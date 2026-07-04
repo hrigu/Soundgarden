@@ -20,9 +20,12 @@
 	(sig * (1 - \mix.kr(0.4, 0.3))) + (wet * \mix.kr(0.4, 0.3))
 };
 
-// Bitcrush/Decimator — Lo-Fi/Glitch-Charakter
+// Bitcrush — Lo-Fi/Glitch-Charakter (nur Core-UGens, kein sc3-plugins nötig)
 ~fxChains[\bitcrush] = { |sig|
-	Decimator.ar(sig, \rate.kr(44100, 0.3), \bits.kr(16, 0.3))
+	var rate = \rate.kr(44100, 0.3);   // Sample-Hold-Rate in Hz — runter = crunchiger
+	var bits = \bits.kr(16, 0.3);      // effektive Bit-Tiefe — runter = crunchiger
+	var held = Latch.ar(sig, Impulse.ar(rate));
+	held.round(0.5.pow(bits))
 };
 
 // Stutter/Gate — rhythmisches An-/Abschneiden für Breaks
