@@ -5,9 +5,9 @@
 
 // --- 1) Track starten ---
 (
-Ndef(\track).fadeTime = 2; // Überblendzeit bei Trackwechsel
+Ndef(\track).fadeTime = 2;
 Ndef(\track, {
-	var buf = ~tracks[\mytrack01]; // <- durch echten Dateinamen ersetzen (ohne Endung)
+	var buf = ~tracks[\Glass];
 	PlayBuf.ar(2, buf, BufRateScale.kr(buf) * \rate.kr(1, 0.5), loop: 1)
 });
 )

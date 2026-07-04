@@ -11,9 +11,12 @@ s.waitForBoot({
 	var validExt = ["wav", "aiff", "aif", "flac"];
 
 	~tracks = ();
+	"Pfad: %\n".postf(soundsDir.fullPath);
 
 	if(soundsDir.isFolder) {
 		soundsDir.entries.select({ |pe|
+			"Entry: %\n".postf(pe);
+
 			validExt.includes(pe.extension.toLower)
 		}).do({ |pe|
 			var key = pe.fileNameWithoutExtension.asSymbol;

@@ -9,3 +9,4 @@ sounds/*.mp3
 # SuperCollider / macOS cruft
 .DS_Store
 *.scsyndef
+.idea/*
