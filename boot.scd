@@ -8,16 +8,13 @@ s.options.memSize = 8192 * 16;
 
 s.waitForBoot({
 	var soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ "sounds");
-	var validExt = ["wav", "aiff", "aif", "flac"];
+	var validExt = [\wav, \aiff, \aif, \flac];
 
 	~tracks = ();
-	"Pfad: %\n".postf(soundsDir.fullPath);
 
 	if(soundsDir.isFolder) {
 		soundsDir.entries.select({ |pe|
-			"Entry: %\n".postf(pe);
-
-			validExt.includes(pe.extension.toLower)
+			validExt.includes(pe.extension.asString.toLower.asSymbol)
 		}).do({ |pe|
 			var key = pe.fileNameWithoutExtension.asSymbol;
 			~tracks[key] = Buffer.read(s, pe.fullPath);
