@@ -14,7 +14,7 @@ s.waitForBoot({
 
 	if(soundsDir.isFolder) {
 		soundsDir.entries.select({ |pe|
-			validExt.includes(pe.extension.toLower)
+			validExt.includes(pe.extension.asString.toLower)
 		}).do({ |pe|
 			var key = pe.fileNameWithoutExtension.asSymbol;
 			~tracks[key] = Buffer.read(s, pe.fullPath);
