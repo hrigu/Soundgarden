@@ -29,6 +29,20 @@ Kernidee: `Ndef(\track, { ... })` und `Ndef(\fx, { ... })` einfach neu
 ausführen – JITLib überblendet automatisch (`fadeTime`), es gibt keine
 Klicks oder Unterbrechungen.
 
+## Tests
+
+Die reine sclang-Logik (aktuell: Extension-Erkennung für Tracks) liegt in
+`classes/` und wird über SuperCollders eingebautes `UnitTest`-Framework
+getestet — ohne Server, ohne echte Audiodateien.
+
+`run_tests.scd` öffnen:
+1. **Block 1** einmal pro SuperCollider-Sitzung ausführen — bindet
+   `classes/` in den Klassenpfad ein und kompiliert neu.
+2. **Block 2** ausführen, sobald im Post-Fenster `compile done` steht.
+   Ergebnis (grün/rot pro Testfall) erscheint im Post-Fenster.
+
+Nach einem Neustart von SuperCollider reicht direkt Block 2.
+
 ## Nächste Schritte / Ideen
 
 - MIDI-Controller oder OSC-Fader anbinden, um Parameter (Cutoff, Mix,
