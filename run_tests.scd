@@ -4,3 +4,4 @@
 // nicht geschehen, und im Post-Fenster auf "compile done" warten.
 
 TestBootTrackDetection.run;
+TestCircularMoveRule.run;
