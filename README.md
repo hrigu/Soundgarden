@@ -76,6 +76,13 @@ HRTF/Kunstkopf) — vorne/hinten bleibt dadurch etwas mehrdeutig. Echtes HRTF
 (überzeugenderes Vorne/Hinten, braucht ein Zusatzpaket) ist eine mögliche
 spätere Ausbaustufe.
 
+Zwei Dokumente mit mehr Hintergrund (Stand nach Intent 9, `MoveRule`/
+`InsectSound`/`Binauralizer` als eigene Klassen):
+- `docs/insekt-architektur-walkthrough.md` — Code-Walkthrough, wer macht was
+- `docs/insekt-architektur-zeitablauf.html` — Grafik: Signalfluss und wie
+  Kontrollrate (sclang) und Audiorate (scsynth) zusammenspielen (im Browser
+  öffnen)
+
 ## Nächste Schritte / Ideen
 
 - MIDI-Controller oder OSC-Fader anbinden, um Parameter (Cutoff, Mix,

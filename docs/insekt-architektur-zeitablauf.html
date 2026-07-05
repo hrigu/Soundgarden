@@ -1,0 +1,458 @@
+<title>Insekt-Architektur — Signalfluss & Steuerung in der Zeit</title>
+<style>
+  :root {
+    --bg: #eae6dd;
+    --grain: #ddd7c9;
+    --panel: #f6f3ec;
+    --panel-strong: #fdf8ec;
+    --line: #cec7b6;
+    --line-strong: #a89f8b;
+    --ink: #221f1a;
+    --ink-muted: #6b6558;
+    --lang: #a15d16;
+    --lang-soft: #a15d1614;
+    --audio: #1f7a52;
+    --audio-soft: #1f7a521a;
+    --grid: #00000014;
+    --tooltip-bg: #221f1a;
+    --tooltip-ink: #fdf8ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151a;
+      --grain: #191d24;
+      --panel: #1b1f27;
+      --panel-strong: #1d2a24;
+      --line: #2d323d;
+      --line-strong: #454c5a;
+      --ink: #e8ecef;
+      --ink-muted: #8b93a1;
+      --lang: #f0b04d;
+      --lang-soft: #f0b04d1a;
+      --audio: #6fe3a4;
+      --audio-soft: #6fe3a41a;
+      --grid: #ffffff14;
+      --tooltip-bg: #e8ecef;
+      --tooltip-ink: #14171c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151a; --grain: #191d24; --panel: #1b1f27; --panel-strong: #1d2a24;
+    --line: #2d323d; --line-strong: #454c5a; --ink: #e8ecef; --ink-muted: #8b93a1;
+    --lang: #f0b04d; --lang-soft: #f0b04d1a; --audio: #6fe3a4; --audio-soft: #6fe3a41a;
+    --grid: #ffffff14; --tooltip-bg: #e8ecef; --tooltip-ink: #14171c;
+  }
+  :root[data-theme="light"] {
+    --bg: #eae6dd; --grain: #ddd7c9; --panel: #f6f3ec; --panel-strong: #fdf8ec;
+    --line: #cec7b6; --line-strong: #a89f8b; --ink: #221f1a; --ink-muted: #6b6558;
+    --lang: #a15d16; --lang-soft: #a15d1614; --audio: #1f7a52; --audio-soft: #1f7a521a;
+    --grid: #00000014; --tooltip-bg: #221f1a; --tooltip-ink: #fdf8ec;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(circle at 1px 1px, var(--grain) 1px, transparent 0) 0 0 / 22px 22px, var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .label-face { font-family: "Avenir Next Condensed", "Futura PT Condensed", "Bahnschrift SemiCondensed", ui-sans-serif, system-ui, sans-serif; }
+  .mono { font-family: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace; }
+
+  .page { max-width: 900px; margin: 0 auto; padding: 3.5rem 1.5rem 5rem; }
+
+  .eyebrow {
+    font-family: "Avenir Next Condensed", "Futura PT Condensed", ui-sans-serif, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.16em; font-size: 0.78rem;
+    color: var(--audio); margin: 0 0 0.6rem; font-weight: 600;
+  }
+  h1 {
+    font-family: "Avenir Next Condensed", "Futura PT Condensed", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700; font-size: clamp(1.7rem, 4vw, 2.4rem); line-height: 1.1;
+    letter-spacing: -0.01em; margin: 0 0 0.9rem; text-wrap: balance;
+  }
+  .dek { font-size: 1.02rem; line-height: 1.55; color: var(--ink-muted); max-width: 60ch; margin: 0 0 3rem; }
+
+  h2.section-title {
+    font-family: "Avenir Next Condensed", "Futura PT Condensed", ui-sans-serif, system-ui, sans-serif;
+    font-size: 1.35rem; font-weight: 700; margin: 0 0 0.4rem;
+  }
+  .section-dek { font-size: 0.92rem; color: var(--ink-muted); margin: 0 0 1.4rem; max-width: 62ch; line-height: 1.5; }
+  section.block { margin-bottom: 3.4rem; }
+
+  /* legend chips for lang/audio domain */
+  .domain-legend { display: flex; gap: 1.4rem; margin-bottom: 1.6rem; flex-wrap: wrap; }
+  .domain-legend span { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--ink-muted); }
+  .domain-legend .dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+  .dot--lang { background: var(--lang); }
+  .dot--audio { background: var(--audio); }
+
+  /* role cards */
+  .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  @media (max-width: 720px) { .roles { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .roles { grid-template-columns: 1fr; } }
+  .role {
+    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--line-strong);
+    border-radius: 3px; padding: 1rem 1.1rem;
+  }
+  .role.lang { border-left-color: var(--lang); }
+  .role.audio { border-left-color: var(--audio); }
+  .role__domain {
+    font-family: "Avenir Next Condensed", "Futura PT Condensed", ui-sans-serif, system-ui, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.66rem; font-weight: 600;
+    margin: 0 0 0.35rem;
+  }
+  .role.lang .role__domain { color: var(--lang); }
+  .role.audio .role__domain { color: var(--audio); }
+  .role__title { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.98rem; font-weight: 600; margin: 0 0 0.4rem; }
+  .role__desc { font-size: 0.83rem; line-height: 1.45; color: var(--ink-muted); margin: 0; }
+
+  /* signal flow strip */
+  .flow {
+    display: flex; align-items: stretch; gap: 0; overflow-x: auto;
+    border: 1px solid var(--line); border-radius: 4px; background: var(--panel);
+  }
+  .flow__node { padding: 1.1rem 1.3rem; min-width: 168px; flex: 1 1 0; }
+  .flow__node:not(:last-child) { border-right: 1px dashed var(--line); }
+  .flow__node.audio { background: var(--audio-soft); }
+  .flow__tag { font-family: ui-monospace, monospace; font-size: 0.72rem; color: var(--ink-muted); margin: 0 0 0.3rem; }
+  .flow__name { font-family: ui-monospace, monospace; font-weight: 600; font-size: 0.92rem; margin: 0 0 0.35rem; color: var(--audio); }
+  .flow__note { font-size: 0.78rem; color: var(--ink-muted); line-height: 1.4; margin: 0; }
+  .flow__arrow {
+    display: flex; align-items: center; justify-content: center; padding: 0 0.4rem;
+    color: var(--line-strong); font-size: 1.1rem; flex: none;
+  }
+
+  /* chart */
+  .chart-card { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1.4rem 1.4rem 1rem; }
+  .chart-legend { display: flex; gap: 1.6rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+  .chart-legend span { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--ink); }
+  .swatch { width: 22px; height: 0; border-top-width: 3px; border-top-style: solid; flex: none; }
+  .swatch--target { border-color: var(--lang); border-top-style: dashed; }
+  .swatch--actual { border-color: var(--audio); }
+  .chart-wrap { position: relative; }
+  canvas { width: 100%; height: 260px; display: block; cursor: crosshair; }
+  .tooltip {
+    position: absolute; pointer-events: none; background: var(--tooltip-bg); color: var(--tooltip-ink);
+    font-family: ui-monospace, monospace; font-size: 0.74rem; padding: 0.4rem 0.6rem; border-radius: 3px;
+    opacity: 0; transform: translate(-50%, -110%); white-space: nowrap; transition: opacity 0.08s;
+    z-index: 5;
+  }
+  .chart-annotation { font-size: 0.8rem; color: var(--ink-muted); margin-top: 0.7rem; line-height: 1.5; }
+  .chart-annotation code { font-family: ui-monospace, monospace; background: var(--lang-soft); color: var(--lang); padding: 0.1rem 0.35rem; border-radius: 2px; }
+
+  footer.note {
+    margin-top: 3rem; padding-top: 1.4rem; border-top: 1px solid var(--line);
+    font-size: 0.8rem; color: var(--ink-muted); line-height: 1.5;
+  }
+</style>
+
+<div class="page">
+
+  <header>
+    <p class="eyebrow">Soundgarden · Spatial-Audio, nach Intent 9</p>
+    <h1>Wer macht was mit dem Klang — und wann</h1>
+    <p class="dek">Zwei Zeitebenen laufen parallel: die Sprachseite (sclang) denkt in einzelnen,
+      seltenen Ticks — der Server denkt in einem ununterbrochenen Strom aus Samples. Diese Grafik
+      zeigt beide und wie sie sich treffen, ohne dass man das Ineinandergreifen hört.</p>
+  </header>
+
+  <div class="domain-legend">
+    <span><span class="dot dot--lang"></span> Sprachseite (sclang) — diskret, selten</span>
+    <span><span class="dot dot--audio"></span> Serverseite (scsynth) — kontinuierlich, Audiorate</span>
+  </div>
+
+  <section class="block">
+    <h2 class="section-title">Wer macht was</h2>
+    <p class="section-dek">Sechs Objekte, klar getrennt nach Zuständigkeit — seit Intent 9 auch
+      räumlich getrennt in eigenen Klassen.</p>
+    <div class="roles">
+      <div class="role lang">
+        <p class="role__domain">Sprache</p>
+        <p class="role__title">MoveRule / CircularMoveRule</p>
+        <p class="role__desc">Errechnet aus Zeit t und Zeitschritt dt die nächste Position — reine
+          Mathematik, kein Server-Kontakt.</p>
+      </div>
+      <div class="role lang">
+        <p class="role__domain">Sprache</p>
+        <p class="role__title">Movable</p>
+        <p class="role__desc">Hält die aktuelle Position und die Raumgrenzen; ruft bei jedem
+          <span class="mono">step()</span> <span class="mono">moveRule.next()</span> auf.</p>
+      </div>
+      <div class="role lang">
+        <p class="role__domain">Sprache</p>
+        <p class="role__title">Listener</p>
+        <p class="role__desc">Fix im Ursprung; rechnet eine Weltposition in Azimuth und Distanz
+          relativ zu sich selbst um.</p>
+      </div>
+      <div class="role lang">
+        <p class="role__domain">Sprache · Brücke</p>
+        <p class="role__title">SoundInsect</p>
+        <p class="role__desc">Orchestriert alles: tickt die Routine, verkabelt den Audio-Bus,
+          schiebt neue Werte zum Server.</p>
+      </div>
+      <div class="role audio">
+        <p class="role__domain">Server / Audio</p>
+        <p class="role__title">InsectSound</p>
+        <p class="role__desc"><span class="mono">SynthDef \insectSound</span> — erzeugt den Klang
+          selbst, kontinuierlich, kennt keine Position im Raum.</p>
+      </div>
+      <div class="role audio">
+        <p class="role__domain">Server / Audio</p>
+        <p class="role__title">Binauralizer</p>
+        <p class="role__desc"><span class="mono">SynthDef \binauralizer</span> — formt Pan, ITD und
+          Filter aus Azimuth/Distanz, kontinuierlich.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2 class="section-title">Signalfluss — Audio, kontinuierlich</h2>
+    <p class="section-dek">Läuft auf dem Server (scsynth), sobald <span class="mono">play()</span>
+      aufgerufen wurde — ununterbrochen, unabhängig davon, ob gerade neue Positions-Werte
+      ankommen oder nicht.</p>
+    <div class="flow">
+      <div class="flow__node audio">
+        <p class="flow__tag">SynthDef</p>
+        <p class="flow__name">\insectSound</p>
+        <p class="flow__note">Flügelschlag + Brummen, mono, auf privaten Bus geschrieben.</p>
+      </div>
+      <div class="flow__arrow">→</div>
+      <div class="flow__node audio">
+        <p class="flow__tag">privater Bus</p>
+        <p class="flow__name">Bus.audio(1)</p>
+        <p class="flow__note">addAfter — Binauralizer läuft im Node-Baum nach InsectSound, liest
+          dessen Output im selben Audio-Block.</p>
+      </div>
+      <div class="flow__arrow">→</div>
+      <div class="flow__node audio">
+        <p class="flow__tag">SynthDef</p>
+        <p class="flow__name">\binauralizer</p>
+        <p class="flow__note">Pan, ITD, distanzabhängiger Tiefpass/Pegel, Behind-Damping.</p>
+      </div>
+      <div class="flow__arrow">→</div>
+      <div class="flow__node">
+        <p class="flow__tag">Hardware</p>
+        <p class="flow__name">Out.ar(0, [L, R])</p>
+        <p class="flow__note">Stereo an die Kopfhörer.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2 class="section-title">Steuerung in der Zeit</h2>
+    <p class="section-dek"><span class="mono">SoundInsect</span>s Routine tickt ca. alle 33ms
+      (30&nbsp;Hz): <span class="mono">movable.step()</span> → <span class="mono">listener.relativeAzimuth/distanceTo</span>
+      → <span class="mono">binauralizer.set(az, dist)</span>. Jeder Tick schickt einen neuen
+      Zielwert an den Server — aber der Server hört nicht in Sprüngen, sondern gleitet.</p>
+
+    <div class="chart-card">
+      <div class="chart-legend">
+        <span><span class="swatch swatch--target"></span> Zielwert von <span class="mono" style="font-size:0.78rem">.set()</span> (Kontrollrate, jeder Tick)</span>
+        <span><span class="swatch swatch--actual"></span> Tatsächlicher Wert im Synth nach <span class="mono" style="font-size:0.78rem">Lag.kr</span> (Audiorate, kontinuierlich)</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart" width="1600" height="520" aria-label="Zielwert vs. geglätteter Wert über die Zeit"></canvas>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+      <p class="chart-annotation">
+        <code>lagTime = 0.08</code> (80ms) im <span class="mono">Binauralizer</span> — deutlich
+        länger als der 33ms-Tick-Abstand. Jeder neue Zielwert wird deshalb noch geglättet,
+        während der nächste schon eintrifft: eine sanfte, ununterbrochene Kurve statt hörbarer
+        Stufen oder Klicks.
+      </p>
+    </div>
+  </section>
+
+  <footer class="note">
+    Bewusst getrennt (Intent 9): die Sprachseite weiß nichts von Samples, der Server weiß nichts
+    von Bewegungsregeln — <span class="mono">Binauralizer.set()</span> ist die einzige Brücke
+    zwischen beiden Zeitebenen. Genau diese Trennstelle ist, wo Intent 5 (ATK-HRTF) später
+    ansetzt, ohne die anderen Teile anzufassen.
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById('chart');
+  var ctx = canvas.getContext('2d');
+  var tooltip = document.getElementById('tooltip');
+
+  // Illustrative Zielwerte (Pan/Azimuth-artiger Wert, -1..1), einer pro Tick.
+  var tickMs = 33;
+  var targets = [0, 0.18, 0.42, 0.66, 0.84, 0.78, 0.52, 0.2, -0.12, -0.38, -0.55, -0.4];
+  var lagTime = 80; // ms, entspricht Binauralizer-Default lagTime=0.08
+  var totalMs = (targets.length - 1) * tickMs;
+
+  function simulateActual() {
+    // Feine Simulation von Lag.kr: exponentielle Annäherung an den jeweils
+    // aktuellen Zielwert, Zeitkonstante lagTime.
+    var stepMs = 1;
+    var points = [];
+    var actual = targets[0];
+    for (var t = 0; t <= totalMs; t += stepMs) {
+      var tickIndex = Math.min(Math.floor(t / tickMs), targets.length - 1);
+      var target = targets[tickIndex];
+      var alpha = 1 - Math.exp(-stepMs / lagTime);
+      actual += (target - actual) * alpha;
+      points.push({ t: t, v: actual });
+    }
+    return points;
+  }
+  var actualPoints = simulateActual();
+
+  function tokens() {
+    var s = getComputedStyle(document.documentElement);
+    return {
+      ink: s.getPropertyValue('--ink').trim(),
+      inkMuted: s.getPropertyValue('--ink-muted').trim(),
+      grid: s.getPropertyValue('--grid').trim(),
+      lang: s.getPropertyValue('--lang').trim(),
+      audio: s.getPropertyValue('--audio').trim(),
+      panel: s.getPropertyValue('--panel').trim()
+    };
+  }
+
+  var pad = { l: 46, r: 20, t: 16, b: 34 };
+
+  function xFor(t, w) { return pad.l + (t / totalMs) * (w - pad.l - pad.r); }
+  function yFor(v, h) { return pad.t + (1 - (v + 1) / 2) * (h - pad.t - pad.b); }
+
+  function draw(hoverT) {
+    var w = canvas.width, h = canvas.height;
+    var tk = tokens();
+    ctx.clearRect(0, 0, w, h);
+
+    // grid (recessive)
+    ctx.strokeStyle = tk.grid;
+    ctx.lineWidth = 1;
+    var yGridVals = [-1, -0.5, 0, 0.5, 1];
+    ctx.font = '20px ui-monospace, monospace';
+    ctx.fillStyle = tk.inkMuted;
+    yGridVals.forEach(function (v) {
+      var y = yFor(v, h);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+    });
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('rechts', pad.l - 8, yFor(1, h));
+    ctx.fillText('mitte', pad.l - 8, yFor(0, h));
+    ctx.fillText('links', pad.l - 8, yFor(-1, h));
+
+    // x axis ticks at each control-tick
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (var i = 0; i < targets.length; i++) {
+      var t = i * tickMs;
+      var x = xFor(t, w);
+      ctx.strokeStyle = tk.grid;
+      ctx.beginPath();
+      ctx.moveTo(x, pad.t);
+      ctx.lineTo(x, h - pad.b);
+      ctx.stroke();
+      if (i % 2 === 0) {
+        ctx.fillText(t + 'ms', x, h - pad.b + 8);
+      }
+    }
+
+    // target step line (dashed, lang color)
+    ctx.strokeStyle = tk.lang;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 8]);
+    ctx.beginPath();
+    for (var i = 0; i < targets.length; i++) {
+      var t0 = i * tickMs;
+      var t1 = (i === targets.length - 1) ? totalMs : (i + 1) * tickMs;
+      var y = yFor(targets[i], h);
+      ctx.moveTo(xFor(t0, w), y);
+      ctx.lineTo(xFor(t1, w), y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // tick dots (moments .set() fires)
+    ctx.fillStyle = tk.lang;
+    for (var i = 0; i < targets.length; i++) {
+      var x = xFor(i * tickMs, w);
+      var y = yFor(targets[i], h);
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // actual smoothed curve (solid, audio color)
+    ctx.strokeStyle = tk.audio;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    actualPoints.forEach(function (p, i) {
+      var x = xFor(p.t, w), y = yFor(p.v, h);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // hover crosshair
+    if (hoverT != null) {
+      var x = xFor(hoverT, w);
+      ctx.strokeStyle = tk.ink;
+      ctx.globalAlpha = 0.35;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, pad.t);
+      ctx.lineTo(x, h - pad.b);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function nearestActual(t) {
+    var idx = Math.round(t);
+    idx = Math.max(0, Math.min(actualPoints.length - 1, idx));
+    return actualPoints[idx].v;
+  }
+  function targetAt(t) {
+    var i = Math.min(Math.floor(t / tickMs), targets.length - 1);
+    return targets[i];
+  }
+
+  function handleMove(evt) {
+    var rect = canvas.getBoundingClientRect();
+    var xCss = evt.clientX - rect.left;
+    var w = canvas.width, h = canvas.height;
+    var xCanvas = xCss * (w / rect.width);
+    var innerW = w - pad.l - pad.r;
+    var t = ((xCanvas - pad.l) / innerW) * totalMs;
+    t = Math.max(0, Math.min(totalMs, t));
+
+    draw(t);
+
+    var tt = targetAt(t).toFixed(2);
+    var aa = nearestActual(t).toFixed(2);
+    tooltip.innerHTML = Math.round(t) + 'ms &nbsp; Ziel ' + tt + ' &nbsp; Ist ' + aa;
+    tooltip.style.left = xCss + 'px';
+    tooltip.style.top = (evt.clientY - rect.top) + 'px';
+    tooltip.style.opacity = 1;
+  }
+  function handleLeave() {
+    tooltip.style.opacity = 0;
+    draw(null);
+  }
+
+  canvas.addEventListener('mousemove', handleMove);
+  canvas.addEventListener('mouseleave', handleLeave);
+  canvas.addEventListener('touchmove', function (e) {
+    if (e.touches[0]) handleMove(e.touches[0]);
+  }, { passive: true });
+
+  draw(null);
+
+  var mql = window.matchMedia('(prefers-color-scheme: dark)');
+  mql.addEventListener && mql.addEventListener('change', function () { draw(null); });
+  new MutationObserver(function () { draw(null); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>
