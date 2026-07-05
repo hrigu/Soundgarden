@@ -52,9 +52,13 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
   nachgebaut.
 - Kein MIDI-Controller vorgesehen — Steuerung ist bewusst reine Tastatur (`Cmd+Enter` je Block).
 - Bluetooth-Headsets (z.B. AirPods, Bose) liefern für ihr Mikrofon oft nur 16kHz, während der
-  Output mit 44100Hz läuft — das lässt den Server-Boot mit einem Samplerate-Konflikt scheitern.
-  `boot.scd` setzt deshalb `s.options.numInputBusChannels = 0` (kein Mikrofon-Input im Projekt
-  nötig).
+  Output mit 44100Hz läuft — das lässt den Server-Boot mit einem Samplerate-Konflikt scheitern,
+  UND hält macOS die Verbindung systemweit im HFP-Modus (mono, verrauscht, kein Stereo-Panning
+  hörbar), solange das Headset in den **macOS-Systemeinstellungen** (Ton → Eingabe) noch als
+  Standard-Mikrofon eingestellt ist. Der eigentliche Fix ist dort: Eingabegerät auf ein
+  Nicht-Bluetooth-Gerät umstellen, dann handelt macOS A2DP (sauberes Stereo) neu aus.
+  `s.options.numInputBusChannels = 0` in `boot.scd` ist zusätzlich vorbereitet (aktuell
+  auskommentiert), falls der Server trotzdem mit aktivem Bluetooth-Mikrofon gebootet wird.
 
 Für das vollständige IDD-Protokoll (Intent-Format, Ordner-Workflow, Task-Bestätigungen,
 Commit-Konventionen) siehe `AGENTS.md`.
