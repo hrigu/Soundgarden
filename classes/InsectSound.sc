@@ -57,7 +57,8 @@ InsectSound {
 	// aufgerufen wurde — SynthDef-Registrierung (/d_recv) ist asynchron und
 	// würde sonst mit dem /s_new dieses Aufrufs um die Wette laufen.
 	play { |server|
-		bus = Bus.audio(server, 1);
+		bus = Bus.audio(server, 1); // 1: Anzahl Kanäle (hier Mono). Die Busnummer wird vom AudiobusAllocator vergeben
+		                            // jede Instanz bekommt eine neue Bus instanz
 		synth = Synth(\insectSound, [
 			\out, bus.index,
 			\wingRate, wingRate,

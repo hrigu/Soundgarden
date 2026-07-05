@@ -1,4 +1,4 @@
-// insect_demo.scd — Prototyp: ein binaurales "Insekt" kreist um den Hörer.
+// insect_demo.scd — Prototyp: zwei binaurale "Insekten" kreisen um den Hörer.
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
 //   1) boot.scd        — Server muss laufen
@@ -18,27 +18,45 @@
 
 // --- 1) SynthDefs registrieren (einmal pro Sitzung, vor dem Abspielen) ---
 // /d_recv ist asynchron — dieser Schritt muss abgeschlossen sein, bevor Block 3
-// versucht, Synths dieser Defs zu instanzieren.
+// versucht, Synths dieser Defs zu instanzieren. Beide Insekten teilen sich
+// dieselben SynthDefs (\insectSound, \binauralizer), nur mit unterschiedlichen
+// Synth-Args.
 (
 InsectSound.addSynthDef;
 Binauralizer.addSynthDef;
 )
 
-// --- 2) Bewegungsregel, Klang, Binauralisierung und Listener anlegen ---
-// Feste Bahn: Kreis um den Hörer, dessen Radius langsam "atmet"
-// (2.5m ± 1.2m, CircularMoveRule-Defaults) — testet Azimuth (rundherum) UND
-// Distanz (laut/leise) zugleich.
+// --- 2) Zwei Insekten anlegen: unterschiedliches Tempo/Richtung, unterschiedlicher Klang ---
+// Ein gemeinsamer Listener (fix im Ursprung) hört beide. Jedes Insekt braucht
+// aber sein eigenes Movable/InsectSound/Binauralizer — die Binauralisierung
+// hängt von der Position ab, die pro Insekt verschieden ist, und jeder Synth
+// braucht seinen eigenen Bus/State.
 (
-var moveRule = CircularMoveRule.new;                   // Defaults: 2.5m Radius, ±1.2m Atmung
-var movable = Movable.new([0, 2.5, 0], moveRule, 5);  // Raumkugel: Radius 5m
-var listener = Listener.new;                           // fix im Ursprung, Blick entlang +y
-var insectSound = InsectSound.new;                     // reiner Klang, kennt keine Position
-var binauralizer = Binauralizer.new;                   // formt Pan/ITD/Distanz für den Listener
-~insect = SoundInsect.new(movable, listener, insectSound, binauralizer);
+var listener = Listener.new;
+
+// Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s
+// im Uhrzeigersinn), Standard-Klang.
+var moveRule1 = CircularMoveRule.new;
+var movable1 = Movable.new([0, 2.5, 0], moveRule1, 5);
+var insectSound1 = InsectSound.new;
+var binauralizer1 = Binauralizer.new;
+
+// Insekt 2: etwas schneller (1.0 statt 0.6 rad/s) und in Gegenrichtung
+// (negatives angularSpeed); heller/schneller Klang (höhere Flügelschlag- und
+// Resonanzfrequenzen, kürzeres Ausklingen) statt Standard-Brummen.
+var moveRule2 = CircularMoveRule.new(3.0, 1.0, 0.15, -1.0);
+var movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
+var insectSound2 = InsectSound.new(280, 0.2, 5200, 7000, 0.015, 0.01, 0.3);
+var binauralizer2 = Binauralizer.new;
+
+~insect1 = SoundInsect.new(movable1, listener, insectSound1, binauralizer1);
+~insect2 = SoundInsect.new(movable2, listener, insectSound2, binauralizer2);
 )
 
 // --- 3) Abspielen ---
-~insect.play(s);
+~insect1.play(s);
+~insect2.play(s);
 
 // --- 4) Stoppen ---
-// ~insect.stop;
+ ~insect1.stop;
+ ~insect2.stop;
