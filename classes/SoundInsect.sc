@@ -1,25 +1,33 @@
-// SoundInsect — verbindet ein Movable mit einem klingenden Synth (\insectVoice,
-// siehe insect_demo.scd). Ein Routine tickt movable.step() regelmäßig, berechnet
-// die Position relativ zum Listener und schiebt Azimuth/Distanz live in den Synth.
+// SoundInsect — Orchestrator: verbindet ein Movable (das sich nach einer
+// MoveRule bewegt) mit einem InsectSound (reiner Klang) und einem
+// Binauralizer (formt den Klang für den Listener anhand Azimuth/Distanz).
+// Eine Routine tickt movable.step() regelmäßig, berechnet die Position
+// relativ zum Listener und schiebt Azimuth/Distanz live in den Binauralizer.
 SoundInsect {
 	var <>movable;
 	var <>listener;
-	var <synth;
+	var <>insectSound;
+	var <>binauralizer;
 	var routine;
 
-	*new { |movable, listener|
-		^super.new.init(movable, listener);
+	*new { |movable, listener, insectSound, binauralizer|
+		^super.new.init(movable, listener, insectSound, binauralizer);
 	}
 
-	init { |aMovable, aListener|
+	init { |aMovable, aListener, aInsectSound, aBinauralizer|
 		movable = aMovable;
 		listener = aListener;
+		insectSound = aInsectSound ? InsectSound.new;
+		binauralizer = aBinauralizer ? Binauralizer.new;
 	}
 
 	play { |server, updateRate = 30|
 		var dt = 1.0 / updateRate;
 
-		synth = Synth(\insectVoice, [\azimuth, 0, \distance, 1], server);
+		insectSound.play(server);
+		// addAfter: Binauralizer muss im Node-Baum nach InsectSound laufen,
+		// um dessen Bus im selben Audio-Block lesen zu können.
+		binauralizer.play(server, insectSound.bus, 0, insectSound.synth, \addAfter);
 
 		routine = Routine({
 			loop {
@@ -27,7 +35,7 @@ SoundInsect {
 				movable.step(dt);
 				az = listener.relativeAzimuth(movable.pos);
 				dist = listener.distanceTo(movable.pos);
-				synth.set(\azimuth, az, \distance, dist);
+				binauralizer.set(az, dist);
 				dt.wait;
 			}
 		}).play;
@@ -37,6 +45,7 @@ SoundInsect {
 
 	stop {
 		routine.stop;
-		synth.free;
+		binauralizer.stop;
+		insectSound.stop;
 	}
 }
