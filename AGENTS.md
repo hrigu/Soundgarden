@@ -76,14 +76,14 @@ Anders als bei einer Web-App lässt sich in einem Audio-/Live-Performance-Projek
 sinnvoll test-first entwickeln:
 
 - **Reine sclang-Logik ohne Server-/Audio-Abhängigkeit** (z.B. `BootTrackDetection`): rot/grün —
-  erst ein `UnitTest` in `classes/`, der fehlschlägt, dann die Implementierung, dann grün.
-  Ausführung über `run_tests.scd`.
+  erst ein `UnitTest` in `tests/`, der fehlschlägt, dann die Implementierung in `classes/`, dann
+  grün. Ausführung über `run_tests.scd`.
 - **SynthDefs, Klangverhalten, Live-Set-Arbeit**: kein erzwungenes TDD. Verifikation über
   Hörtest (Kopfhörer bei binauralen Sachen) — "klingt es richtig" lässt sich nicht sinnvoll als
   Vorher-Test formulieren.
-- Neue Klassen kommen nach `classes/`; `load_classes.scd` (einmal pro Sitzung:
-  `LanguageConfig.addIncludePath` + `thisProcess.recompile`) muss laufen, bevor sie verfügbar
-  sind.
+- Produktiv-Klassen kommen nach `classes/`, Test-Klassen (`UnitTest`-Subklassen) nach `tests/`;
+  `load_classes.scd` (einmal pro Sitzung: `LanguageConfig.addIncludePath` für beide Ordner +
+  `thisProcess.recompile`) muss laufen, bevor sie verfügbar sind.
 
 ## Commit-Konventionen
 

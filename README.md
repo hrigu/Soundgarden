@@ -29,10 +29,12 @@ Kernidee: `Ndef(\track, { ... })` und `Ndef(\fx, { ... })` einfach neu
 ausführen – JITLib überblendet automatisch (`fadeTime`), es gibt keine
 Klicks oder Unterbrechungen.
 
-## classes/ und load_classes.scd
+## classes/, tests/ und load_classes.scd
 
-Eigene Klassen (`BootTrackDetection`, `Movable`, `Listener`, `SoundInsect`, ...)
-liegen in `classes/`. Damit SuperCollider sie kennt, einmal pro Sitzung
+Eigene Produktiv-Klassen (`BootTrackDetection`, `Movable`, `Listener`,
+`SoundInsect`, ...) liegen in `classes/`, die zugehörigen Test-Klassen
+(`UnitTest`-Subklassen wie `TestBootTrackDetection`) getrennt davon in
+`tests/`. Damit SuperCollider beide kennt, einmal pro Sitzung
 **`load_classes.scd`** ausführen und im Post-Fenster auf `compile done`
 warten — danach stehen sie überall zur Verfügung.
 

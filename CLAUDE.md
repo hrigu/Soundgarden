@@ -22,8 +22,8 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 ## Befehle
 
 - SuperCollider-IDE (scide) öffnen (Spotlight oder `open -a SuperCollider`).
-- `load_classes.scd` einmal pro Sitzung ausführen — bindet `classes/` in den Klassenpfad ein und
-  kompiliert neu; danach im Post-Fenster auf `compile done` warten.
+- `load_classes.scd` einmal pro Sitzung ausführen — bindet `classes/` und `tests/` in den
+  Klassenpfad ein und kompiliert neu; danach im Post-Fenster auf `compile done` warten.
 - `run_tests.scd` — automatisierte Tests (`UnitTest`) für die reine sclang-Logik.
 - Live-Set-Workflow: `boot.scd` → `fx.scd` → `set_template.scd` (Block für Block, `Cmd+Enter`).
 - Spatial-Audio-Prototyp: `boot.scd` → `load_classes.scd` → `insect_demo.scd` —
@@ -32,9 +32,10 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 ## Architektur
 
 - sclang + scsynth (Client/Server), JITLib (`Ndef`) fürs klickfreie Live-Editing laufender Synths.
-- `classes/` enthält eigene Klassen (`BootTrackDetection` + Test, `Movable`, `Listener`,
-  `SoundInsect`) — projekt-lokal eingebunden via `LanguageConfig.addIncludePath` +
-  `thisProcess.recompile` in `load_classes.scd` (kein globaler Extensions-Ordner).
+- `classes/` enthält Produktiv-Klassen (`BootTrackDetection`, `Movable`, `Listener`,
+  `SoundInsect`), `tests/` die zugehörigen `UnitTest`-Klassen (`TestBootTrackDetection`) — beide
+  projekt-lokal eingebunden via `LanguageConfig.addIncludePath` + `thisProcess.recompile` in
+  `load_classes.scd` (kein globaler Extensions-Ordner).
 - `sc3-plugins` ist bewusst (noch) nicht installiert — wo möglich mit Core-UGens gearbeitet
   (siehe Gotchas). Für Intent 5 (ATK/echtes HRTF) wird die Zusatzinstallation in Kauf genommen.
 
@@ -43,7 +44,8 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 - `PathName>>extension` kann ein **Symbol** statt einen String liefern. `Array:-includes`/
   `-indexOf` vergleichen intern per Identität — zwei inhaltsgleiche, aber unterschiedliche
   String-Objekte matchen NICHT, auch wenn ein direkter `==`-Vergleich `true` ergibt. Extensions
-  deshalb immer als Symbol vergleichen (siehe `classes/BootTrackDetection.sc`).
+  deshalb immer als Symbol vergleichen (siehe `classes/BootTrackDetection.sc`, getestet in
+  `tests/TestBootTrackDetection.sc`).
 - `Decimator` (Bitcrush-UGen) gehört zu `sc3-plugins`, nicht zum Core — auf einer frischen
   Installation `ERROR: Class not defined`. In `fx.scd` stattdessen mit `Latch` + `round`
   nachgebaut.
