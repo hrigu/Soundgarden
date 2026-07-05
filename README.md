@@ -17,11 +17,13 @@ Bitcrush, Reverb) – ohne Aussetzer, per JITLib (`Ndef`).
 
 Dateien der Reihe nach öffnen und blockweise ausführen (Cmd+Enter):
 
-1. **`boot.scd`** – bootet den Server und lädt alle Dateien aus `sounds/`
+1. **`load_classes.scd`** – muss zuerst laufen (einmal pro Sitzung): bindet `classes/`/`tests/`
+   ein und kompiliert neu. `boot.scd` braucht die Klasse `BootTrackDetection` daraus.
+2. **`boot.scd`** – bootet den Server und lädt alle Dateien aus `sounds/`
    automatisch in `~tracks` (z.B. `~tracks[\mytrack01]`).
-2. **`fx.scd`** – definiert die FX-Bausteine (`~fxChains`), die du live
+3. **`fx.scd`** – definiert die FX-Bausteine (`~fxChains`), die du live
    kombinierst.
-3. **`set_template.scd`** – das eigentliche Live-Set. Jeder Block darin ist
+4. **`set_template.scd`** – das eigentliche Live-Set. Jeder Block darin ist
    während der Party einzeln ausführbar: Track starten, FX-Kette
    umschalten, Parameter live verstellen, in den nächsten Track überblenden.
 
@@ -34,9 +36,13 @@ Klicks oder Unterbrechungen.
 Eigene Produktiv-Klassen (`BootTrackDetection`, `Movable`, `Listener`,
 `SoundInsect`, ...) liegen in `classes/`, die zugehörigen Test-Klassen
 (`UnitTest`-Subklassen wie `TestBootTrackDetection`) getrennt davon in
-`tests/`. Damit SuperCollider beide kennt, einmal pro Sitzung
-**`load_classes.scd`** ausführen und im Post-Fenster auf `compile done`
-warten — danach stehen sie überall zur Verfügung.
+`tests/`. Damit SuperCollider beide kennt, einmal pro Sitzung **als
+allererstes** (vor `boot.scd`!) **`load_classes.scd`** ausführen und im
+Post-Fenster auf `compile done` warten — danach stehen sie überall zur
+Verfügung. Ohne diesen Schritt scheitert `boot.scd` mit
+`ERROR: Class not defined.` (auf einer frisch gestarteten
+SuperCollider-Sitzung ist die Klassenbibliothek noch im
+Auslieferungszustand).
 
 ## Tests
 
@@ -62,7 +68,7 @@ Objektmodell:
   Synth (Pan, winzige Laufzeitdifferenz zwischen den Ohren, entfernungs-
   abhängiger Pegel/Tiefpass).
 
-Ausführen: `boot.scd` → `load_classes.scd` → `insect_demo.scd` (Block für
+Ausführen: `load_classes.scd` → `boot.scd` → `insect_demo.scd` (Block für
 Block), mit Kopfhörern.
 
 Aktuell eine einfache Binaural-Näherung mit reinen Core-UGens (kein
