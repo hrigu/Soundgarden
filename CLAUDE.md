@@ -22,11 +22,12 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 ## Befehle
 
 - SuperCollider-IDE (scide) öffnen (Spotlight oder `open -a SuperCollider`).
-- `load_classes.scd` einmal pro Sitzung ausführen — bindet `classes/` und `tests/` in den
-  Klassenpfad ein und kompiliert neu; danach im Post-Fenster auf `compile done` warten.
+- `load_classes.scd` einmal pro Sitzung ausführen — bindet `classes/` in den Klassenpfad ein und
+  kompiliert neu; danach im Post-Fenster auf `compile done` warten. **Muss vor `boot.scd`
+  laufen** — `boot.scd` ruft `BootTrackDetection` auf, das erst nach diesem Schritt existiert.
 - `run_tests.scd` — automatisierte Tests (`UnitTest`) für die reine sclang-Logik.
 - Live-Set-Workflow: `boot.scd` → `fx.scd` → `set_template.scd` (Block für Block, `Cmd+Enter`).
-- Spatial-Audio-Prototyp: `boot.scd` → `load_classes.scd` → `insect_demo.scd` —
+- Spatial-Audio-Prototyp: `boot.scd` → `insect_demo.scd` —
   **Kopfhörer benutzen**, binaurale Effekte funktionieren über Lautsprecher nicht richtig.
 
 ## Architektur
