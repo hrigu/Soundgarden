@@ -3,7 +3,7 @@
 // wird sie überschritten, steuert step() sanft zurück (kein hartes Abprallen).
 Movable {
 	var <>pos;        // [x, y, z]
-	var <>moveRule;   // Function: { |pos, t, dt| ... -> neue [x, y, z] }
+	var <>moveRule;   // MoveRule-Objekt: next(pos, t, dt) -> neue [x, y, z]
 	var <>roomRadius;
 	var <>time;
 
@@ -22,7 +22,7 @@ Movable {
 		var newPos, dist, targetScale, scale, pullback = 0.2;
 
 		time = time + dt;
-		newPos = moveRule.(pos, time, dt);
+		newPos = moveRule.next(pos, time, dt);
 
 		dist = (newPos.pow(2).sum).sqrt;
 		if(dist > roomRadius) {
