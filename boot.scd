@@ -5,6 +5,8 @@
 s = Server.default;
 s.options.numBuffers = 1024 * 16;
 s.options.memSize = 8192 * 16;
+s.options.numInputBusChannels = 0; // kein Mikrofon-Input nötig — vermeidet Samplerate-Konflikte
+                                    // mit Bluetooth-Headsets (deren Mikrofon oft nur 16kHz liefert)
 
 s.waitForBoot({
 	var soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ "sounds");
