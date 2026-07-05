@@ -7,6 +7,8 @@ Movable {
 	var <>roomRadius;
 	var <>time;
 
+	// erzeugt eine Instanz an gegebener Startposition mit gegebener MoveRule;
+	// time startet bei 0
 	*new { |pos = #[0, 0, 0], moveRule, roomRadius = 5|
 		^super.new.init(pos, moveRule, roomRadius);
 	}
@@ -18,7 +20,15 @@ Movable {
 		time = 0;
 	}
 
+	// step — bewegt das Objekt einen Zeitschritt weiter.
+	// dt: Zeitschritt in Sekunden seit dem letzten step()-Aufruf
+	// -> neue Position [x, y, z]; mutiert dabei auch pos und time (kumulative
+	//    Gesamtzeit) als Seiteneffekt
 	step { |dt = 0.033|
+		// pullback: Anteil des Wegs zurück zur Kugeloberfläche pro step()
+		// (0 = kein Zurücksteuern, 1 = hartes Clamping auf roomRadius).
+		// Klein gehalten, damit die Rückführung sanft statt als Sprung/Klick
+		// hörbar wird.
 		var newPos, dist, targetScale, scale, pullback = 0.2;
 
 		time = time + dt;

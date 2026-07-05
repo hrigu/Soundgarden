@@ -83,3 +83,6 @@ spätere Ausbaustufe.
 - Weitere FX-Bausteine in `fx.scd` ergänzen (z.B. Reverse, Granular).
 - Pattern-basierte Automation (`Pbind`) für sich selbst entwickelnde
   Übergänge zwischen Tracks.
+- `Movable` mit einem `UnitTest` absichern: `step()` ist trotz Seiteneffekt gut
+  testbar (`MoveRule` injizierbar per Fake, Rückführungslogik bei
+  `roomRadius`-Überschreitung ist reine Mathematik ohne Server-Bezug).

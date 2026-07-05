@@ -6,14 +6,15 @@
 // von der Klangerzeugung, damit sich die Binauralisierung (z.B. später
 // ATK-HRTF, Intent 5) austauschen lässt, ohne den Klang selbst anzufassen.
 Binauralizer {
-	var <>lagTime;
-	var <>itdScale;
-	var <>cutoffMin;
-	var <>cutoffMax;
-	var <>ampRolloff;
-	var <>behindDampMin;
-	var <synth;
+	var <>lagTime;        // Glättungszeit für Azimuth-/Distanzänderungen, in Sekunden
+	var <>itdScale;       // max. Laufzeitdifferenz zwischen den Ohren, in Sekunden
+	var <>cutoffMin;      // Tiefpass-Grenzfrequenz in maximaler Distanz, in Hz
+	var <>cutoffMax;      // Tiefpass-Grenzfrequenz in Distanz 0, in Hz
+	var <>ampRolloff;     // wie schnell die Lautstärke mit der Distanz abfällt
+	var <>behindDampMin;  // Lautstärkefaktor, wenn die Quelle genau hinter dem Hörer ist
+	var <synth;           // laufender Synth, sobald play() aufgerufen wurde
 
+	// erzeugt eine Instanz mit den gegebenen (oder Default-)Parametern
 	*new { |lagTime = 0.08, itdScale = 0.0006, cutoffMin = 600, cutoffMax = 9000,
 			ampRolloff = 0.9, behindDampMin = 0.55|
 		^super.new.init(lagTime, itdScale, cutoffMin, cutoffMax, ampRolloff, behindDampMin);
@@ -28,6 +29,11 @@ Binauralizer {
 		behindDampMin = aBehindDampMin;
 	}
 
+	// registriert die \binauralizer-SynthDef beim Server: Pan (sin(az)), ITD
+	// (DelayL pro Kanal), distanzabhängiger Tiefpass/Pegel und Behind-Damping
+	// (cos(az)) gegen das Vorne/Hinten-Cone-of-Confusion-Problem. Liest von
+	// in (Mono), schreibt Stereo nach out. Asynchron (/d_recv) — vor play()
+	// mit etwas zeitlichem Abstand aufrufen.
 	*addSynthDef {
 		SynthDef(\binauralizer, { |in = 0, out = 0, azimuth = 0, distance = 1,
 				lagTime = 0.08, itdScale = 0.0006, cutoffMin = 600, cutoffMax = 9000,
@@ -66,10 +72,14 @@ Binauralizer {
 		^this
 	}
 
+	// aktualisiert Azimuth/Distanz auf dem laufenden Synth — SoundInsect ruft
+	// dies bei jedem Tick der Bewegungs-Routine auf
 	set { |azimuth, distance|
 		synth.set(\azimuth, azimuth, \distance, distance);
 	}
 
+	// gibt nur den Synth frei — der Eingangs-Bus gehört der Klangquelle
+	// (z.B. InsectSound), nicht dem Binauralizer
 	stop {
 		synth.free;
 	}

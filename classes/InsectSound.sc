@@ -4,16 +4,17 @@
 // Hardware-Output. Klangparameter mit Defaults aus dem ursprünglichen
 // \insectVoice-Prototyp (Intent 3), aber pro Instanz überschreibbar.
 InsectSound {
-	var <>wingRate;
-	var <>wingDuty;
-	var <>ringFreq1;
-	var <>ringFreq2;
-	var <>ringDecay1;
-	var <>ringDecay2;
-	var <>amp;
-	var <bus;
-	var <synth;
+	var <>wingRate;    // Flügelschlag-Rate in Hz (Puls-Gate für das Rauschen)
+	var <>wingDuty;    // Tastverhältnis des Flügelschlag-Gates, 0..1
+	var <>ringFreq1;   // erste Resonanzfrequenz des Brummens, in Hz
+	var <>ringFreq2;   // zweite Resonanzfrequenz des Brummens, in Hz
+	var <>ringDecay1;  // Ausklingzeit der ersten Resonanz, in Sekunden
+	var <>ringDecay2;  // Ausklingzeit der zweiten Resonanz, in Sekunden
+	var <>amp;         // Grundlautstärke des Klangs selbst, unabhängig von Position
+	var <bus;          // privater Mono-Bus, auf den der Klang geschrieben wird
+	var <synth;        // laufender Synth, sobald play() aufgerufen wurde
 
+	// erzeugt eine Instanz mit den gegebenen (oder Default-)Klangparametern
 	*new { |wingRate = 210, wingDuty = 0.25, ringFreq1 = 3200, ringFreq2 = 4600,
 			ringDecay1 = 0.02, ringDecay2 = 0.015, amp = 0.35|
 		^super.new.init(wingRate, wingDuty, ringFreq1, ringFreq2, ringDecay1, ringDecay2, amp);
@@ -29,6 +30,10 @@ InsectSound {
 		amp = aAmp;
 	}
 
+	// registriert die \insectSound-SynthDef beim Server. Flügelschlag-Gate
+	// (LFPulse) moduliert Rauschen, zwei Ringz erzeugen daraus den Brummton;
+	// Ausgabe ist mono, ohne jeden Raumbezug. Asynchron (/d_recv) — vor play()
+	// mit etwas zeitlichem Abstand aufrufen.
 	*addSynthDef {
 		SynthDef(\insectSound, { |out = 0, wingRate = 210, wingDuty = 0.25,
 				ringFreq1 = 3200, ringFreq2 = 4600, ringDecay1 = 0.02, ringDecay2 = 0.015,
@@ -40,6 +45,7 @@ InsectSound {
 		}).add;
 	}
 
+	// legt einen privaten Mono-Bus an und startet den Synth darauf.
 	// Setzt voraus, dass addSynthDef vorher (mit etwas zeitlichem Abstand)
 	// aufgerufen wurde — SynthDef-Registrierung (/d_recv) ist asynchron und
 	// würde sonst mit dem /s_new dieses Aufrufs um die Wette laufen.
@@ -58,6 +64,8 @@ InsectSound {
 		^this
 	}
 
+	// gibt Synth und Bus wieder frei — InsectSound besitzt den Bus, ist also
+	// auch fürs Aufräumen zuständig
 	stop {
 		synth.free;
 		bus.free;
