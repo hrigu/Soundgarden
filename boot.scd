@@ -5,7 +5,8 @@
 s = Server.default;
 s.options.numBuffers = 1024 * 16;
 s.options.memSize = 8192 * 16;
-s.options.numInputBusChannels = 0; // kein Mikrofon-Input nötig — vermeidet Samplerate-Konflikte
+// nicht nötig, wenn Mikrofon-Input des Bluetooth-Headsets in den Systemeinstellungen deaktiviert ists
+//s.options.numInputBusChannels = 0; // kein Mikrofon-Input nötig — vermeidet Samplerate-Konflikte
                                     // mit Bluetooth-Headsets (deren Mikrofon oft nur 16kHz liefert)
 
 s.waitForBoot({
@@ -32,7 +33,11 @@ s.waitForBoot({
 )
 
 // Panic / alles stoppen:
-// s.freeAll;
+s.freeAll;
 
 // Server neu starten (z.B. nach Absturz):
 // s.reboot;
+
+{ Pan2.ar(SinOsc.ar(440, 0, 0.2), 1) }.play;  // sollte NUR rechts zu hören sein
+
+{ Pan2.ar(SinOsc.ar(440, 0, 0.2), -1) }.play; // sollte NUR links zu hören sein
