@@ -34,6 +34,12 @@ Binauralizer {
 	// (cos(az)) gegen das Vorne/Hinten-Cone-of-Confusion-Problem. Liest von
 	// in (Mono), schreibt Stereo nach out. Asynchron (/d_recv) — vor play()
 	// mit etwas zeitlichem Abstand aufrufen.
+	//
+	// Die Zahlen-Defaults hier dupliziert *new (bewusst, s. InsectSound für die
+	// ausführliche Begründung): play() übergibt immer alle Instanzvariablen
+	// explizit, die SynthDef-eigenen Defaults greifen also nur bei direktem
+	// Server-Zugriff ohne die Klasse. SynthDef-Argument-Defaults müssen
+	// literale Konstanten sein, können also nicht auf *new verweisen.
 	*addSynthDef {
 		SynthDef(\binauralizer, { |in = 0, out = 0, azimuth = 0, distance = 1,
 				lagTime = 0.08, itdScale = 0.0006, cutoffMin = 600, cutoffMax = 9000,

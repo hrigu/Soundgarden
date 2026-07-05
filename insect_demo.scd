@@ -29,12 +29,12 @@ Binauralizer.addSynthDef;
 // (2.5m ± 1.2m, CircularMoveRule-Defaults) — testet Azimuth (rundherum) UND
 // Distanz (laut/leise) zugleich.
 (
-~moveRule = CircularMoveRule.new;                   // Defaults: 2.5m Radius, ±1.2m Atmung
-~movable = Movable.new([0, 2.5, 0], ~moveRule, 5);  // Raumkugel: Radius 5m
-~listener = Listener.new;                           // fix im Ursprung, Blick entlang +y
-~insectSound = InsectSound.new;                     // reiner Klang, kennt keine Position
-~binauralizer = Binauralizer.new;                   // formt Pan/ITD/Distanz für den Listener
-~insect = SoundInsect.new(~movable, ~listener, ~insectSound, ~binauralizer);
+var moveRule = CircularMoveRule.new;                   // Defaults: 2.5m Radius, ±1.2m Atmung
+var movable = Movable.new([0, 2.5, 0], moveRule, 5);  // Raumkugel: Radius 5m
+var listener = Listener.new;                           // fix im Ursprung, Blick entlang +y
+var insectSound = InsectSound.new;                     // reiner Klang, kennt keine Position
+var binauralizer = Binauralizer.new;                   // formt Pan/ITD/Distanz für den Listener
+~insect = SoundInsect.new(movable, listener, insectSound, binauralizer);
 )
 
 // --- 3) Abspielen ---

@@ -333,3 +333,52 @@ Node-Reihenfolge angibt. `set` ist die schlanke Schnittstelle, die
 `SoundInsect` jeden Tick aufruft. `stop` gibt **nur den Synth** frei, keinen
 Bus — `Binauralizer` besitzt den Bus nicht, er liest nur davon; wer eine
 Ressource anlegt (`InsectSound`), ist auch fürs Aufräumen zuständig.
+
+## Frage: Warum liegen die Defaults in InsectSound/Binauralizer doppelt vor?
+
+Auffällig: dieselben Zahlen (z.B. `wingRate = 210`) stehen sowohl in `*new`
+als auch in `*addSynthDef`:
+
+```supercollider
+*new { |wingRate = 210, wingDuty = 0.25, ...|          // Objekt-Defaults (sclang, Client-Seite)
+	^super.new.init(...);
+}
+
+*addSynthDef {
+	SynthDef(\insectSound, { |out = 0, wingRate = 210, wingDuty = 0.25, ...|  // SynthDef-Defaults (Server-Seite)
+		...
+	}).add;
+}
+```
+
+Zwei verschiedene Ebenen: `*new`s Defaults füllen die Instanzvariablen, wenn
+`InsectSound.new` ohne Argumente aufgerufen wird. Die SynthDef-Argument-
+Defaults greifen dagegen nur, wenn ein `Synth(\insectSound, ...)` **ohne**
+dieses Argument erzeugt wird — z.B. direkt in der IDE zum schnellen Antesten
+(`Synth(\insectSound)`), unabhängig von der Klasse.
+
+Der Haken: `play()` übergibt immer *alle* Instanzvariablen explizit als
+Synth-Args, die SynthDef-eigenen Defaults kommen über den normalen
+Klassen-Pfad also nie zum Einsatz — praktisch tot, außer man ruft
+`Synth(\insectSound)` komplett an der Klasse vorbei auf. Eine echte
+Ableitung "aus einer Quelle" ist nicht möglich, weil SynthDef-Argument-
+Defaults literale Konstanten sein müssen (sie werden Teil der kompilierten
+SynthDef) — man kann dort nicht auf `*new` verweisen.
+
+Entscheidung: so gelassen (nicht neutralisiert) — die SynthDef bleibt dadurch
+auch direkt am Server spielbar/testbar, unabhängig von der Klasse. Beide
+Stellen jetzt im Code kurz kommentiert (`classes/InsectSound.sc`,
+`classes/Binauralizer.sc`), damit die Duplikation beim nächsten Lesen nicht
+wie ein Versehen wirkt.
+
+## Fund beim Review: Tippfehler in insect_demo.scd
+
+Beim gemeinsamen Durchgehen wurde `insect_demo.scd` zwischenzeitlich
+umgebaut: die Zwischenobjekte (`moveRule`, `movable`, `listener`,
+`insectSound`, `binauralizer`) wurden von `~`-Environment-Variablen auf
+lokale `var`s umgestellt — passend, weil sie nur innerhalb von Block 2
+gebraucht werden (nur die fertige `SoundInsect`-Instanz muss über den Block
+hinaus als `~insect` erreichbar bleiben, für Block 3). Dabei aber ein
+Tippfehler eingeschlichen: `~insectt = SoundInsect.new(...)` (doppeltes "t"),
+während Block 3 weiterhin `~insect.play(s)` aufrief — das wäre `nil.play(s)`
+gewesen. Korrigiert auf `~insect`.

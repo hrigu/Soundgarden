@@ -1,6 +1,5 @@
 // CircularMoveRule — Kreisbahn um den Ursprung, deren Radius langsam "atmet"
-// (baseRadius ± breathAmount). Defaults entsprechen der ursprünglichen
-// ~circleRule aus insect_demo.scd (Intent 3).
+// (baseRadius ± breathAmount).
 CircularMoveRule : MoveRule {
 	var <>baseRadius;     // Radius der Kreisbahn in Metern (Mittelwert)
 	var <>breathAmount;   // Schwankung des Radius um baseRadius, in Metern

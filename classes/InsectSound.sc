@@ -34,6 +34,13 @@ InsectSound {
 	// (LFPulse) moduliert Rauschen, zwei Ringz erzeugen daraus den Brummton;
 	// Ausgabe ist mono, ohne jeden Raumbezug. Asynchron (/d_recv) — vor play()
 	// mit etwas zeitlichem Abstand aufrufen.
+	//
+	// Die Zahlen-Defaults hier dupliziert *new (bewusst, kein Versehen): play()
+	// übergibt immer alle Instanzvariablen explizit als Synth-Args, die
+	// SynthDef-eigenen Defaults greifen also nur, wenn man \insectSound direkt
+	// am Server ohne die Klasse spielt (z.B. Synth(\insectSound) zum schnellen
+	// Antesten in der IDE). SynthDef-Argument-Defaults müssen literale
+	// Konstanten sein — sie können nicht auf *new verweisen, daher zwei Stellen.
 	*addSynthDef {
 		SynthDef(\insectSound, { |out = 0, wingRate = 210, wingDuty = 0.25,
 				ringFreq1 = 3200, ringFreq2 = 4600, ringDecay1 = 0.02, ringDecay2 = 0.015,
