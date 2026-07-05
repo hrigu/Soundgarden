@@ -40,8 +40,10 @@ InsectSound {
 		}).add;
 	}
 
+	// Setzt voraus, dass addSynthDef vorher (mit etwas zeitlichem Abstand)
+	// aufgerufen wurde — SynthDef-Registrierung (/d_recv) ist asynchron und
+	// würde sonst mit dem /s_new dieses Aufrufs um die Wette laufen.
 	play { |server|
-		InsectSound.addSynthDef;
 		bus = Bus.audio(server, 1);
 		synth = Synth(\insectSound, [
 			\out, bus.index,
