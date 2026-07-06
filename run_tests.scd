@@ -5,3 +5,4 @@
 
 TestBootTrackDetection.run;
 TestCircularMoveRule.run;
+TestOrchestra.run;
