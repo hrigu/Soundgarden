@@ -4,20 +4,24 @@
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
 //   1) load_classes.scd — bindet Movable/Listener/CircularMoveRule/SteadyMoveRule/InsectSound/
-//                          Binauralizer/SoundObject/Orchestra/KeyboardListenerControl/
-//                          SpaceView in den Klassenpfad ein
+//                          Binauralizer/AtkBinauralizer/SoundObject/Orchestra/
+//                          KeyboardListenerControl/SpaceView in den Klassenpfad ein
 //   2) boot.scd        — Server muss laufen
+//   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
+//      AtkBinauralizer.setup fehl
 //
-// Kopfhörer benutzen — binaurale Effekte (ITD/Panning) funktionieren nicht über
+// Kopfhörer benutzen — binaurale Effekte (ITD/Panning/HRTF) funktionieren nicht über
 // Lautsprecher richtig.
 //
-// Hinweis zur Räumlichkeit: Das ist die "einfache" Variante (Core-UGens, kein
-// echtes HRTF) — Panning + winzige Laufzeitdifferenz zwischen den Ohren (ITD) +
-// entfernungsabhängiger Pegel/Tiefpass, siehe Binauralizer. Vorne/hinten bleibt
-// dadurch etwas mehrdeutig (das bekannte "Cone of Confusion"-Problem echter
-// Ohren lässt sich ohne Kunstkopf-Impulsantworten nicht ganz auflösen) — ein
-// leichtes zusätzliches Dämpfen "hinter" dem Hörer gibt zumindest einen groben
-// Anhaltspunkt.
+// Hinweis zur Räumlichkeit: Zwei Binauralisierungs-Varianten zum direkten Vergleich.
+// Insekt 1 nutzt AtkBinauralizer (Intent 5) — echtes HRTF-Rendering über das Ambisonic
+// Toolkit (FoaEncode/FoaTransform/FoaDecoderKernel), Vorne/Hinten sollte hier eindeutig
+// hörbar sein. Insekt 2 und der Brunnen nutzen weiterhin die einfache Binauralizer-Variante
+// (Core-UGens, kein echtes HRTF) — Panning + winzige Laufzeitdifferenz zwischen den Ohren
+// (ITD) + entfernungsabhängiger Pegel/Tiefpass. Vorne/hinten bleibt dadurch etwas mehrdeutig
+// (das bekannte "Cone of Confusion"-Problem echter Ohren lässt sich ohne Kunstkopf-
+// Impulsantworten nicht ganz auflösen) — ein leichtes zusätzliches Dämpfen "hinter" dem
+// Hörer gibt zumindest einen groben Anhaltspunkt.
 
 // --- 1) Setup: SynthDefs registrieren + alle Soundobjekte anlegen ---
 // Ein Block statt zwei — SynthDef-Registrierung (/d_recv, asynchron) muss nicht
@@ -37,6 +41,11 @@ var fountainMoveRule, fountainSound, fountainBinauralizer, fountain;
 
 InsectSound.addSynthDef;
 Binauralizer.addSynthDef;
+// AtkBinauralizer.setup MUSS vor addSynthDef abgeschlossen sein (legt die geteilte
+// Encoder-Matrix/den HRTF-Decoder-Kernel an, die die SynthDef referenziert) — braucht
+// deshalb den bereits gebooteten Server (s), anders als die übrigen addSynthDef-Aufrufe hier.
+AtkBinauralizer.setup(s);
+AtkBinauralizer.addSynthDef;
 
 // Ein gemeinsamer Listener (Position/Blickrichtung per Tastatur beweglich,
 // siehe Block 3) hört alle Soundobjekte. Jedes Soundobjekt braucht aber sein
@@ -49,11 +58,12 @@ Binauralizer.addSynthDef;
                           // braucht eine Referenz darauf über den Block hinaus.
 
 // Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s
-// im Uhrzeigersinn), Standard-Klang.
+// im Uhrzeigersinn), Standard-Klang. AtkBinauralizer statt Binauralizer — echtes
+// HRTF, zum direkten Vergleich mit Insekt 2/Brunnen (siehe Kopfkommentar).
 moveRule1 = CircularMoveRule.new;
 movable1 = Movable.new([0, 2.5, 0], moveRule1, 5);
 insectSound1 = InsectSound.new;
-binauralizer1 = Binauralizer.new;
+binauralizer1 = AtkBinauralizer.new;
 
 // Insekt 2: etwas schneller (1.0 statt 0.6 rad/s) und in Gegenrichtung
 // (negatives angularSpeed); heller/schneller Klang (höhere Flügelschlag- und
@@ -117,6 +127,10 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 // orchestra.stop stoppt das Ticken UND ruft stop auf allen registrierten
 // Soundobjekten auf (Synths/Busse werden freigegeben).
 ~orchestra.stop;
+
+// AtkBinauralizer.teardown gibt den geteilten HRTF-Decoder-Kernel frei (Server-Buffer) —
+// separat, weil der Kernel der Klasse gehört, nicht einer einzelnen Instanz/orchestra.stop.
+AtkBinauralizer.teardown;
 
 // Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
 // falls Block 3 überhaupt ausgeführt wurde.
