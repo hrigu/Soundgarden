@@ -67,10 +67,11 @@ Objektmodell:
   (`Sound`-Subklasse) und einem `Binauralizer`; kennt den `Listener` selbst
   nicht. Startet nur den Synth, tickt aber nicht selbst.
 - **`Orchestra`** — hält den `Listener` und eine Registry registrierter
-  `SoundObject`s; tickt sie über eine einzige gemeinsame Routine (Bewegung +
-  Azimuth/Distanz statt Pan, winzige Laufzeitdifferenz zwischen den Ohren,
-  entfernungsabhängiger Pegel/Tiefpass pro Objekt). Ein `stop`-Aufruf beendet
-  das Ticken und stoppt alle registrierten SoundObjects.
+  `SoundObject`s. `play(server)` startet jedes registrierte SoundObject und
+  danach eine einzige gemeinsame Tick-Routine (Bewegung + Azimuth/Distanz
+  statt Pan, winzige Laufzeitdifferenz zwischen den Ohren, entfernungs-
+  abhängiger Pegel/Tiefpass pro Objekt). `stop` beendet das Ticken und
+  stoppt alle registrierten SoundObjects.
 
 Ausführen: `load_classes.scd` → `boot.scd` → `insect_demo.scd` (Block für
 Block), mit Kopfhörern.

@@ -39,9 +39,12 @@ Orchestra {
 		};
 	}
 
-	// startet den zentralen Taktgeber: eine Routine statt einer pro SoundObject.
-	play { |updateRate = 30|
+	// startet jedes registrierte SoundObject (Sound-/Binauralizer-Synth) und danach
+	// den zentralen Taktgeber: eine Routine statt einer pro SoundObject.
+	play { |server, updateRate = 30|
 		var dt = 1.0 / updateRate;
+
+		soundObjects.do { |soundObject| soundObject.play(server) };
 
 		routine = Routine({
 			loop {

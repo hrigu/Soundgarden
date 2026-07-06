@@ -51,21 +51,19 @@ var movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
 var insectSound2 = InsectSound.new(280, 0.2, 5200, 7000, 0.015, 0.01, 0.3);
 var binauralizer2 = Binauralizer.new;
 
-~insect1 = SoundObject.new(movable1, insectSound1, binauralizer1);
-~insect2 = SoundObject.new(movable2, insectSound2, binauralizer2);
+var insect1 = SoundObject.new(movable1, insectSound1, binauralizer1);
+var insect2 = SoundObject.new(movable2, insectSound2, binauralizer2);
 
 ~orchestra = Orchestra.new(listener);
-~orchestra.register(~insect1);
-~orchestra.register(~insect2);
+~orchestra.register(insect1);
+~orchestra.register(insect2);
 )
 
 // --- 3) Abspielen ---
-// Jedes Insekt startet zuerst seinen eigenen Klang-/Binauralizer-Synth;
-// orchestra.play startet danach den gemeinsamen Taktgeber (Bewegung +
-// Azimuth/Distanz für beide).
-~insect1.play(s);
-~insect2.play(s);
-~orchestra.play;
+// orchestra.play startet den Klang-/Binauralizer-Synth für jedes registrierte
+// Insekt und danach den gemeinsamen Taktgeber (Bewegung + Azimuth/Distanz
+// für beide).
+~orchestra.play(s);
 
 // --- 4) Stoppen ---
 // Ein Aufruf stoppt das Ticken UND ruft stop auf beiden registrierten

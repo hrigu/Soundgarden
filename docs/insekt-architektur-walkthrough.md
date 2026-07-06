@@ -48,15 +48,13 @@ verdrahtet sie nur. Den `Listener` kennt es nicht mehr; den hält stattdessen
 **Block 3 — Abspielen**
 
 ```supercollider
-~insect.play(s);
-~orchestra.play;
+~orchestra.play(s);
 ```
 
-`~insect.play(s)` startet nur die Kette aus Sound- und Binauralizer-Synth
-(Bus-Verkabelung, Node-Reihenfolge) — Details dazu bei `SoundObject`.
-`~orchestra.play` startet die tickende Routine, die für jedes registrierte
-SoundObject Bewegung und Azimuth/Distanz zum `Listener` berechnet — Details
-dazu bei `Orchestra`.
+Ein Aufruf reicht: `Orchestra` startet zuerst für jedes registrierte `SoundObject`
+dessen Sound-/Binauralizer-Synth (Bus-Verkabelung, Node-Reihenfolge — Details dazu bei
+`SoundObject`), danach die tickende Routine, die für jedes registrierte SoundObject
+Bewegung und Azimuth/Distanz zum `Listener` berechnet — Details dazu bei `Orchestra`.
 
 ## Fragen & Antworten
 
@@ -373,8 +371,9 @@ Orchestra {
 		};
 	}
 
-	play { |updateRate = 30|
+	play { |server, updateRate = 30|
 		var dt = 1.0 / updateRate;
+		soundObjects.do { |soundObject| soundObject.play(server) };
 		routine = Routine({ loop { this.tick(dt); dt.wait } }).play;
 		^this
 	}
@@ -388,10 +387,13 @@ Orchestra {
 ```
 
 `Orchestra` hält jetzt den einen `Listener` und eine Registry beliebig vieler `SoundObject`s.
-`play` startet eine **einzige** Routine statt einer pro Objekt; `tick` ist bewusst als eigene
-Methode ausgelagert (statt inline in der Routine), weil sie dadurch ganz ohne laufende Routine
-und ohne Server direkt per `UnitTest` testbar ist (`tests/TestOrchestra.sc`, mit Fake-Objekten,
-die nur `pos`/`step`/`updateSpatial` beantworten müssen).
+`play(server)` startet zuerst jedes registrierte `SoundObject` (dessen Sound-/Binauralizer-Synth)
+und danach eine **einzige** Routine statt einer pro Objekt — dadurch reicht ein Aufruf
+(`orchestra.play(s)`), statt jedes Insekt einzeln zu starten und danach noch das Orchester.
+`tick` ist bewusst als eigene Methode ausgelagert (statt inline in der Routine), weil sie dadurch
+ganz ohne laufende Routine und ohne Server direkt per `UnitTest` testbar ist
+(`tests/TestOrchestra.sc`, mit Fake-Objekten, die nur `play`/`pos`/`step`/`updateSpatial`
+beantworten müssen).
 
 `SoundObject` selbst schrumpft dadurch auf drei schlanke Methoden, die `Orchestra` pro Tick
 aufruft: `pos` (liest `movable.pos`), `step(dt)` (delegiert an `movable.step(dt)`) und

@@ -1,8 +1,9 @@
-// Test-Double für SoundObject: zeichnet Aufrufe auf (step/updateSpatial/stop), ohne
-// echten Movable/Sound/Binauralizer zu brauchen — Orchestra kennt SoundObject nur über
-// diese drei Methoden plus pos.
+// Test-Double für SoundObject: zeichnet Aufrufe auf (play/step/updateSpatial/stop),
+// ohne echten Movable/Sound/Binauralizer zu brauchen — Orchestra kennt SoundObject nur
+// über diese Methoden plus pos.
 FakeSoundObjectForOrchestraTest {
 	var <pos;
+	var <playedServer;
 	var <steppedDt;
 	var <lastAzimuth;
 	var <lastDistance;
@@ -15,6 +16,10 @@ FakeSoundObjectForOrchestraTest {
 	init { |aPos|
 		pos = aPos;
 		stopped = false;
+	}
+
+	play { |server|
+		playedServer = server;
 	}
 
 	step { |dt|
@@ -47,6 +52,24 @@ TestOrchestra : UnitTest {
 			"Objekt direkt vor dem Listener: Azimuth 0");
 		this.assertEquals(soundObject.lastDistance.round(0.0001), 2.0,
 			"Distanz entspricht der Fake-Position");
+	}
+
+	test_playStartsAllRegisteredSoundObjects {
+		var listener = Listener.new;
+		var soundObject1 = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
+		var soundObject2 = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
+		var orchestra = Orchestra.new(listener);
+
+		orchestra.register(soundObject1);
+		orchestra.register(soundObject2);
+		orchestra.play(\fakeServer);
+
+		this.assertEquals(soundObject1.playedServer, \fakeServer,
+			"play() wird mit dem Server auf jedem registrierten Objekt aufgerufen");
+		this.assertEquals(soundObject2.playedServer, \fakeServer,
+			"play() wird mit dem Server auf jedem registrierten Objekt aufgerufen");
+
+		orchestra.stop;
 	}
 
 	test_stopStopsAllRegisteredSoundObjectsAndClearsRegistry {
