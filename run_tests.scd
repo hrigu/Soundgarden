@@ -8,3 +8,4 @@ TestCircularMoveRule.run;
 TestOrchestra.run;
 TestSteadyMoveRule.run;
 TestMovable.run;
+TestListener.run;
