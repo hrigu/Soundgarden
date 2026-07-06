@@ -159,3 +159,13 @@ Zwei Dokumente mit mehr Hintergrund (Stand nach Intent 9, `MoveRule`/
 - `Movable` mit einem `UnitTest` absichern: `step()` ist trotz Seiteneffekt gut
   testbar (`MoveRule` injizierbar per Fake, Rückführungslogik bei
   `roomRadius`-Überschreitung ist reine Mathematik ohne Server-Bezug).
+- `SampleSound`/`AtkBinauralizer` ressourcenschonender machen: aktuell läuft pro
+  Sample-Objekt ein dauerhafter Synth (inkl. teurer HRTF-Faltung), auch wenn es
+  die meiste Zeit nur Stille verarbeitet (z.B. `sample_demo.scd` mit vielen
+  Objekten im Kreis, die sich den Rhythmus per Phasenversatz weitergeben — real
+  hörbar ist meist nur eines gleichzeitig). Idee: On-Demand-Synths statt eines
+  durchgehend laufenden pro Objekt — bei jedem Trigger neu erzeugen, nach
+  Abklingen von Sample+HRTF-Tail per `doneAction` automatisch freigeben. Bricht
+  mit dem bisher einheitlichen "ein Synth pro SoundObject läuft von play() bis
+  stop()"-Muster (passt zu `InsectSound`, das kontinuierlich tönt, aber nicht
+  zu rhythmischen One-Shots) — eigener Intent, kein Quick-Fix.
