@@ -29,12 +29,15 @@ SpaceView {
 		view.drawFunc = { this.draw(view) };
 		window.front;
 
+		// AppClock statt SystemClock (Default): view.refresh ist ein GUI-Aufruf und muss
+		// dort laufen, damit Qt ihn zuverlässig verarbeitet — sonst "läuft" die Routine,
+		// aber das Fenster bleibt ein Standbild.
 		routine = Routine({
 			loop {
 				view.refresh;
 				dt.wait;
 			}
-		}).play;
+		}).play(AppClock);
 
 		^this
 	}
