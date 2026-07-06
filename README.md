@@ -33,16 +33,21 @@ Klicks oder Unterbrechungen.
 
 ## classes/, tests/ und load_classes.scd
 
-Eigene Produktiv-Klassen (`BootTrackDetection`, `Movable`, `Listener`,
-`SoundObject`, ...) liegen in `classes/`, die zugehörigen Test-Klassen
-(`UnitTest`-Subklassen wie `TestBootTrackDetection`) getrennt davon in
-`tests/`. Damit SuperCollider beide kennt, einmal pro Sitzung **als
-allererstes** (vor `boot.scd`!) **`load_classes.scd`** ausführen und im
-Post-Fenster auf `compile done` warten — danach stehen sie überall zur
-Verfügung. Ohne diesen Schritt scheitert `boot.scd` mit
-`ERROR: Class not defined.` (auf einer frisch gestarteten
-SuperCollider-Sitzung ist die Klassenbibliothek noch im
-Auslieferungszustand).
+Eigene Produktiv-Klassen liegen in `classes/`, die zugehörigen Test-Klassen
+(`UnitTest`-Subklassen) getrennt davon in `tests/`. `BootTrackDetection` (Live-Set-Domäne)
+liegt direkt in `classes/`; die Spatial-Audio-Klassen sind unter `classes/sg/` nach
+Zuständigkeit sortiert (reine Ordnerkonvention — SuperCollider selbst kennt keine echten
+Namespaces):
+- `classes/sg/sounds/` — `Sound`, `InsectSound`
+- `classes/sg/soundobjects/` — `SoundObject`, `Movable`, `MoveRule`, `CircularMoveRule`
+- `classes/sg/spatial/` — `Listener`, `Binauralizer`, `Orchestra`
+- passende Tests spiegelbildlich unter `tests/sg/soundobjects/`, `tests/sg/spatial/`
+
+Damit SuperCollider alles kennt, einmal pro Sitzung **als allererstes** (vor `boot.scd`!)
+**`load_classes.scd`** ausführen (bindet `classes/` und `tests/` rekursiv ein) und im
+Post-Fenster auf `compile done` warten — danach stehen alle Klassen überall zur Verfügung.
+Ohne diesen Schritt scheitert `boot.scd` mit `ERROR: Class not defined.` (auf einer frisch
+gestarteten SuperCollider-Sitzung ist die Klassenbibliothek noch im Auslieferungszustand).
 
 ## Tests
 

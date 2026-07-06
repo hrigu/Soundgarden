@@ -104,7 +104,7 @@ Methode `next(pos, t, dt)`. Vorteil: eine Regel kann jetzt eigenen
 Zustand/Parameter tragen (siehe `CircularMoveRule`), was eine anonyme
 Function nicht so sauber könnte.
 
-Auf Wunsch direkt im Code dokumentiert (`classes/MoveRule.sc`):
+Auf Wunsch direkt im Code dokumentiert (`classes/sg/soundobjects/MoveRule.sc`):
 
 ```supercollider
 // next — von Subklassen zu implementieren.
@@ -193,7 +193,7 @@ Die "sanfte Rückführung":
   Demo aktuell nie — reine Absicherung für Regeln, die weiter ausschlagen.
 
 Kein Bezug zu Klang oder Listener — reine Geometrie/Kinematik. Auf Wunsch im
-Code dokumentiert (`classes/Movable.sc`): `step()` hat jetzt einen
+Code dokumentiert (`classes/sg/soundobjects/Movable.sc`): `step()` hat jetzt einen
 Doc-Kommentar zu `dt`, Rückgabewert/Seiteneffekt, und `pullback` ist erklärt.
 
 **Notiz für später** (in README → "Nächste Schritte / Ideen" eingetragen):
@@ -392,7 +392,7 @@ und danach eine **einzige** Routine statt einer pro Objekt — dadurch reicht ei
 (`orchestra.play(s)`), statt jedes Insekt einzeln zu starten und danach noch das Orchester.
 `tick` ist bewusst als eigene Methode ausgelagert (statt inline in der Routine), weil sie dadurch
 ganz ohne laufende Routine und ohne Server direkt per `UnitTest` testbar ist
-(`tests/TestOrchestra.sc`, mit Fake-Objekten, die nur `play`/`pos`/`step`/`updateSpatial`
+(`tests/sg/spatial/TestOrchestra.sc`, mit Fake-Objekten, die nur `play`/`pos`/`step`/`updateSpatial`
 beantworten müssen).
 
 `SoundObject` selbst schrumpft dadurch auf drei schlanke Methoden, die `Orchestra` pro Tick
@@ -437,8 +437,8 @@ SynthDef) — man kann dort nicht auf `*new` verweisen.
 
 Entscheidung: so gelassen (nicht neutralisiert) — die SynthDef bleibt dadurch
 auch direkt am Server spielbar/testbar, unabhängig von der Klasse. Beide
-Stellen jetzt im Code kurz kommentiert (`classes/InsectSound.sc`,
-`classes/Binauralizer.sc`), damit die Duplikation beim nächsten Lesen nicht
+Stellen jetzt im Code kurz kommentiert (`classes/sg/sounds/InsectSound.sc`,
+`classes/sg/spatial/Binauralizer.sc`), damit die Duplikation beim nächsten Lesen nicht
 wie ein Versehen wirkt.
 
 ## Fund beim Review: Tippfehler in insect_demo.scd

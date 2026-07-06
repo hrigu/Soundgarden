@@ -12,10 +12,9 @@ Soundgarden ist ein SuperCollider-Spielplatz mit aktuell zwei Arbeitssträngen:
 1. **Live-Coding-Rig** (`boot.scd`, `fx.scd`, `set_template.scd`) — bestehende elektronische
    Tracks live umformen (Filter, Echo, Bitcrush, Stutter, Reverb) während einer
    Fusion-Tanzparty, über JITLib (`Ndef`), rein per Tastatur (kein MIDI-Controller).
-2. **Spatial-Audio-Prototyp** (`classes/Movable.sc`, `classes/Listener.sc`,
-   `classes/SoundObject.sc`, `insect_demo.scd`) — ein virtuelles Klangobjekt ("Insekt"), das
-   sich nach einer Bewegungsregel durch einen definierten Raum bewegt und dem Hörer über
-   Kopfhörer binaural zugespielt wird.
+2. **Spatial-Audio-Prototyp** (`classes/sg/`, `insect_demo.scd`) — virtuelle Klangobjekte
+   ("Insekten"), die sich nach einer Bewegungsregel durch einen definierten Raum bewegen und
+   dem Hörer über Kopfhörer binaural zugespielt werden.
 
 Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 
@@ -33,10 +32,20 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 ## Architektur
 
 - sclang + scsynth (Client/Server), JITLib (`Ndef`) fürs klickfreie Live-Editing laufender Synths.
-- `classes/` enthält Produktiv-Klassen (`BootTrackDetection`, `Movable`, `Listener`,
-  `SoundObject`), `tests/` die zugehörigen `UnitTest`-Klassen (`TestBootTrackDetection`) — beide
-  projekt-lokal eingebunden via `LanguageConfig.addIncludePath` + `thisProcess.recompile` in
-  `load_classes.scd` (kein globaler Extensions-Ordner).
+- `classes/` enthält Produktiv-Klassen (`BootTrackDetection`), `tests/` die zugehörigen
+  `UnitTest`-Klassen (`TestBootTrackDetection`) — beide projekt-lokal eingebunden via
+  `LanguageConfig.addIncludePath` + `thisProcess.recompile` in `load_classes.scd` (kein
+  globaler Extensions-Ordner; beide Pfade werden rekursiv eingelesen).
+- Spatial-Audio-Klassen liegen unter `classes/sg/` (kein echter SC-Namespace — SuperCollider
+  hat nur einen globalen, flachen Klassen-Namensraum — sondern reine Ordnerkonvention, drei
+  Unter-Ordner nach Zuständigkeit):
+  - `classes/sg/sounds/` — `Sound`, `InsectSound` (reine Klangerzeugung)
+  - `classes/sg/soundobjects/` — `SoundObject`, `Movable`, `MoveRule`, `CircularMoveRule`
+    (Bewegung + Klangobjekt)
+  - `classes/sg/spatial/` — `Listener`, `Binauralizer`, `Orchestra` (Raumwahrnehmung/-steuerung)
+  - zugehörige Tests spiegelbildlich unter `tests/sg/soundobjects/`, `tests/sg/spatial/`
+  - `BootTrackDetection` gehört bewusst nicht zu `sg` (andere Domäne: Live-Set statt
+    Spatial-Audio).
 - `sc3-plugins` ist bewusst (noch) nicht installiert — wo möglich mit Core-UGens gearbeitet
   (siehe Gotchas). Für Intent 5 (ATK/echtes HRTF) wird die Zusatzinstallation in Kauf genommen.
 
