@@ -1,8 +1,8 @@
 // SampleSound — spielt statt eines synthetisierten Klangs (wie InsectSound) ein
 // Audiosample rhythmisch ab: Impulse.kr(rate, phase) triggert PlayBuf.ar, das das
 // Sample bei jedem Trigger von vorne startet (kein Loop, kein Überlappen-Management).
-// Lädt die Datei als Mono-Buffer (channels: [0] — auch bei stereo Quelldateien nur der
-// erste Kanal), passend zum Mono-Bus-Vertrag von Sound.
+// Lädt die Datei als Mono-Buffer (Buffer.readChannel mit channels: [0] — auch bei stereo
+// Quelldateien nur der erste Kanal), passend zum Mono-Bus-Vertrag von Sound.
 SampleSound : Sound {
 	var <path;      // Pfad zur Audiodatei
 	var <>rate;     // Trigger-Rate in Hz — wie oft das Sample pro Sekunde neu startet
@@ -38,7 +38,7 @@ SampleSound : Sound {
 	// die Nummer, keine Buffer-Metadaten zum SynthDef-Bauzeitpunkt wie z.B.
 	// FoaDecoderKernel, siehe AtkBinauralizer) und erzeugt den Synth darauf.
 	makeSynth { |server, bus|
-		buffer = Buffer.read(server, path, channels: [0]);
+		buffer = Buffer.readChannel(server, path, channels: [0]);
 		^Synth(\sampleSound, [
 			\out, bus.index,
 			\buf, buffer.bufnum,
