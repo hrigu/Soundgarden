@@ -42,9 +42,9 @@ AtkBinauralizer {
 		ampRolloff = aAmpRolloff;
 	}
 
-	// legt die geteilte Encoder-Matrix und den HRTF-Decoder-Kernel an und registriert danach
-	// die SynthDef — ANDERS als bei InsectSound/Binauralizer reicht hier kein bloßer
-	// zeitlicher Abstand zwischen den Schritten: der Kernel lädt HRTF-Daten asynchron als
+	// legt den geteilten HRTF-Decoder-Kernel an und registriert danach die SynthDef — ANDERS
+	// als bei InsectSound/Binauralizer reicht hier kein bloßer zeitlicher Abstand zwischen
+	// den Schritten: der Kernel lädt HRTF-Daten asynchron als
 	// Server-Buffer, und addSynthDef braucht dessen tatsächliche Buffergröße (Convolution2
 	// intern), nicht nur die Buffernummer. Ohne Sync schlägt addSynthDef mit
 	// "Convolution2 arg: 'framesize' has bad input: nil" fehl (Buffer-Info noch nicht da).
