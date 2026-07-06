@@ -59,9 +59,9 @@ ausführen; Ergebnis (grün/rot pro Testfall) erscheint im Post-Fenster.
 ## Zweiter Prototyp: binaurales Insekt (`insect_demo.scd`)
 
 Ein virtuelles Klangobjekt ("Insekt"), das nach einer Bewegungsregel durch
-einen definierten Raum kurvt; der Hörer (aktuell fix in der Mitte, mit zwei
-Ohren) bekommt es über Kopfhörer binaural zugespielt — mal vorne, mal
-hinten, mal laut (nah), mal leise (fern).
+einen definierten Raum kurvt; der Hörer bekommt es über Kopfhörer binaural
+zugespielt — mal vorne, mal hinten, mal laut (nah), mal leise (fern). Der
+Hörer selbst kann sich per Tastatur durch den Raum bewegen und drehen.
 
 Objektmodell:
 - **`Movable`** — hat eine Position, die sich nach einer Bewegungsregel
@@ -71,8 +71,14 @@ Objektmodell:
 - **`MoveRule`/`CircularMoveRule`/`SteadyMoveRule`** — Bewegungsregeln: Kreisbahn
   mit atmendem Radius, oder `SteadyMoveRule` für stationäre Soundobjekte (bewegt
   sich nicht von selbst, per `moveTo` trotzdem umplatzierbar).
-- **`Listener`** — Position und Blickrichtung aktuell fix; berechnet aus
-  einer Weltposition Azimuth (relativ zur eigenen Blickrichtung) und Distanz.
+- **`Listener`** — Position und Blickrichtung, beweglich: `moveForward`/
+  `moveBackward`/`strafeLeft`/`strafeRight`/`rotate`, alle relativ zur aktuellen
+  Blickrichtung. Berechnet aus einer Weltposition Azimuth (relativ zur eigenen
+  Blickrichtung) und Distanz.
+- **`KeyboardListenerControl`** — bewegt/dreht einen `Listener` kontinuierlich
+  per Tastatur, solange eine Taste gehalten wird (**W**/**S** vor/zurück,
+  **A**/**D** seitlich, **Q**/**E** drehen). Braucht ein fokussiertes Fenster
+  (SuperCollider-Standardidiom für Tastatur-Input).
 - **`SoundObject`** — verbindet ein `Movable` mit einem klingenden Synth
   (`Sound`-Subklasse) und einem `Binauralizer`; kennt den `Listener` selbst
   nicht. Startet nur den Synth, tickt aber nicht selbst.
@@ -84,7 +90,8 @@ Objektmodell:
   stoppt alle registrierten SoundObjects.
 
 Ausführen: `load_classes.scd` → `boot.scd` → `insect_demo.scd` (Block für
-Block), mit Kopfhörern.
+Block), mit Kopfhörern. Für die Tastatursteuerung muss das
+`KeyboardListenerControl`-Fenster fokussiert sein.
 
 Aktuell eine einfache Binaural-Näherung mit reinen Core-UGens (kein
 HRTF/Kunstkopf) — vorne/hinten bleibt dadurch etwas mehrdeutig. Echtes HRTF

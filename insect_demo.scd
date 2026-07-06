@@ -1,9 +1,11 @@
 // insect_demo.scd — Prototyp: zwei binaurale "Insekten" kreisen um den Hörer, dazu ein
-// stationäres ("steady") Soundobjekt, dessen Position live per Code verändert werden kann.
+// stationäres ("steady") Soundobjekt, dessen Position live per Code verändert werden kann,
+// und ein per Tastatur beweglicher Listener.
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
 //   1) load_classes.scd — bindet Movable/Listener/CircularMoveRule/SteadyMoveRule/InsectSound/
-//                          Binauralizer/SoundObject/Orchestra in den Klassenpfad ein
+//                          Binauralizer/SoundObject/Orchestra/KeyboardListenerControl in den
+//                          Klassenpfad ein
 //   2) boot.scd        — Server muss laufen
 //
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning) funktionieren nicht über
@@ -35,7 +37,8 @@ Binauralizer.addSynthDef;
 // und tickt beide Insekten über eine einzige Routine statt je einer eigenen —
 // die Insekten selbst kennen den Listener nicht mehr.
 (
-var listener = Listener.new;
+~listener = Listener.new; // Environment-Variable statt var: Block 3c (Tastatursteuerung)
+                          // braucht eine Referenz darauf über den Block hinaus.
 
 // Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s
 // im Uhrzeigersinn), Standard-Klang.
@@ -65,7 +68,7 @@ var fountainSound = InsectSound.new(60, 0.6, 800, 1400, 0.08, 0.06, 0.25);
 var fountainBinauralizer = Binauralizer.new;
 var fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer);
 
-~orchestra = Orchestra.new(listener);
+~orchestra = Orchestra.new(~listener);
 ~orchestra.register(insect1);
 ~orchestra.register(insect2);
 ~orchestra.register(fountain);
@@ -82,7 +85,17 @@ var fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinaural
 // ohne die roomRadius-Rückführung, die für die Insekten-Eigenbewegung gedacht ist.
 ~fountainMovable.moveTo([-3, 2, 0]);
 
+// --- 3c) Tastatursteuerung für den Listener starten ---
+// Öffnet ein kleines Fenster, das während der Steuerung fokussiert sein muss
+// (SuperCollider-Standardidiom für Tastatur-Input). Tasten halten:
+// W/S vor/zurück, A/D seitlich, Q/E drehen.
+~listenerControl = KeyboardListenerControl.new(~listener);
+~listenerControl.play;
+
 // --- 4) Stoppen ---
-// Ein Aufruf stoppt das Ticken UND ruft stop auf beiden registrierten
-// Insekten auf (Synths/Busse werden freigegeben).
+// Ein Aufruf stoppt das Ticken UND ruft stop auf allen registrierten
+// Soundobjekten auf (Synths/Busse werden freigegeben).
 ~orchestra.stop;
+
+// Tastatursteuerung separat stoppen (schließt das Kontrollfenster):
+~listenerControl.stop;

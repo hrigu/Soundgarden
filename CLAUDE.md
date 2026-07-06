@@ -42,7 +42,9 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
   - `classes/sg/sounds/` — `Sound`, `InsectSound` (reine Klangerzeugung)
   - `classes/sg/soundobjects/` — `SoundObject`, `Movable`, `MoveRule`, `CircularMoveRule`,
     `SteadyMoveRule` (Bewegung + Klangobjekt)
-  - `classes/sg/spatial/` — `Listener`, `Binauralizer`, `Orchestra` (Raumwahrnehmung/-steuerung)
+  - `classes/sg/spatial/` — `Listener`, `Binauralizer`, `Orchestra`, `KeyboardListenerControl`
+    (Raumwahrnehmung/-steuerung; Listener per Tastatur beweglich: W/S/A/D/Q/E, siehe
+    `KeyboardListenerControl`, braucht ein fokussiertes Fenster)
   - zugehörige Tests spiegelbildlich unter `tests/sg/soundobjects/`, `tests/sg/spatial/`
   - `BootTrackDetection` gehört bewusst nicht zu `sg` (andere Domäne: Live-Set statt
     Spatial-Audio).
