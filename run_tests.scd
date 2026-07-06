@@ -6,3 +6,4 @@
 TestBootTrackDetection.run;
 TestCircularMoveRule.run;
 TestOrchestra.run;
+TestSteadyMoveRule.run;
