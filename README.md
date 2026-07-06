@@ -40,7 +40,8 @@ Zuständigkeit sortiert (reine Ordnerkonvention — SuperCollider selbst kennt k
 Namespaces):
 - `classes/sg/sounds/` — `Sound`, `InsectSound`
 - `classes/sg/soundobjects/` — `SoundObject`, `Movable`, `MoveRule`, `CircularMoveRule`
-- `classes/sg/spatial/` — `Listener`, `Binauralizer`, `Orchestra`
+- `classes/sg/spatial/` — `Listener`, `Binauralizer`, `AtkBinauralizer`, `Orchestra`,
+  `KeyboardListenerControl`, `SpaceView`
 - passende Tests spiegelbildlich unter `tests/sg/soundobjects/`, `tests/sg/spatial/`
 
 Damit SuperCollider alles kennt, einmal pro Sitzung **als allererstes** (vor `boot.scd`!)
@@ -80,8 +81,9 @@ Objektmodell:
   **A**/**D** seitlich, **Q**/**E** drehen). Braucht ein fokussiertes Fenster
   (SuperCollider-Standardidiom für Tastatur-Input).
 - **`SoundObject`** — verbindet ein `Movable` mit einem klingenden Synth
-  (`Sound`-Subklasse) und einem `Binauralizer`; kennt den `Listener` selbst
-  nicht. Startet nur den Synth, tickt aber nicht selbst.
+  (`Sound`-Subklasse) und einem Binauralisierer (`Binauralizer` oder
+  `AtkBinauralizer`, austauschbar, gleiche Schnittstelle); kennt den `Listener`
+  selbst nicht. Startet nur den Synth, tickt aber nicht selbst.
 - **`Orchestra`** — hält den `Listener` und eine Registry registrierter
   `SoundObject`s. `play(server)` startet jedes registrierte SoundObject und
   danach eine einzige gemeinsame Tick-Routine (Bewegung + Azimuth/Distanz
@@ -100,10 +102,45 @@ Ausführen: `load_classes.scd` → `boot.scd` → `insect_demo.scd` (Block für
 Block), mit Kopfhörern. Für die Tastatursteuerung muss das
 `KeyboardListenerControl`-Fenster fokussiert sein.
 
-Aktuell eine einfache Binaural-Näherung mit reinen Core-UGens (kein
-HRTF/Kunstkopf) — vorne/hinten bleibt dadurch etwas mehrdeutig. Echtes HRTF
-(überzeugenderes Vorne/Hinten, braucht ein Zusatzpaket) ist eine mögliche
-spätere Ausbaustufe.
+Zwei Binauralisierungs-Varianten stehen zum direkten Vergleich zur Verfügung
+(in `insect_demo.scd`: Insekt 1 nutzt `AtkBinauralizer`, Insekt 2 und der
+Brunnen `Binauralizer`):
+
+- **`Binauralizer`** — einfache Näherung mit reinen Core-UGens (Pan +
+  winzige Laufzeitdifferenz zwischen den Ohren + entfernungsabhängiger
+  Pegel/Tiefpass, kein Zusatzpaket nötig). Vorne/hinten bleibt dadurch etwas
+  mehrdeutig (Cone-of-Confusion-Problem echter Ohren).
+- **`AtkBinauralizer`** — echtes HRTF-Rendering über das [Ambisonic Toolkit
+  (ATK)](https://github.com/ambisonictoolkit/atk-sc3): `PanB2` codiert
+  Azimuth/Distanz horizontal ins B-Format, `FoaDecoderKernel` (gemessene
+  HRTF, z.B. CIPIC) decodiert binaural. Vorne/hinten ist dadurch deutlich
+  eindeutiger hörbar. Elevation ist bewusst außen vor (Datenmodell ist
+  aktuell rein 2D, siehe Intent 5).
+
+### ATK-Setup (für `AtkBinauralizer`)
+
+Einmal pro Installation, in scide ausführen:
+
+```supercollider
+// 1) Quark installieren
+Quarks.install("https://github.com/ambisonictoolkit/atk-sc3.git");
+// Klassenbibliothek danach neu kompilieren (Language → Recompile Class Library)
+
+// 2) HRTF-Kernel/Matrizen/Soundfiles laden
+Atk.downloadKernels;
+Atk.downloadMatrices;
+Atk.downloadSounds;
+```
+
+`sc3-plugins` wird für `AtkBinauralizer` **nicht** gebraucht — `FoaTransform`/`FoaRotate`
+(kompilierte UGens aus `sc3-plugins`) werden bewusst umgangen, da `sc3-plugins` in diesem
+Projekt (noch) nicht installiert ist (siehe Gotchas in `CLAUDE.md`); `PanB2` (Core-UGen) deckt
+den hier ohnehin rein horizontalen Fall gleichwertig ab. `FoaDecoderKernel`/`FoaDecode`
+brauchen intern nur `Convolution2` (ebenfalls Core).
+
+In `AtkBinauralizer.setup(server, subjectID)` lässt sich `subjectID` (Default 21 = KEMAR-
+Kunstkopf) auf ein anderes CIPIC-Subjekt ändern, um mit verschiedenen Kopfformen zu
+experimentieren (siehe `FoaDecoderKernel`-Hilfe in scide für die Liste gültiger IDs).
 
 Zwei Dokumente mit mehr Hintergrund (Stand nach Intent 9, `MoveRule`/
 `InsectSound`/`Binauralizer` als eigene Klassen):
