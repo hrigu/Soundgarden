@@ -29,4 +29,13 @@ Sound {
 		synth.free;
 		bus.free;
 	}
+
+	// call — löst einen kurzen, hörbaren Akzent auf dem laufenden Klang aus (z.B. für
+	// Call-and-Response zwischen Soundobjekten, siehe Orchestra>>call). Generischer
+	// Hook: setzt einen t_call-Trigger auf dem Synth. Subklassen, deren SynthDef
+	// keinen t_call-Control besitzt, ignorieren das — .set auf einen nicht
+	// existierenden Control-Namen ist ein stiller No-Op.
+	call {
+		synth.set(\t_call, 1);
+	}
 }
