@@ -37,36 +37,44 @@ Binauralizer.addSynthDef;
 // und tickt beide Insekten über eine einzige Routine statt je einer eigenen —
 // die Insekten selbst kennen den Listener nicht mehr.
 (
+// Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen, vor jeder
+// anderen Anweisung (SuperCollider-Syntaxregel) — deshalb hier gesammelt,
+// auch wenn sie erst weiter unten mit Werten befüllt werden.
+var moveRule1, movable1, insectSound1, binauralizer1;
+var moveRule2, movable2, insectSound2, binauralizer2;
+var insect1, insect2;
+var fountainMoveRule, fountainSound, fountainBinauralizer, fountain;
+
 ~listener = Listener.new; // Environment-Variable statt var: Block 3c (Tastatursteuerung)
                           // braucht eine Referenz darauf über den Block hinaus.
 
 // Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s
 // im Uhrzeigersinn), Standard-Klang.
-var moveRule1 = CircularMoveRule.new;
-var movable1 = Movable.new([0, 2.5, 0], moveRule1, 5);
-var insectSound1 = InsectSound.new;
-var binauralizer1 = Binauralizer.new;
+moveRule1 = CircularMoveRule.new;
+movable1 = Movable.new([0, 2.5, 0], moveRule1, 5);
+insectSound1 = InsectSound.new;
+binauralizer1 = Binauralizer.new;
 
 // Insekt 2: etwas schneller (1.0 statt 0.6 rad/s) und in Gegenrichtung
 // (negatives angularSpeed); heller/schneller Klang (höhere Flügelschlag- und
 // Resonanzfrequenzen, kürzeres Ausklingen) statt Standard-Brummen.
-var moveRule2 = CircularMoveRule.new(3.0, 1.0, 0.15, -1.0);
-var movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
-var insectSound2 = InsectSound.new(280, 0.2, 5200, 7000, 0.015, 0.01, 0.3);
-var binauralizer2 = Binauralizer.new;
+moveRule2 = CircularMoveRule.new(3.0, 1.0, 0.15, -1.0);
+movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
+insectSound2 = InsectSound.new(280, 0.2, 5200, 7000, 0.015, 0.01, 0.3);
+binauralizer2 = Binauralizer.new;
 
-var insect1 = SoundObject.new(movable1, insectSound1, binauralizer1);
-var insect2 = SoundObject.new(movable2, insectSound2, binauralizer2);
+insect1 = SoundObject.new(movable1, insectSound1, binauralizer1);
+insect2 = SoundObject.new(movable2, insectSound2, binauralizer2);
 
 // "Brunnen": steady Soundobjekt — SteadyMoveRule bewegt sich nicht von selbst
 // (next() gibt die Position unverändert zurück), tiefer/langsamer Klang zur
 // Unterscheidung von den Insekten. Position per Live-Coding änderbar, siehe
 // Block 3b weiter unten (~fountainMovable.moveTo(...)).
-var fountainMoveRule = SteadyMoveRule.new;
+fountainMoveRule = SteadyMoveRule.new;
 ~fountainMovable = Movable.new([2, 1, 0], fountainMoveRule, 5);
-var fountainSound = InsectSound.new(60, 0.6, 800, 1400, 0.08, 0.06, 0.25);
-var fountainBinauralizer = Binauralizer.new;
-var fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer);
+fountainSound = InsectSound.new(60, 0.6, 800, 1400, 0.08, 0.06, 0.25);
+fountainBinauralizer = Binauralizer.new;
+fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer);
 
 ~orchestra = Orchestra.new(~listener);
 ~orchestra.register(insect1);
