@@ -47,6 +47,8 @@ rate = 1; // Hz — einmal pro Sekunde, bewusst langsamer als die Sample-Länge 
 		// Rueckfuehrung bei bewegten Objekten relevant, siehe Movable>>step)
 	var sound = SampleSound.new(pe.fullPath, rate, phase);
 	var soundObject = SoundObject.new(movable, sound, AtkBinauralizer.new);
+	sound.preload(s); // laedt den Buffer schon jetzt, statt erst bei orchestra.play(s) in
+		// Block 2 — gibt der asynchronen Dateileseoperation Zeit (siehe SampleSound>>preload)
 	~orchestra.register(soundObject);
 	soundObject
 });
@@ -61,6 +63,9 @@ rate = 1; // Hz — einmal pro Sekunde, bewusst langsamer als die Sample-Länge 
 // Zeigt Listener im Zentrum und alle Sample-Objekte auf dem Kreis, von oben betrachtet.
 ~spaceView = SpaceView.new(~orchestra);
 ~spaceView.play;
+
+~listenerControl = KeyboardListenerControl.new(~listener);
+~listenerControl.play;
 
 // --- 4) Stoppen ---
 ~orchestra.stop;

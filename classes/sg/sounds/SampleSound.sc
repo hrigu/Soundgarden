@@ -34,11 +34,22 @@ SampleSound : Sound {
 		}).add;
 	}
 
-	// lädt den Buffer (asynchron, aber bufnum steht sofort fest — PlayBuf braucht nur
-	// die Nummer, keine Buffer-Metadaten zum SynthDef-Bauzeitpunkt wie z.B.
-	// FoaDecoderKernel, siehe AtkBinauralizer) und erzeugt den Synth darauf.
+	// lädt den Buffer vorab (asynchron) — optional, aber empfohlen: ohne preload lädt
+	// makeSynth den Buffer erst bei play(), dann kann der allererste Trigger auf einen
+	// noch leeren Buffer treffen ("Buffer UGen: no buffer data", harmlos, aber unschön).
+	// Mit etwas zeitlichem Abstand zu play() aufrufen, wie InsectSound/Binauralizer
+	// addSynthDef — z.B. schon in Block 1 des Demo-Skripts, während Block 2 noch nicht
+	// lief.
+	preload { |server|
+		^buffer = Buffer.readChannel(server, path, channels: [0]);
+	}
+
+	// erzeugt den Synth; lädt den Buffer selbst nach, falls preload nicht vorher
+	// aufgerufen wurde. bufnum steht so oder so sofort fest — PlayBuf braucht nur die
+	// Nummer, keine Buffer-Metadaten zum SynthDef-Bauzeitpunkt wie z.B. FoaDecoderKernel
+	// (siehe AtkBinauralizer).
 	makeSynth { |server, bus|
-		buffer = Buffer.readChannel(server, path, channels: [0]);
+		buffer = buffer ?? { Buffer.readChannel(server, path, channels: [0]) };
 		^Synth(\sampleSound, [
 			\out, bus.index,
 			\buf, buffer.bufnum,
