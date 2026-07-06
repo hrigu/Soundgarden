@@ -5,17 +5,23 @@
 // Intent 5, 1.4) — Elevation (phi) ist fest 0.
 //
 // Signalweg pro Instanz: Mono-Eingang → distanzabhängiger Tiefpass/Pegel (wie Binauralizer)
-// → FoaEncode (Omni) → FoaPush (auf Azimuth "geschoben", volle Direktionalität) → FoaDecode
-// (HRTF-Kernel) → Stereo. Encoder-Matrix und Decoder-Kernel sind teure, geteilte Ressourcen
-// (Server-Buffer) — genau EINE Instanz pro Session, siehe *setup/*teardown, nicht pro
-// AtkBinauralizer-Objekt.
+// → PanB2 (horizontales B-Format, SuperCollider-Core) → FoaDecode (HRTF-Kernel) → Stereo.
+// Encoding bewusst über PanB2 statt FoaEncode/FoaTransform('push'): letztere kompilieren
+// (für den generischen, nicht-achsengebundenen Fall) zu FoaRotate, einem UGen aus
+// sc3-plugins — das ist laut CLAUDE.md (Gotchas) bewusst nicht installiert. PanB2 ist
+// Core-UGen, erzeugt aber dieselbe (FuMa-)B-Format-Konvention, die FoaDecode erwartet, und
+// deckt den hier ohnehin auf die horizontale Ebene beschränkten Fall (siehe Intent 5, 1.4)
+// vollständig ab. Der Decoder-Kernel selbst (FoaDecoderKernel/FoaDecode) braucht keine
+// sc3-plugins — intern nur Convolution2 & Co., beides SuperCollider-Core.
 //
-// Azimuth-Vorzeichen: Listener>>relativeAzimuth liefert positiv = rechts (siehe Listener.sc).
-// ATK verwendet die umgekehrte Konvention (positiv = links, siehe Guides/Encoding-FOA:
-// "azimuth -> hard left = back, centre = centre, hard right = back", d.h. positiv dreht nach
-// links) — deshalb wird azimuth beim Senden an den Synth negiert.
+// Decoder-Kernel ist eine teure, geteilte Ressource (Server-Buffer) — genau EINE Instanz
+// pro Session, siehe *setup/*teardown, nicht pro AtkBinauralizer-Objekt.
+//
+// Azimuth-Einheit/Vorzeichen: Listener>>relativeAzimuth liefert Radiant, positiv = rechts
+// (siehe Listener.sc). PanB2 erwartet -1..1 (nicht Radiant; siehe PanB2-Hilfe: -1/+1 =
+// hinten, -0.5 = links, 0 = vorne, +0.5 = rechts) — Konvention "positiv = rechts" stimmt
+// direkt überein, daher nur Skalierung (/pi), kein Vorzeichenwechsel nötig.
 AtkBinauralizer {
-	classvar <encoderMatrix;  // FoaEncoderMatrix.newOmni — eine geteilte Instanz für alle
 	classvar <decoderKernel;  // FoaDecoderKernel (HRTF) — eine geteilte Instanz für alle
 
 	var <>lagTime;        // Glättungszeit für Azimuth-/Distanzänderungen, in Sekunden
@@ -47,7 +53,6 @@ AtkBinauralizer {
 	// subjectID: 21 = KEMAR-Kunstkopf (generische Messung, kein bestimmtes Individuum) —
 	// siehe FoaDecoderKernel-Hilfe für Alternativen zum Ausprobieren.
 	*setup { |server, subjectID = 21|
-		encoderMatrix = FoaEncoderMatrix.newOmni;
 		decoderKernel = FoaDecoderKernel.newCIPIC(subjectID, server);
 		Routine({
 			server.sync;
@@ -64,7 +69,6 @@ AtkBinauralizer {
 	// registriert die \atkBinauralizer-SynthDef beim Server. Wird von *setup selbst
 	// aufgerufen, sobald der Kernel geladen ist — nicht separat von außen aufrufen.
 	*addSynthDef {
-		var encoder = encoderMatrix;
 		var decoder = decoderKernel;
 
 		SynthDef(\atkBinauralizer, { |in = 0, out = 0, azimuth = 0, distance = 1,
@@ -72,8 +76,8 @@ AtkBinauralizer {
 			// azimuth kommt von Listener>>relativeAzimuth auf (-pi, pi] gewrappt an; beim
 			// Vorbeiziehen hinter dem Hörer springt der Rohwert um ~2pi (+pi -> -pi). Lag.kr
 			// direkt auf azimuth würde diesen Sprung linear durchfahren (hörbarer Klick, da
-			// FoaTransform kurz alle Richtungen durchläuft) — stattdessen sin/cos VOR dem Lag
-			// bilden (an der Wrap-Grenze stetig) und den Winkel danach per atan2 rekonstruieren.
+			// PanB2 kurz alle Richtungen durchläuft) — stattdessen sin/cos VOR dem Lag bilden
+			// (an der Wrap-Grenze stetig) und den Winkel danach per atan2 rekonstruieren.
 			var sinAz = Lag.kr(sin(azimuth), lagTime);
 			var cosAz = Lag.kr(cos(azimuth), lagTime);
 			var az = atan2(sinAz, cosAz);
@@ -81,11 +85,8 @@ AtkBinauralizer {
 			var cutoff = (cutoffMax / (1 + dist)).clip(cutoffMin, cutoffMax);
 			var distAmp = (1 / (1 + (dist * ampRolloff))).clip(0, 1);
 			var mono = LPF.ar(In.ar(in, 1), cutoff) * distAmp;
-			var encoded = FoaEncode.ar(mono, encoder);
-			// angle = pi/2: voll auf eine ebene Welle "geschoben" (Punktquelle), nicht
-			// diffus — nur die Richtung (theta) ändert sich live.
-			var pushed = FoaTransform.ar(encoded, 'push', pi / 2, az.neg);
-			var binaural = FoaDecode.ar(pushed, decoder);
+			var bFormat = PanB2.ar(mono, az / pi, 1);
+			var binaural = FoaDecode.ar(bFormat, decoder);
 			Out.ar(out, binaural);
 		}).add;
 	}
