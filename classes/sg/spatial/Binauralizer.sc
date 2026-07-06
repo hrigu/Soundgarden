@@ -44,12 +44,17 @@ Binauralizer {
 		SynthDef(\binauralizer, { |in = 0, out = 0, azimuth = 0, distance = 1,
 				lagTime = 0.08, itdScale = 0.0006, cutoffMin = 600, cutoffMax = 9000,
 				ampRolloff = 0.9, behindDampMin = 0.55|
-			var az = Lag.kr(azimuth, lagTime);
+			// azimuth kommt von Listener>>relativeAzimuth auf (-pi, pi] gewrappt an; beim
+			// Vorbeiziehen hinter dem Hörer springt der Rohwert um ~2pi (+pi -> -pi). Lag.kr
+			// direkt auf azimuth würde diesen Sprung linear durchfahren (hörbarer Klick, da
+			// kurz alle Richtungen durchlaufen werden) — stattdessen sin/cos VOR dem Lag
+			// bilden: die sind an der Wrap-Grenze stetig, kein Sprung.
 			var dist = Lag.kr(distance, lagTime);
-			var pan = sin(az);
+			var pan = Lag.kr(sin(azimuth), lagTime);
+			var behindCos = Lag.kr(cos(azimuth), lagTime);
 			var itd = itdScale * pan;
 			var cutoff = (cutoffMax / (1 + dist)).clip(cutoffMin, cutoffMax);
-			var behindDamp = cos(az).linlin(-1, 1, behindDampMin, 1);
+			var behindDamp = behindCos.linlin(-1, 1, behindDampMin, 1);
 			var distAmp = (1 / (1 + (dist * ampRolloff))).clip(0, 1);
 			var sig = LPF.ar(In.ar(in, 1), cutoff) * behindDamp * distAmp;
 			var stereo = Pan2.ar(sig, pan);

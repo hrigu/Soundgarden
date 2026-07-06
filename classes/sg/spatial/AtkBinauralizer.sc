@@ -62,7 +62,14 @@ AtkBinauralizer {
 
 		SynthDef(\atkBinauralizer, { |in = 0, out = 0, azimuth = 0, distance = 1,
 				lagTime = 0.08, cutoffMin = 600, cutoffMax = 9000, ampRolloff = 0.9|
-			var az = Lag.kr(azimuth, lagTime);
+			// azimuth kommt von Listener>>relativeAzimuth auf (-pi, pi] gewrappt an; beim
+			// Vorbeiziehen hinter dem Hörer springt der Rohwert um ~2pi (+pi -> -pi). Lag.kr
+			// direkt auf azimuth würde diesen Sprung linear durchfahren (hörbarer Klick, da
+			// FoaTransform kurz alle Richtungen durchläuft) — stattdessen sin/cos VOR dem Lag
+			// bilden (an der Wrap-Grenze stetig) und den Winkel danach per atan2 rekonstruieren.
+			var sinAz = Lag.kr(sin(azimuth), lagTime);
+			var cosAz = Lag.kr(cos(azimuth), lagTime);
+			var az = atan2(sinAz, cosAz);
 			var dist = Lag.kr(distance, lagTime);
 			var cutoff = (cutoffMax / (1 + dist)).clip(cutoffMin, cutoffMax);
 			var distAmp = (1 / (1 + (dist * ampRolloff))).clip(0, 1);
