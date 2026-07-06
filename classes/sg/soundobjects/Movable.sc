@@ -44,4 +44,13 @@ Movable {
 		pos = newPos;
 		^pos
 	}
+
+	// moveTo — setzt die Position direkt (Live-Coding-Platzierung, z.B. für steady
+	// Soundobjekte mit SteadyMoveRule). Bewusst OHNE die roomRadius-Rückführung aus
+	// step(): die ist für organische Bewegungsdrift gedacht, nicht dafür, eine
+	// bewusste Nutzer-Platzierung zu korrigieren.
+	moveTo { |newPos|
+		pos = newPos;
+		^pos
+	}
 }
