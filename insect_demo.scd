@@ -19,23 +19,12 @@
 // leichtes zusätzliches Dämpfen "hinter" dem Hörer gibt zumindest einen groben
 // Anhaltspunkt.
 
-// --- 1) SynthDefs registrieren (einmal pro Sitzung, vor dem Abspielen) ---
-// /d_recv ist asynchron — dieser Schritt muss abgeschlossen sein, bevor Block 3
-// versucht, Synths dieser Defs zu instanzieren. Beide Insekten teilen sich
-// dieselben SynthDefs (\insectSound, \binauralizer), nur mit unterschiedlichen
-// Synth-Args.
-(
-InsectSound.addSynthDef;
-Binauralizer.addSynthDef;
-)
-
-// --- 2) Zwei Insekten anlegen: unterschiedliches Tempo/Richtung, unterschiedlicher Klang ---
-// Ein gemeinsamer Listener (fix im Ursprung) hört beide. Jedes Insekt braucht
-// aber sein eigenes Movable/InsectSound/Binauralizer — die Binauralisierung
-// hängt von der Position ab, die pro Insekt verschieden ist, und jeder Synth
-// braucht seinen eigenen Bus/State. Ein gemeinsames Orchestra hält den Listener
-// und tickt beide Insekten über eine einzige Routine statt je einer eigenen —
-// die Insekten selbst kennen den Listener nicht mehr.
+// --- 1) Setup: SynthDefs registrieren + alle Soundobjekte anlegen ---
+// Ein Block statt zwei — SynthDef-Registrierung (/d_recv, asynchron) muss nicht
+// abgeschlossen sein, bevor die Objekte hier unten angelegt werden (reines
+// Zusammenstecken, keine Server-Kommunikation); sie muss erst abgeschlossen sein,
+// bevor Block 2 (orchestra.play) Synths instanziert. Da Block 2 ein eigener,
+// manuell ausgeführter Schritt ist, vergeht bis dahin ohnehin reale Zeit.
 (
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen, vor jeder
 // anderen Anweisung (SuperCollider-Syntaxregel) — deshalb hier gesammelt,
@@ -46,7 +35,17 @@ var fountainMoveRule, fountainSound, fountainBinauralizer, fountain;
 // ~insect1/~insect2 als Environment-Variablen statt var: Block 3d (Call-and-Response)
 // braucht Referenzen darauf über den Block hinaus.
 
-~listener = Listener.new; // Environment-Variable statt var: Block 3c (Tastatursteuerung)
+InsectSound.addSynthDef;
+Binauralizer.addSynthDef;
+
+// Ein gemeinsamer Listener (Position/Blickrichtung per Tastatur beweglich,
+// siehe Block 3) hört alle Soundobjekte. Jedes Soundobjekt braucht aber sein
+// eigenes Movable/Sound/Binauralizer — die Binauralisierung hängt von der
+// Position ab, die pro Objekt verschieden ist, und jeder Synth braucht seinen
+// eigenen Bus/State. Ein gemeinsames Orchestra hält den Listener und tickt
+// alle Objekte über eine einzige Routine statt je einer eigenen — die
+// Soundobjekte selbst kennen den Listener nicht.
+~listener = Listener.new; // Environment-Variable statt var: Block 3 (Tastatursteuerung)
                           // braucht eine Referenz darauf über den Block hinaus.
 
 // Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s
@@ -70,7 +69,7 @@ binauralizer2 = Binauralizer.new;
 // "Brunnen": steady Soundobjekt — SteadyMoveRule bewegt sich nicht von selbst
 // (next() gibt die Position unverändert zurück), tiefer/langsamer Klang zur
 // Unterscheidung von den Insekten. Position per Live-Coding änderbar, siehe
-// Block 3b weiter unten (~fountainMovable.moveTo(...)).
+// Block 2b weiter unten (~fountainMovable.moveTo(...)).
 fountainMoveRule = SteadyMoveRule.new;
 ~fountainMovable = Movable.new([2, 1, 0], fountainMoveRule, 5);
 fountainSound = InsectSound.new(60, 0.6, 800, 1400, 0.08, 0.06, 0.25);
@@ -83,18 +82,18 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 ~orchestra.register(fountain);
 )
 
-// --- 3) Abspielen ---
+// --- 2) Abspielen ---
 // orchestra.play startet den Klang-/Binauralizer-Synth für jedes registrierte
-// Insekt und danach den gemeinsamen Taktgeber (Bewegung + Azimuth/Distanz
-// für beide).
+// Soundobjekt und danach den gemeinsamen Taktgeber (Bewegung + Azimuth/Distanz).
 ~orchestra.play(s);
 
-// --- 3b) Live-Coding: Brunnen umplatzieren ---
+// --- 2b) Live-Coding: Brunnen umplatzieren ---
 // Position jederzeit während des Sets änderbar — moveTo setzt sie direkt,
 // ohne die roomRadius-Rückführung, die für die Insekten-Eigenbewegung gedacht ist.
 ~fountainMovable.moveTo([-3, 2, 0]);
 
-// --- 3c) Tastatursteuerung für den Listener starten ---
+// --- 3) Tastatursteuerung für den Listener starten ---
+// Bewusst separat und erst NACH Block 2 ausführen (Orchester muss schon spielen).
 // Öffnet ein kleines Fenster, das während der Steuerung fokussiert sein muss
 // (SuperCollider-Standardidiom für Tastatur-Input). Tasten halten:
 // W/S vor/zurück, A/D seitlich, Q/E drehen.
@@ -108,9 +107,10 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 ~orchestra.call(~insect1);
 
 // --- 4) Stoppen ---
-// Ein Aufruf stoppt das Ticken UND ruft stop auf allen registrierten
+// orchestra.stop stoppt das Ticken UND ruft stop auf allen registrierten
 // Soundobjekten auf (Synths/Busse werden freigegeben).
 ~orchestra.stop;
 
-// Tastatursteuerung separat stoppen (schließt das Kontrollfenster):
+// Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
+// falls Block 3 überhaupt ausgeführt wurde.
 ~listenerControl.stop;
