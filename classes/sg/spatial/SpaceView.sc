@@ -53,6 +53,8 @@ SpaceView {
 		var listener = orchestra.listener;
 		var forward = listener.forwardVector;
 		var arrowLen = 18;
+		var lx = cx + (listener.pos[0] * scale);
+		var ly = cy - (listener.pos[1] * scale);
 
 		Pen.fillColor = Color.white;
 		Pen.fillRect(bounds);
@@ -72,14 +74,14 @@ SpaceView {
 			Pen.fillOval(Rect(x - 5, y - 5, 10, 10));
 		};
 
-		// Listener: Punkt + Blickrichtung als kurze Linie
+		// Listener: Punkt + Blickrichtung als kurze Linie, an seiner tatsächlichen Position
 		Pen.strokeColor = Color.blue;
 		Pen.width = 2;
-		Pen.line(cx@cy, (cx + (forward[0] * arrowLen))@(cy - (forward[1] * arrowLen)));
+		Pen.line(lx@ly, (lx + (forward[0] * arrowLen))@(ly - (forward[1] * arrowLen)));
 		Pen.stroke;
 
 		Pen.fillColor = Color.blue;
-		Pen.fillOval(Rect(cx - 6, cy - 6, 12, 12));
+		Pen.fillOval(Rect(lx - 6, ly - 6, 12, 12));
 	}
 
 	// beendet die Refresh-Routine und schließt das Fenster.
