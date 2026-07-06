@@ -91,6 +91,10 @@ Objektmodell:
   einen kurzen Klang-Akzent aus (Call-and-Response, siehe `Sound>>call`) —
   ein zufälliges anderes registriertes Objekt ruft nach kurzer Verzögerung
   zurück.
+- **`SpaceView`** — live aktualisierte 2D-Draufsicht: Listener (Position +
+  Blickrichtung als Pfeil) und alle registrierten Soundobjekte, von oben
+  betrachtet. Bewegt selbst nichts, liest bei jedem Neuzeichnen einfach den
+  aktuellen Zustand der `Orchestra`.
 
 Ausführen: `load_classes.scd` → `boot.scd` → `insect_demo.scd` (Block für
 Block), mit Kopfhörern. Für die Tastatursteuerung muss das

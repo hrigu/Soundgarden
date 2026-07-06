@@ -4,8 +4,8 @@
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
 //   1) load_classes.scd — bindet Movable/Listener/CircularMoveRule/SteadyMoveRule/InsectSound/
-//                          Binauralizer/SoundObject/Orchestra/KeyboardListenerControl in den
-//                          Klassenpfad ein
+//                          Binauralizer/SoundObject/Orchestra/KeyboardListenerControl/
+//                          SpaceView in den Klassenpfad ein
 //   2) boot.scd        — Server muss laufen
 //
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning) funktionieren nicht über
@@ -106,6 +106,13 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 // registriertes Objekt (insect2 oder fountain) zurück (Call-and-Response).
 ~orchestra.call(~insect1);
 
+// --- 3c) Raum-Draufsicht öffnen ---
+// Live aktualisiertes Fenster: Listener (Position + Blickrichtung als Pfeil) und
+// alle registrierten Soundobjekte, von oben betrachtet. Bewegt selbst nichts —
+// liest bei jedem Neuzeichnen einfach den aktuellen Zustand von ~orchestra.
+~spaceView = SpaceView.new(~orchestra);
+~spaceView.play;
+
 // --- 4) Stoppen ---
 // orchestra.stop stoppt das Ticken UND ruft stop auf allen registrierten
 // Soundobjekten auf (Synths/Busse werden freigegeben).
@@ -114,3 +121,7 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 // Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
 // falls Block 3 überhaupt ausgeführt wurde.
 ~listenerControl.stop;
+
+// Raum-Draufsicht separat stoppen (schließt das Fenster) — nur nötig, falls
+// Block 3c überhaupt ausgeführt wurde.
+~spaceView.stop;
