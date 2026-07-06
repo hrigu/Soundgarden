@@ -25,4 +25,12 @@ TestCircularMoveRule : UnitTest {
 		this.assertEquals(pos[0].round(0.0001), 2.5, "bei angle = pi/2 liegt die Position auf der x-Achse");
 		this.assertEquals(pos[1].round(0.0001), 0.0, "bei angle = pi/2 ist die y-Komponente 0");
 	}
+
+	test_startAngleOffsetsPositionAtTimeZero {
+		var rule = CircularMoveRule.new(2.5, 0, 0.15, 0.6, 0.5pi);
+		var pos = rule.next(#[0, 0, 0], 0, 0.033);
+
+		this.assertEquals(pos[0].round(0.0001), 2.5, "bei t=0 und startAngle=pi/2 liegt die Position auf der x-Achse");
+		this.assertEquals(pos[1].round(0.0001), 0.0, "bei t=0 und startAngle=pi/2 ist die y-Komponente 0");
+	}
 }
