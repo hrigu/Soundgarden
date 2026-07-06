@@ -6,26 +6,26 @@
 // registriert; sie ruft dafür pos/step/updateSpatial auf.
 SoundObject {
 	var <>movable;
-	var <>insectSound;
+	var <>sound;
 	var <>binauralizer;
 
-	*new { |movable, insectSound, binauralizer|
-		^super.new.init(movable, insectSound, binauralizer);
+	*new { |movable, sound, binauralizer|
+		^super.new.init(movable, sound, binauralizer);
 	}
 
-	init { |aMovable, aInsectSound, aBinauralizer|
+	init { |aMovable, aSound, aBinauralizer|
 		movable = aMovable;
-		insectSound = aInsectSound ? InsectSound.new;
+		sound = aSound ? InsectSound.new;
 		binauralizer = aBinauralizer ? Binauralizer.new;
 	}
 
 	// startet Klang- und Binauralizer-Synth. Das Ticken (Bewegung, Azimuth/Distanz)
 	// läuft nicht mehr hier, sondern über Orchestra.
 	play { |server|
-		insectSound.play(server);
-		// addAfter: Binauralizer muss im Node-Baum nach InsectSound laufen,
+		sound.play(server);
+		// addAfter: Binauralizer muss im Node-Baum nach dem Sound laufen,
 		// um dessen Bus im selben Audio-Block lesen zu können.
-		binauralizer.play(server, insectSound.bus, 0, insectSound.synth, \addAfter);
+		binauralizer.play(server, sound.bus, 0, sound.synth, \addAfter);
 		^this
 	}
 
@@ -47,6 +47,6 @@ SoundObject {
 
 	stop {
 		binauralizer.stop;
-		insectSound.stop;
+		sound.stop;
 	}
 }
