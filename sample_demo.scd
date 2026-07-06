@@ -29,10 +29,14 @@ AtkBinauralizer.setup(s);
 ~listener = Listener.new;
 ~orchestra = Orchestra.new(~listener);
 
-// dieselbe Ordner-/Extension-Erkennung wie boot.scd — alle gültigen Audiodateien aus
-// sounds/, keine feste Dateiliste, damit das Demo mit den lokal vorhandenen Samples läuft.
+// gültige Audiodateien aus sounds/ — rekursiv (filesDo statt entries.select), da die
+// Samples in Unterordnern liegen (z.B. sounds/apple/, sounds/compmusic/); keine feste
+// Dateiliste, damit das Demo mit den lokal vorhandenen Samples läuft.
 soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ "sounds");
-sampleFiles = soundsDir.entries.select({ |pe| BootTrackDetection.isValidExtension(pe.extension) });
+sampleFiles = [];
+soundsDir.filesDo({ |pe|
+	if(BootTrackDetection.isValidExtension(pe.extension)) { sampleFiles = sampleFiles.add(pe) };
+});
 n = sampleFiles.size;
 radius = 3;
 rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (~1s), da
