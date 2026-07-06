@@ -35,7 +35,7 @@ soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ "sounds");
 sampleFiles = soundsDir.entries.select({ |pe| BootTrackDetection.isValidExtension(pe.extension) });
 n = sampleFiles.size;
 radius = 3;
-rate = 1; // Hz — einmal pro Sekunde, bewusst langsamer als die Sample-Länge (~1s), da
+rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (~1s), da
           // SampleSound (Intent 20) noch kein Overlap-Handling hat
 
 ~sampleObjects = sampleFiles.collect({ |pe, i|
