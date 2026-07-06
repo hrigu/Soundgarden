@@ -1,9 +1,9 @@
 // insect_demo.scd — Prototyp: zwei binaurale "Insekten" kreisen um den Hörer.
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) boot.scd        — Server muss laufen
-//   2) load_classes.scd — bindet Movable/Listener/CircularMoveRule/InsectSound/
+//   1) load_classes.scd — bindet Movable/Listener/CircularMoveRule/InsectSound/
 //                          Binauralizer/SoundObject/Orchestra in den Klassenpfad ein
+//   2) boot.scd        — Server muss laufen
 //
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning) funktionieren nicht über
 // Lautsprecher richtig.
