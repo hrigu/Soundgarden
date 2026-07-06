@@ -3,7 +3,7 @@
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
 //   1) boot.scd        — Server muss laufen
 //   2) load_classes.scd — bindet Movable/Listener/CircularMoveRule/InsectSound/
-//                          Binauralizer/SoundInsect in den Klassenpfad ein
+//                          Binauralizer/SoundObject in den Klassenpfad ein
 //
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning) funktionieren nicht über
 // Lautsprecher richtig.
@@ -49,8 +49,8 @@ var movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
 var insectSound2 = InsectSound.new(280, 0.2, 5200, 7000, 0.015, 0.01, 0.3);
 var binauralizer2 = Binauralizer.new;
 
-~insect1 = SoundInsect.new(movable1, listener, insectSound1, binauralizer1);
-~insect2 = SoundInsect.new(movable2, listener, insectSound2, binauralizer2);
+~insect1 = SoundObject.new(movable1, listener, insectSound1, binauralizer1);
+~insect2 = SoundObject.new(movable2, listener, insectSound2, binauralizer2);
 )
 
 // --- 3) Abspielen ---
