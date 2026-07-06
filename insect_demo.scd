@@ -32,7 +32,7 @@
 var moveRule1, movable1, insectSound1, binauralizer1;
 var moveRule2, movable2, insectSound2, binauralizer2;
 var fountainMoveRule, fountainSound, fountainBinauralizer, fountain;
-// ~insect1/~insect2 als Environment-Variablen statt var: Block 3d (Call-and-Response)
+// ~insect1/~insect2 als Environment-Variablen statt var: Block 3b (Call-and-Response)
 // braucht Referenzen darauf über den Block hinaus.
 
 InsectSound.addSynthDef;
@@ -100,7 +100,7 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 ~listenerControl = KeyboardListenerControl.new(~listener);
 ~listenerControl.play;
 
-// --- 3d) Live-Coding: Insekt 1 zurufen lassen ---
+// --- 3b) Live-Coding: Insekt 1 zurufen lassen ---
 // Löst bei insect1 einen kurzen Klang-Akzent aus (Tonhöhe/Pegel blitzen kurz
 // auf); nach kurzer, leicht zufälliger Verzögerung ruft ein zufälliges anderes
 // registriertes Objekt (insect2 oder fountain) zurück (Call-and-Response).
