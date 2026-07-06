@@ -61,7 +61,7 @@ Binauralizer {
 
 	// target/addAction bestimmen die Position im Node-Baum — der Binauralizer
 	// muss NACH der Klangquelle laufen, damit er ihren Bus im selben Audio-
-	// Block noch lesen kann (siehe SoundInsect, das dies verkabelt).
+	// Block noch lesen kann (siehe SoundObject, das dies verkabelt).
 	// Setzt außerdem voraus, dass addSynthDef vorher (mit etwas zeitlichem
 	// Abstand) aufgerufen wurde — siehe InsectSound>>play.
 	play { |server, inBus, outBus = 0, target, addAction = \addToTail|
@@ -78,7 +78,7 @@ Binauralizer {
 		^this
 	}
 
-	// aktualisiert Azimuth/Distanz auf dem laufenden Synth — SoundInsect ruft
+	// aktualisiert Azimuth/Distanz auf dem laufenden Synth — SoundObject ruft
 	// dies bei jedem Tick der Bewegungs-Routine auf
 	set { |azimuth, distance|
 		synth.set(\azimuth, azimuth, \distance, distance);
