@@ -4,6 +4,8 @@
 // Hardware-Output) kommt von Sound; hier nur die eigentliche Klangerzeugung
 // (makeSynth). Klangparameter mit Defaults aus dem ursprünglichen
 // \insectVoice-Prototyp (Intent 3), aber pro Instanz überschreibbar.
+// Unterstützt Sound>>call (t_call-Trigger): kurzzeitiger Aufblitz von Tonhöhe
+// und Pegel, für Call-and-Response zwischen Soundobjekten (Intent 17).
 InsectSound : Sound {
 	var <>wingRate;    // Flügelschlag-Rate in Hz (Puls-Gate für das Rauschen)
 	var <>wingDuty;    // Tastverhältnis des Flügelschlag-Gates, 0..1
@@ -43,11 +45,16 @@ InsectSound : Sound {
 	*addSynthDef {
 		SynthDef(\insectSound, { |out = 0, wingRate = 210, wingDuty = 0.25,
 				ringFreq1 = 3200, ringFreq2 = 4600, ringDecay1 = 0.02, ringDecay2 = 0.015,
-				amp = 0.35|
+				amp = 0.35, t_call = 0|
+			// call-Akzent: kurzer, perkussiver Aufblitz von Tonhöhe (+30%) und
+			// Pegel (+150%), ausgelöst durch Sound>>call (t_call-Trigger).
+			var callEnv = EnvGen.kr(Env.perc(0.005, 0.35), t_call);
+			var freqShift = 1 + (callEnv * 0.3);
+			var ampBoost = 1 + (callEnv * 1.5);
 			var wings = LFPulse.ar(wingRate, 0, wingDuty) * WhiteNoise.ar(1);
-			var buzz = Ringz.ar(wings, ringFreq1, ringDecay1)
-				+ Ringz.ar(wings, ringFreq2, ringDecay2);
-			Out.ar(out, buzz * amp);
+			var buzz = Ringz.ar(wings, ringFreq1 * freqShift, ringDecay1)
+				+ Ringz.ar(wings, ringFreq2 * freqShift, ringDecay2);
+			Out.ar(out, buzz * amp * ampBoost);
 		}).add;
 	}
 

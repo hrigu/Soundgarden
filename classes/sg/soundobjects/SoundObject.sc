@@ -45,6 +45,12 @@ SoundObject {
 		binauralizer.set(azimuth, distance);
 	}
 
+	// löst einen Zuruf aus (Call-and-Response, siehe Orchestra>>call) — delegiert
+	// an den eigenen Sound.
+	call {
+		sound.call;
+	}
+
 	stop {
 		binauralizer.stop;
 		sound.stop;
