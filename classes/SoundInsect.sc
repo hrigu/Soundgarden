@@ -1,7 +1,7 @@
-// SoundInsect — Orchestrator: verbindet ein Movable (das sich nach einer
-// MoveRule bewegt) mit einem InsectSound (reiner Klang) und einem
-// Binauralizer (formt den Klang für den Listener anhand Azimuth/Distanz).
-// Eine Routine tickt movable.step() regelmäßig, berechnet die Position
+// SoundInsect — Orchestrator: Die Klasse, die das konkrete Soundobjekt beschreibt.
+// Sie verbindet ein Movable (das sich nach einer MoveRule bewegt) mit einem Sound (reiner Klang)
+// und einem Binauralizer (formt den Klang für den Listener anhand Azimuth/Distanz).
+// Eine Routine tickt movable.step() regelmässig, berechnet die Position
 // relativ zum Listener und schiebt Azimuth/Distanz live in den Binauralizer.
 SoundInsect {
 	var <>movable;

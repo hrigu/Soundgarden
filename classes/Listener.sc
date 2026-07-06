@@ -1,6 +1,6 @@
 // Listener — der Hörer. Position aktuell fix, Blickrichtung (facing, in Grad,
-// 0 = entlang +y) aktuell fix. Rechnet Weltkoordinaten in "was hört er"
-// um: Azimuth relativ zur eigenen Blickrichtung (0 = vorne, positiv = rechts,
+// 0 = entlang +y) aktuell fix. Rechnet Weltkoordinaten in "was hört er" um:
+//bAzimuth relativ zur eigenen Blickrichtung (0 = vorne, positiv = rechts,
 // ±pi = hinten) und Distanz.
 Listener {
 	var <>pos;     // [x, y, z]
@@ -15,6 +15,7 @@ Listener {
 		facing = aFacing;
 	}
 
+	// Azimuth zur anderen Position relativ zur Blickrichtung
 	relativeAzimuth { |targetPos|
 		var rel = targetPos - pos;
 		var worldAngle = atan2(rel[0], rel[1]);
