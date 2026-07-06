@@ -1,9 +1,5 @@
 # Audio files — keep tracks local, never commit them
-sounds/*.wav
-sounds/*.aiff
-sounds/*.aif
-sounds/*.flac
-sounds/*.mp3
+sounds/*
 !sounds/.gitkeep
 
 # SuperCollider / macOS cruft
