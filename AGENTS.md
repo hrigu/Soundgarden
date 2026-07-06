@@ -85,6 +85,17 @@ sinnvoll test-first entwickeln:
   `load_classes.scd` (einmal pro Sitzung: `LanguageConfig.addIncludePath` für beide Ordner +
   `thisProcess.recompile`) muss laufen, bevor sie verfügbar sind.
 
+### Headless-Testlauf vor dem Push (falls sclang in der Agent-Umgebung verfügbar ist)
+
+Reine sclang-Logik-Tests (kein Server nötig, siehe oben) lassen sich ohne Audio-Hardware
+ausführen: `sclang -l <conf.yaml> <script.scd>`, wobei die Konfiguration `classes/` und
+`tests/` als `includePaths` einträgt und das Skript alle `Test*`-Klassen `.run` aufruft,
+gefolgt von `0.exit`. In Umgebungen mit `QT_QPA_PLATFORM=offscreen` und
+`QTWEBENGINE_DISABLE_SANDBOX=1` als Env-Variablen (nötig für headless/als root). Ein
+Coding-Agent mit sclang-Zugriff **soll** dies vor jedem Push ausführen, wenn testbare
+Logik geändert wurde — echtes Feedback statt reinem Code-Lesen. Ersetzt nicht den
+Hörtest für SynthDefs/Klangverhalten, den nur der Nutzer selbst machen kann.
+
 ## Commit-Konventionen
 
 - Intent-Erstellung:
