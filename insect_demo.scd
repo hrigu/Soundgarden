@@ -3,7 +3,7 @@
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
 //   1) boot.scd        — Server muss laufen
 //   2) load_classes.scd — bindet Movable/Listener/CircularMoveRule/InsectSound/
-//                          Binauralizer/SoundObject in den Klassenpfad ein
+//                          Binauralizer/SoundObject/Orchestra in den Klassenpfad ein
 //
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning) funktionieren nicht über
 // Lautsprecher richtig.
@@ -30,7 +30,9 @@ Binauralizer.addSynthDef;
 // Ein gemeinsamer Listener (fix im Ursprung) hört beide. Jedes Insekt braucht
 // aber sein eigenes Movable/InsectSound/Binauralizer — die Binauralisierung
 // hängt von der Position ab, die pro Insekt verschieden ist, und jeder Synth
-// braucht seinen eigenen Bus/State.
+// braucht seinen eigenen Bus/State. Ein gemeinsames Orchestra hält den Listener
+// und tickt beide Insekten über eine einzige Routine statt je einer eigenen —
+// die Insekten selbst kennen den Listener nicht mehr.
 (
 var listener = Listener.new;
 
@@ -49,14 +51,23 @@ var movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
 var insectSound2 = InsectSound.new(280, 0.2, 5200, 7000, 0.015, 0.01, 0.3);
 var binauralizer2 = Binauralizer.new;
 
-~insect1 = SoundObject.new(movable1, listener, insectSound1, binauralizer1);
-~insect2 = SoundObject.new(movable2, listener, insectSound2, binauralizer2);
+~insect1 = SoundObject.new(movable1, insectSound1, binauralizer1);
+~insect2 = SoundObject.new(movable2, insectSound2, binauralizer2);
+
+~orchestra = Orchestra.new(listener);
+~orchestra.register(~insect1);
+~orchestra.register(~insect2);
 )
 
 // --- 3) Abspielen ---
+// Jedes Insekt startet zuerst seinen eigenen Klang-/Binauralizer-Synth;
+// orchestra.play startet danach den gemeinsamen Taktgeber (Bewegung +
+// Azimuth/Distanz für beide).
 ~insect1.play(s);
 ~insect2.play(s);
+~orchestra.play;
 
 // --- 4) Stoppen ---
- ~insect1.stop;
- ~insect2.stop;
+// Ein Aufruf stoppt das Ticken UND ruft stop auf beiden registrierten
+// Insekten auf (Synths/Busse werden freigegeben).
+~orchestra.stop;
