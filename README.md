@@ -66,6 +66,11 @@ hinten, mal laut (nah), mal leise (fern).
 Objektmodell:
 - **`Movable`** — hat eine Position, die sich nach einer Bewegungsregel
   verändert; steuert sanft zurück, falls sie eine Raumkugel verlässt.
+  `moveTo(newPos)` setzt die Position stattdessen direkt (Live-Coding-Platzierung,
+  ohne Rückführung).
+- **`MoveRule`/`CircularMoveRule`/`SteadyMoveRule`** — Bewegungsregeln: Kreisbahn
+  mit atmendem Radius, oder `SteadyMoveRule` für stationäre Soundobjekte (bewegt
+  sich nicht von selbst, per `moveTo` trotzdem umplatzierbar).
 - **`Listener`** — Position und Blickrichtung aktuell fix; berechnet aus
   einer Weltposition Azimuth (relativ zur eigenen Blickrichtung) und Distanz.
 - **`SoundObject`** — verbindet ein `Movable` mit einem klingenden Synth

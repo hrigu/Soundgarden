@@ -1,7 +1,8 @@
-// insect_demo.scd — Prototyp: zwei binaurale "Insekten" kreisen um den Hörer.
+// insect_demo.scd — Prototyp: zwei binaurale "Insekten" kreisen um den Hörer, dazu ein
+// stationäres ("steady") Soundobjekt, dessen Position live per Code verändert werden kann.
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) load_classes.scd — bindet Movable/Listener/CircularMoveRule/InsectSound/
+//   1) load_classes.scd — bindet Movable/Listener/CircularMoveRule/SteadyMoveRule/InsectSound/
 //                          Binauralizer/SoundObject/Orchestra in den Klassenpfad ein
 //   2) boot.scd        — Server muss laufen
 //
@@ -54,9 +55,20 @@ var binauralizer2 = Binauralizer.new;
 var insect1 = SoundObject.new(movable1, insectSound1, binauralizer1);
 var insect2 = SoundObject.new(movable2, insectSound2, binauralizer2);
 
+// "Brunnen": steady Soundobjekt — SteadyMoveRule bewegt sich nicht von selbst
+// (next() gibt die Position unverändert zurück), tiefer/langsamer Klang zur
+// Unterscheidung von den Insekten. Position per Live-Coding änderbar, siehe
+// Block 3b weiter unten (~fountainMovable.moveTo(...)).
+var fountainMoveRule = SteadyMoveRule.new;
+~fountainMovable = Movable.new([2, 1, 0], fountainMoveRule, 5);
+var fountainSound = InsectSound.new(60, 0.6, 800, 1400, 0.08, 0.06, 0.25);
+var fountainBinauralizer = Binauralizer.new;
+var fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer);
+
 ~orchestra = Orchestra.new(listener);
 ~orchestra.register(insect1);
 ~orchestra.register(insect2);
+~orchestra.register(fountain);
 )
 
 // --- 3) Abspielen ---
@@ -64,6 +76,11 @@ var insect2 = SoundObject.new(movable2, insectSound2, binauralizer2);
 // Insekt und danach den gemeinsamen Taktgeber (Bewegung + Azimuth/Distanz
 // für beide).
 ~orchestra.play(s);
+
+// --- 3b) Live-Coding: Brunnen umplatzieren ---
+// Position jederzeit während des Sets änderbar — moveTo setzt sie direkt,
+// ohne die roomRadius-Rückführung, die für die Insekten-Eigenbewegung gedacht ist.
+~fountainMovable.moveTo([-3, 2, 0]);
 
 // --- 4) Stoppen ---
 // Ein Aufruf stoppt das Ticken UND ruft stop auf beiden registrierten

@@ -40,8 +40,8 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
   hat nur einen globalen, flachen Klassen-Namensraum — sondern reine Ordnerkonvention, drei
   Unter-Ordner nach Zuständigkeit):
   - `classes/sg/sounds/` — `Sound`, `InsectSound` (reine Klangerzeugung)
-  - `classes/sg/soundobjects/` — `SoundObject`, `Movable`, `MoveRule`, `CircularMoveRule`
-    (Bewegung + Klangobjekt)
+  - `classes/sg/soundobjects/` — `SoundObject`, `Movable`, `MoveRule`, `CircularMoveRule`,
+    `SteadyMoveRule` (Bewegung + Klangobjekt)
   - `classes/sg/spatial/` — `Listener`, `Binauralizer`, `Orchestra` (Raumwahrnehmung/-steuerung)
   - zugehörige Tests spiegelbildlich unter `tests/sg/soundobjects/`, `tests/sg/spatial/`
   - `BootTrackDetection` gehört bewusst nicht zu `sg` (andere Domäne: Live-Set statt
