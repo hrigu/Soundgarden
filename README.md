@@ -87,7 +87,10 @@ Objektmodell:
   danach eine einzige gemeinsame Tick-Routine (Bewegung + Azimuth/Distanz
   statt Pan, winzige Laufzeitdifferenz zwischen den Ohren, entfernungs-
   abhängiger Pegel/Tiefpass pro Objekt). `stop` beendet das Ticken und
-  stoppt alle registrierten SoundObjects.
+  stoppt alle registrierten SoundObjects. `call(caller)` löst bei `caller`
+  einen kurzen Klang-Akzent aus (Call-and-Response, siehe `Sound>>call`) —
+  ein zufälliges anderes registriertes Objekt ruft nach kurzer Verzögerung
+  zurück.
 
 Ausführen: `load_classes.scd` → `boot.scd` → `insect_demo.scd` (Block für
 Block), mit Kopfhörern. Für die Tastatursteuerung muss das

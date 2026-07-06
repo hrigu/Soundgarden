@@ -42,8 +42,9 @@ Binauralizer.addSynthDef;
 // auch wenn sie erst weiter unten mit Werten befüllt werden.
 var moveRule1, movable1, insectSound1, binauralizer1;
 var moveRule2, movable2, insectSound2, binauralizer2;
-var insect1, insect2;
 var fountainMoveRule, fountainSound, fountainBinauralizer, fountain;
+// ~insect1/~insect2 als Environment-Variablen statt var: Block 3d (Call-and-Response)
+// braucht Referenzen darauf über den Block hinaus.
 
 ~listener = Listener.new; // Environment-Variable statt var: Block 3c (Tastatursteuerung)
                           // braucht eine Referenz darauf über den Block hinaus.
@@ -63,8 +64,8 @@ movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
 insectSound2 = InsectSound.new(280, 0.2, 5200, 7000, 0.015, 0.01, 0.3);
 binauralizer2 = Binauralizer.new;
 
-insect1 = SoundObject.new(movable1, insectSound1, binauralizer1);
-insect2 = SoundObject.new(movable2, insectSound2, binauralizer2);
+~insect1 = SoundObject.new(movable1, insectSound1, binauralizer1);
+~insect2 = SoundObject.new(movable2, insectSound2, binauralizer2);
 
 // "Brunnen": steady Soundobjekt — SteadyMoveRule bewegt sich nicht von selbst
 // (next() gibt die Position unverändert zurück), tiefer/langsamer Klang zur
@@ -77,8 +78,8 @@ fountainBinauralizer = Binauralizer.new;
 fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer);
 
 ~orchestra = Orchestra.new(~listener);
-~orchestra.register(insect1);
-~orchestra.register(insect2);
+~orchestra.register(~insect1);
+~orchestra.register(~insect2);
 ~orchestra.register(fountain);
 )
 
@@ -99,6 +100,12 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 // W/S vor/zurück, A/D seitlich, Q/E drehen.
 ~listenerControl = KeyboardListenerControl.new(~listener);
 ~listenerControl.play;
+
+// --- 3d) Live-Coding: Insekt 1 zurufen lassen ---
+// Löst bei insect1 einen kurzen Klang-Akzent aus (Tonhöhe/Pegel blitzen kurz
+// auf); nach kurzer, leicht zufälliger Verzögerung ruft ein zufälliges anderes
+// registriertes Objekt (insect2 oder fountain) zurück (Call-and-Response).
+~orchestra.call(~insect1);
 
 // --- 4) Stoppen ---
 // Ein Aufruf stoppt das Ticken UND ruft stop auf allen registrierten

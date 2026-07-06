@@ -39,7 +39,8 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 - Spatial-Audio-Klassen liegen unter `classes/sg/` (kein echter SC-Namespace — SuperCollider
   hat nur einen globalen, flachen Klassen-Namensraum — sondern reine Ordnerkonvention, drei
   Unter-Ordner nach Zuständigkeit):
-  - `classes/sg/sounds/` — `Sound`, `InsectSound` (reine Klangerzeugung)
+  - `classes/sg/sounds/` — `Sound`, `InsectSound` (reine Klangerzeugung; `Sound>>call`
+    löst einen kurzen Klang-Akzent aus, für Call-and-Response zwischen Soundobjekten)
   - `classes/sg/soundobjects/` — `SoundObject`, `Movable`, `MoveRule`, `CircularMoveRule`,
     `SteadyMoveRule` (Bewegung + Klangobjekt)
   - `classes/sg/spatial/` — `Listener`, `Binauralizer`, `Orchestra`, `KeyboardListenerControl`
