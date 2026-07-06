@@ -86,4 +86,35 @@ TestOrchestra : UnitTest {
 		this.assert(soundObject2.stopped, "stop() wird auf jedem registrierten Objekt aufgerufen");
 		this.assertEquals(orchestra.soundObjects.size, 0, "Registry ist nach stop leer");
 	}
+
+	test_chooseResponderNeverReturnsCallerItself {
+		var listener = Listener.new;
+		var caller = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
+		var other1 = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
+		var other2 = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
+		var orchestra = Orchestra.new(listener);
+
+		orchestra.register(caller);
+		orchestra.register(other1);
+		orchestra.register(other2);
+
+		// mehrfach ziehen, um sicherzugehen, dass der Zufall nie caller trifft
+		20.do {
+			var responder = orchestra.chooseResponder(caller);
+			this.assert(responder != caller, "chooseResponder wählt nie den Aufrufer selbst");
+			this.assert([other1, other2].includes(responder),
+				"chooseResponder wählt aus den übrigen registrierten Objekten");
+		};
+	}
+
+	test_chooseResponderReturnsNilWhenOnlyCallerRegistered {
+		var listener = Listener.new;
+		var caller = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
+		var orchestra = Orchestra.new(listener);
+
+		orchestra.register(caller);
+
+		this.assertEquals(orchestra.chooseResponder(caller), nil,
+			"kein Rückruf möglich, wenn kein anderes Objekt registriert ist");
+	}
 }

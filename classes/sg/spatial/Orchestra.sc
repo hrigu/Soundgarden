@@ -64,4 +64,26 @@ Orchestra {
 		soundObjects.do { |soundObject| soundObject.stop };
 		soundObjects = [];
 	}
+
+	// wählt ein zufälliges anderes registriertes SoundObject (nie caller selbst) für
+	// Call-and-Response; nil, falls keine anderen registriert sind. Reine sclang-Logik,
+	// ohne Server-Bezug, daher separat von call() testbar (siehe tests/TestOrchestra.sc).
+	chooseResponder { |caller|
+		var others = soundObjects.reject { |soundObject| soundObject == caller };
+		^if(others.notEmpty) { others.choose } { nil };
+	}
+
+	// löst bei caller einen Zuruf aus (siehe Sound>>call) und lässt, falls ein anderes
+	// Objekt registriert ist, dieses nach kurzer, leicht zufälliger Verzögerung
+	// zurückrufen (Call-and-Response).
+	call { |caller|
+		var responder = this.chooseResponder(caller);
+		caller.call;
+		if(responder.notNil) {
+			Routine({
+				(0.3 + 0.4.rand).wait;
+				responder.call;
+			}).play;
+		};
+	}
 }
