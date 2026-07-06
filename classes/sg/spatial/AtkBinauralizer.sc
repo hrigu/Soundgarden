@@ -36,16 +36,23 @@ AtkBinauralizer {
 		ampRolloff = aAmpRolloff;
 	}
 
-	// legt die geteilte Encoder-Matrix und den HRTF-Decoder-Kernel an — MUSS vor addSynthDef
-	// abgeschlossen sein, da die SynthDef beide Objekte direkt referenziert (ihre
-	// Server-Buffernummern werden beim Definieren in den UGen-Graph eingebacken). Asynchron
-	// (der Kernel lädt HRTF-Daten als Server-Buffer) — etwas zeitlichen Abstand zu
-	// addSynthDef lassen, genau wie bei InsectSound/Binauralizer.
+	// legt die geteilte Encoder-Matrix und den HRTF-Decoder-Kernel an und registriert danach
+	// die SynthDef — ANDERS als bei InsectSound/Binauralizer reicht hier kein bloßer
+	// zeitlicher Abstand zwischen den Schritten: der Kernel lädt HRTF-Daten asynchron als
+	// Server-Buffer, und addSynthDef braucht dessen tatsächliche Buffergröße (Convolution2
+	// intern), nicht nur die Buffernummer. Ohne Sync schlägt addSynthDef mit
+	// "Convolution2 arg: 'framesize' has bad input: nil" fehl (Buffer-Info noch nicht da).
+	// server.sync (in einer Routine, da .sync nur innerhalb eines Threads yielden kann)
+	// wartet zuverlässig, bevor addSynthDef intern aufgerufen wird.
 	// subjectID: 21 = KEMAR-Kunstkopf (generische Messung, kein bestimmtes Individuum) —
 	// siehe FoaDecoderKernel-Hilfe für Alternativen zum Ausprobieren.
 	*setup { |server, subjectID = 21|
 		encoderMatrix = FoaEncoderMatrix.newOmni;
 		decoderKernel = FoaDecoderKernel.newCIPIC(subjectID, server);
+		Routine({
+			server.sync;
+			this.addSynthDef;
+		}).play;
 	}
 
 	// gibt den geteilten HRTF-Kernel frei (Server-Buffer) — einmal am Ende der Session,
@@ -54,8 +61,8 @@ AtkBinauralizer {
 		decoderKernel !? { decoderKernel.free };
 	}
 
-	// registriert die \atkBinauralizer-SynthDef beim Server. Setzt voraus, dass *setup
-	// bereits abgeschlossen ist (siehe oben).
+	// registriert die \atkBinauralizer-SynthDef beim Server. Wird von *setup selbst
+	// aufgerufen, sobald der Kernel geladen ist — nicht separat von außen aufrufen.
 	*addSynthDef {
 		var encoder = encoderMatrix;
 		var decoder = decoderKernel;

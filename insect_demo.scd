@@ -41,11 +41,11 @@ var fountainMoveRule, fountainSound, fountainBinauralizer, fountain;
 
 InsectSound.addSynthDef;
 Binauralizer.addSynthDef;
-// AtkBinauralizer.setup MUSS vor addSynthDef abgeschlossen sein (legt die geteilte
-// Encoder-Matrix/den HRTF-Decoder-Kernel an, die die SynthDef referenziert) — braucht
-// deshalb den bereits gebooteten Server (s), anders als die übrigen addSynthDef-Aufrufe hier.
+// AtkBinauralizer.setup lädt den HRTF-Kernel (asynchron) und registriert danach selbst die
+// SynthDef (siehe AtkBinauralizer>>*setup) — braucht deshalb den bereits gebooteten Server
+// (s). Etwas mehr zeitlichen Abstand zu Block 2 lassen als bei den übrigen addSynthDef-
+// Aufrufen hier: der Kernel lädt spürbar länger als eine normale SynthDef-Registrierung.
 AtkBinauralizer.setup(s);
-AtkBinauralizer.addSynthDef;
 
 // Ein gemeinsamer Listener (Position/Blickrichtung per Tastatur beweglich,
 // siehe Block 3) hört alle Soundobjekte. Jedes Soundobjekt braucht aber sein
@@ -88,8 +88,8 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 
 ~orchestra = Orchestra.new(~listener);
 ~orchestra.register(~insect1);
-~orchestra.register(~insect2);
-~orchestra.register(fountain);
+//~orchestra.register(~insect2);
+//~orchestra.register(fountain);
 )
 
 // --- 2) Abspielen ---
