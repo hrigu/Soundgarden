@@ -1,9 +1,10 @@
 // InsectSound — der reine Klang des Insekts (Flügelschlag + Brummen). Kennt
 // weder Position noch Pan/Lautstärke im Raum — das ist Aufgabe von
-// Binauralizer. Spielt auf einen privaten Mono-Bus statt direkt auf den
-// Hardware-Output. Klangparameter mit Defaults aus dem ursprünglichen
+// Binauralizer. Bus-/Synth-Lifecycle (privater Mono-Bus statt direkt auf den
+// Hardware-Output) kommt von Sound; hier nur die eigentliche Klangerzeugung
+// (makeSynth). Klangparameter mit Defaults aus dem ursprünglichen
 // \insectVoice-Prototyp (Intent 3), aber pro Instanz überschreibbar.
-InsectSound {
+InsectSound : Sound {
 	var <>wingRate;    // Flügelschlag-Rate in Hz (Puls-Gate für das Rauschen)
 	var <>wingDuty;    // Tastverhältnis des Flügelschlag-Gates, 0..1
 	var <>ringFreq1;   // erste Resonanzfrequenz des Brummens, in Hz
@@ -11,8 +12,6 @@ InsectSound {
 	var <>ringDecay1;  // Ausklingzeit der ersten Resonanz, in Sekunden
 	var <>ringDecay2;  // Ausklingzeit der zweiten Resonanz, in Sekunden
 	var <>amp;         // Grundlautstärke des Klangs selbst, unabhängig von Position
-	var <bus;          // privater Mono-Bus, auf den der Klang geschrieben wird
-	var <synth;        // laufender Synth, sobald play() aufgerufen wurde
 
 	// erzeugt eine Instanz mit den gegebenen (oder Default-)Klangparametern
 	*new { |wingRate = 210, wingDuty = 0.25, ringFreq1 = 3200, ringFreq2 = 4600,
@@ -52,14 +51,12 @@ InsectSound {
 		}).add;
 	}
 
-	// legt einen privaten Mono-Bus an und startet den Synth darauf.
-	// Setzt voraus, dass addSynthDef vorher (mit etwas zeitlichem Abstand)
-	// aufgerufen wurde — SynthDef-Registrierung (/d_recv) ist asynchron und
-	// würde sonst mit dem /s_new dieses Aufrufs um die Wette laufen.
-	play { |server|
-		bus = Bus.audio(server, 1); // 1: Anzahl Kanäle (hier Mono). Die Busnummer wird vom AudiobusAllocator vergeben
-		                            // jede Instanz bekommt eine neue Bus instanz
-		synth = Synth(\insectSound, [
+	// erzeugt den Synth auf dem von Sound angelegten Bus. Setzt voraus, dass
+	// addSynthDef vorher (mit etwas zeitlichem Abstand) aufgerufen wurde —
+	// SynthDef-Registrierung (/d_recv) ist asynchron und würde sonst mit dem
+	// /s_new dieses Aufrufs um die Wette laufen.
+	makeSynth { |server, bus|
+		^Synth(\insectSound, [
 			\out, bus.index,
 			\wingRate, wingRate,
 			\wingDuty, wingDuty,
@@ -69,13 +66,5 @@ InsectSound {
 			\ringDecay2, ringDecay2,
 			\amp, amp
 		], server);
-		^this
-	}
-
-	// gibt Synth und Bus wieder frei — InsectSound besitzt den Bus, ist also
-	// auch fürs Aufräumen zuständig
-	stop {
-		synth.free;
-		bus.free;
 	}
 }
