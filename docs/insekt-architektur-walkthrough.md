@@ -3,7 +3,7 @@
 Notizen aus einem gemeinsamen, interaktiven Code-Review nach Intent 9
 (`.intents/completed/9.enhancement_spatial-audio_insekt-architektur-aufteilen.md`).
 Reihenfolge folgt dem tatsächlichen Datenfluss: `insect_demo.scd` → `MoveRule`/
-`CircularMoveRule` → `Movable` → `InsectSound` → `Binauralizer` → `SoundInsect`
+`CircularMoveRule` → `Movable` → `InsectSound` → `Binauralizer` → `SoundObject`
 (Orchestrator).
 
 ## insect_demo.scd — Übersicht
@@ -29,12 +29,12 @@ instanzieren einen Synth davon" echte Zeit vergeht.
 ~listener = Listener.new;
 ~insectSound = InsectSound.new;
 ~binauralizer = Binauralizer.new;
-~insect = SoundInsect.new(~movable, ~listener, ~insectSound, ~binauralizer);
+~insect = SoundObject.new(~movable, ~listener, ~insectSound, ~binauralizer);
 ```
 
 Vier unabhängige Objekte für vier Verantwortlichkeiten: **wo** (Movable +
 seine Regel), **wie es hört** (Listener), **wie es klingt** (InsectSound),
-**wie es räumlich geformt wird** (Binauralizer). `SoundInsect` bekommt alle
+**wie es räumlich geformt wird** (Binauralizer). `SoundObject` bekommt alle
 vier injiziert — er erzeugt sie nicht selbst (außer als Default), er
 verdrahtet sie nur.
 
@@ -45,7 +45,7 @@ verdrahtet sie nur.
 ```
 
 Ein Aufruf startet die ganze Kette (Bus-Verkabelung, Node-Reihenfolge, die
-tickende Routine) — Details dazu bei `SoundInsect`.
+tickende Routine) — Details dazu bei `SoundObject`.
 
 ## Fragen & Antworten
 
@@ -72,7 +72,7 @@ Environment-Variable, sondern eine der 26 reservierten
 Interpreter-Variablen (`a`–`z`) — anderer Mechanismus, aber gleicher Zweck:
 über Blöcke hinweg persistent, im Gegensatz zu `var`.
 
-Innerhalb der Klassen selbst (`Movable`, `SoundInsect`, ...) stehen dagegen
+Innerhalb der Klassen selbst (`Movable`, `SoundObject`, ...) stehen dagegen
 echte Instanzvariablen (`var <>pos` etc.) — kein Environment-Bezug.
 
 ## MoveRule — die Basisklasse
@@ -214,7 +214,7 @@ Gleiches Muster wie bei `CircularMoveRule`: `*new` mit Defaults, `init` setzt
 die Instanzvars. `var <bus` und `var <synth` haben nur `<` (Getter, kein
 Setter) — von außen soll niemand einfach `insectSound.bus = irgendwas`
 setzen, das ist internes, vom Objekt selbst verwaltetes Zeug. Nur *lesbar*,
-weil `SoundInsect` gleich `insectSound.bus`/`insectSound.synth` braucht, um
+weil `SoundObject` gleich `insectSound.bus`/`insectSound.synth` braucht, um
 den `Binauralizer` zu verkabeln.
 
 **Die SynthDef (`*addSynthDef`):**
@@ -280,7 +280,7 @@ Konstruktor-Parameter, jeder einer Formel unten zugeordnet:
 Die SynthDef, Formel für Formel:
 
 - `az/dist = Lag.kr(azimuth/distance, lagTime)` — glättet die 30x/Sekunde von
-  `SoundInsect` reingeschobenen Werte exponentiell (Zeitkonstante `lagTime`,
+  `SoundObject` reingeschobenen Werte exponentiell (Zeitkonstante `lagTime`,
   80ms), sonst gäbe es stufige Sprünge.
 - `pan = sin(az)` — `az` kommt von `Listener.relativeAzimuth` (0 = vorne,
   positiv = rechts, ±π = hinten). `sin(az)` mappt auf den `Pan2`-Bereich
@@ -330,7 +330,7 @@ stop {
 `target ? server` ist SuperCollider-Kurzform für "nimm `target`, falls nicht
 `nil`, sonst `server`" — Fallback, falls niemand einen Ziel-Node für die
 Node-Reihenfolge angibt. `set` ist die schlanke Schnittstelle, die
-`SoundInsect` jeden Tick aufruft. `stop` gibt **nur den Synth** frei, keinen
+`SoundObject` jeden Tick aufruft. `stop` gibt **nur den Synth** frei, keinen
 Bus — `Binauralizer` besitzt den Bus nicht, er liest nur davon; wer eine
 Ressource anlegt (`InsectSound`), ist auch fürs Aufräumen zuständig.
 

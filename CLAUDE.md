@@ -13,7 +13,7 @@ Soundgarden ist ein SuperCollider-Spielplatz mit aktuell zwei Arbeitssträngen:
    Tracks live umformen (Filter, Echo, Bitcrush, Stutter, Reverb) während einer
    Fusion-Tanzparty, über JITLib (`Ndef`), rein per Tastatur (kein MIDI-Controller).
 2. **Spatial-Audio-Prototyp** (`classes/Movable.sc`, `classes/Listener.sc`,
-   `classes/SoundInsect.sc`, `insect_demo.scd`) — ein virtuelles Klangobjekt ("Insekt"), das
+   `classes/SoundObject.sc`, `insect_demo.scd`) — ein virtuelles Klangobjekt ("Insekt"), das
    sich nach einer Bewegungsregel durch einen definierten Raum bewegt und dem Hörer über
    Kopfhörer binaural zugespielt wird.
 
@@ -34,7 +34,7 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 
 - sclang + scsynth (Client/Server), JITLib (`Ndef`) fürs klickfreie Live-Editing laufender Synths.
 - `classes/` enthält Produktiv-Klassen (`BootTrackDetection`, `Movable`, `Listener`,
-  `SoundInsect`), `tests/` die zugehörigen `UnitTest`-Klassen (`TestBootTrackDetection`) — beide
+  `SoundObject`), `tests/` die zugehörigen `UnitTest`-Klassen (`TestBootTrackDetection`) — beide
   projekt-lokal eingebunden via `LanguageConfig.addIncludePath` + `thisProcess.recompile` in
   `load_classes.scd` (kein globaler Extensions-Ordner).
 - `sc3-plugins` ist bewusst (noch) nicht installiert — wo möglich mit Core-UGens gearbeitet

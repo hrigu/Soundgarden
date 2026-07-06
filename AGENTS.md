@@ -34,7 +34,7 @@ offensichtliche Korrekturen).
 - Domains in diesem Projekt (bei Bedarf erweiterbar):
   - `Live-Set` — `boot.scd`/`fx.scd`/`set_template.scd`, der DJ-Live-Coding-Workflow.
   - `Boot-Tracks` — Track-Erkennung/-Loading-Logik.
-  - `Spatial-Audio` — `Movable`/`Listener`/`SoundInsect`, binaurale Klangobjekte.
+  - `Spatial-Audio` — `Movable`/`Listener`/`SoundObject`, binaurale Klangobjekte.
 - Pflicht-Abschnitte:
   - **1. Why** — Objective, Context, optional Depends On/Related To Intents.
   - **2.0 What** — Gherkin-Szenarien (bei Feature/Enhancement/Bug/Test) oder eine kurze

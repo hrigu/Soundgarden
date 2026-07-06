@@ -34,7 +34,7 @@ Klicks oder Unterbrechungen.
 ## classes/, tests/ und load_classes.scd
 
 Eigene Produktiv-Klassen (`BootTrackDetection`, `Movable`, `Listener`,
-`SoundInsect`, ...) liegen in `classes/`, die zugehörigen Test-Klassen
+`SoundObject`, ...) liegen in `classes/`, die zugehörigen Test-Klassen
 (`UnitTest`-Subklassen wie `TestBootTrackDetection`) getrennt davon in
 `tests/`. Damit SuperCollider beide kennt, einmal pro Sitzung **als
 allererstes** (vor `boot.scd`!) **`load_classes.scd`** ausführen und im
@@ -63,7 +63,7 @@ Objektmodell:
   verändert; steuert sanft zurück, falls sie eine Raumkugel verlässt.
 - **`Listener`** — Position und Blickrichtung aktuell fix; berechnet aus
   einer Weltposition Azimuth (relativ zur eigenen Blickrichtung) und Distanz.
-- **`SoundInsect`** — verbindet ein `Movable` mit einem klingenden Synth;
+- **`SoundObject`** — verbindet ein `Movable` mit einem klingenden Synth;
   ein `Routine` tickt die Bewegung und schiebt Azimuth/Distanz live in den
   Synth (Pan, winzige Laufzeitdifferenz zwischen den Ohren, entfernungs-
   abhängiger Pegel/Tiefpass).
