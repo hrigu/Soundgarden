@@ -63,10 +63,14 @@ Objektmodell:
   verändert; steuert sanft zurück, falls sie eine Raumkugel verlässt.
 - **`Listener`** — Position und Blickrichtung aktuell fix; berechnet aus
   einer Weltposition Azimuth (relativ zur eigenen Blickrichtung) und Distanz.
-- **`SoundObject`** — verbindet ein `Movable` mit einem klingenden Synth;
-  ein `Routine` tickt die Bewegung und schiebt Azimuth/Distanz live in den
-  Synth (Pan, winzige Laufzeitdifferenz zwischen den Ohren, entfernungs-
-  abhängiger Pegel/Tiefpass).
+- **`SoundObject`** — verbindet ein `Movable` mit einem klingenden Synth
+  (`Sound`-Subklasse) und einem `Binauralizer`; kennt den `Listener` selbst
+  nicht. Startet nur den Synth, tickt aber nicht selbst.
+- **`Orchestra`** — hält den `Listener` und eine Registry registrierter
+  `SoundObject`s; tickt sie über eine einzige gemeinsame Routine (Bewegung +
+  Azimuth/Distanz statt Pan, winzige Laufzeitdifferenz zwischen den Ohren,
+  entfernungsabhängiger Pegel/Tiefpass pro Objekt). Ein `stop`-Aufruf beendet
+  das Ticken und stoppt alle registrierten SoundObjects.
 
 Ausführen: `load_classes.scd` → `boot.scd` → `insect_demo.scd` (Block für
 Block), mit Kopfhörern.

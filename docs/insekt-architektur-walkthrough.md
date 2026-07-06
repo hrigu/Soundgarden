@@ -3,8 +3,10 @@
 Notizen aus einem gemeinsamen, interaktiven Code-Review nach Intent 9
 (`.intents/completed/9.enhancement_spatial-audio_insekt-architektur-aufteilen.md`).
 Reihenfolge folgt dem tatsächlichen Datenfluss: `insect_demo.scd` → `MoveRule`/
-`CircularMoveRule` → `Movable` → `InsectSound` → `Binauralizer` → `SoundObject`
-(Orchestrator).
+`CircularMoveRule` → `Movable` → `InsectSound` → `Binauralizer` → `SoundObject` →
+`Orchestra` (zentraler Taktgeber, seit Intent 12 — tickt beliebig viele registrierte
+`SoundObject`s über eine gemeinsame Routine statt je einer eigenen, und hält dafür den
+`Listener`, den `SoundObject` selbst nicht mehr kennt).
 
 ## insect_demo.scd — Übersicht
 
@@ -29,23 +31,32 @@ instanzieren einen Synth davon" echte Zeit vergeht.
 ~listener = Listener.new;
 ~insectSound = InsectSound.new;
 ~binauralizer = Binauralizer.new;
-~insect = SoundObject.new(~movable, ~listener, ~insectSound, ~binauralizer);
+~insect = SoundObject.new(~movable, ~insectSound, ~binauralizer);
+
+~orchestra = Orchestra.new(~listener);
+~orchestra.register(~insect);
 ```
 
 Vier unabhängige Objekte für vier Verantwortlichkeiten: **wo** (Movable +
 seine Regel), **wie es hört** (Listener), **wie es klingt** (InsectSound),
-**wie es räumlich geformt wird** (Binauralizer). `SoundObject` bekommt alle
-vier injiziert — er erzeugt sie nicht selbst (außer als Default), er
-verdrahtet sie nur.
+**wie es räumlich geformt wird** (Binauralizer). Seit Intent 12 bekommt
+`SoundObject` aber nur noch drei davon injiziert — Movable, InsectSound,
+Binauralizer — und erzeugt sie nicht selbst (außer als Default), sondern
+verdrahtet sie nur. Den `Listener` kennt es nicht mehr; den hält stattdessen
+`Orchestra`, bei der sich `SoundObject` per `register` anmeldet.
 
 **Block 3 — Abspielen**
 
 ```supercollider
 ~insect.play(s);
+~orchestra.play;
 ```
 
-Ein Aufruf startet die ganze Kette (Bus-Verkabelung, Node-Reihenfolge, die
-tickende Routine) — Details dazu bei `SoundObject`.
+`~insect.play(s)` startet nur die Kette aus Sound- und Binauralizer-Synth
+(Bus-Verkabelung, Node-Reihenfolge) — Details dazu bei `SoundObject`.
+`~orchestra.play` startet die tickende Routine, die für jedes registrierte
+SoundObject Bewegung und Azimuth/Distanz zum `Listener` berechnet — Details
+dazu bei `Orchestra`.
 
 ## Fragen & Antworten
 
@@ -333,6 +344,63 @@ Node-Reihenfolge angibt. `set` ist die schlanke Schnittstelle, die
 `SoundObject` jeden Tick aufruft. `stop` gibt **nur den Synth** frei, keinen
 Bus — `Binauralizer` besitzt den Bus nicht, er liest nur davon; wer eine
 Ressource anlegt (`InsectSound`), ist auch fürs Aufräumen zuständig.
+
+## Orchestra — zentraler Taktgeber (seit Intent 12)
+
+Vor Intent 12 hatte jedes `SoundObject` seine eigene `Routine`, kannte den `Listener` direkt und
+schob Azimuth/Distanz selbst in seinen `Binauralizer`. Bei mehreren Klangobjekten hiess das: so
+viele unabhängige Routinen wie Objekte, jede mit eigenem Timing — und jedes `SoundObject` musste
+den `Listener` kennen, obwohl das eigentlich reine Geometrie ist, die nichts mit dem Klangobjekt
+selbst zu tun hat.
+
+```supercollider
+Orchestra {
+	var <listener;
+	var <soundObjects;
+	var routine;
+
+	register { |soundObject|
+		soundObjects = soundObjects.add(soundObject);
+	}
+
+	tick { |dt|
+		soundObjects.do { |soundObject|
+			var az, dist;
+			soundObject.step(dt);
+			az = listener.relativeAzimuth(soundObject.pos);
+			dist = listener.distanceTo(soundObject.pos);
+			soundObject.updateSpatial(az, dist);
+		};
+	}
+
+	play { |updateRate = 30|
+		var dt = 1.0 / updateRate;
+		routine = Routine({ loop { this.tick(dt); dt.wait } }).play;
+		^this
+	}
+
+	stop {
+		routine !? { routine.stop };
+		soundObjects.do { |soundObject| soundObject.stop };
+		soundObjects = [];
+	}
+}
+```
+
+`Orchestra` hält jetzt den einen `Listener` und eine Registry beliebig vieler `SoundObject`s.
+`play` startet eine **einzige** Routine statt einer pro Objekt; `tick` ist bewusst als eigene
+Methode ausgelagert (statt inline in der Routine), weil sie dadurch ganz ohne laufende Routine
+und ohne Server direkt per `UnitTest` testbar ist (`tests/TestOrchestra.sc`, mit Fake-Objekten,
+die nur `pos`/`step`/`updateSpatial` beantworten müssen).
+
+`SoundObject` selbst schrumpft dadurch auf drei schlanke Methoden, die `Orchestra` pro Tick
+aufruft: `pos` (liest `movable.pos`), `step(dt)` (delegiert an `movable.step(dt)`) und
+`updateSpatial(azimuth, distance)` (delegiert an `binauralizer.set(azimuth, distance)`) — den
+`Listener` braucht es dafür an keiner Stelle mehr.
+
+`stop` räumt konsequent zu Ende auf: Routine stoppen, `stop` auf jedem registrierten
+`SoundObject` aufrufen (das gibt wiederum dessen Synth/Bus frei), Registry leeren. Ein einziger
+Aufruf (`orchestra.stop`) ersetzt damit das bisherige Stoppen jedes Insekts einzeln.
 
 ## Frage: Warum liegen die Defaults in InsectSound/Binauralizer doppelt vor?
 
