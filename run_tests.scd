@@ -9,3 +9,4 @@ TestOrchestra.run;
 TestSteadyMoveRule.run;
 TestMovable.run;
 TestListener.run;
+TestRoom.run;
