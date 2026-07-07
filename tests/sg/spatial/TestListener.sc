@@ -1,5 +1,25 @@
+// Test-Double für Listener>>makeBinauralizer: zeichnet nur die übergebenen Konstruktor-
+// Argumente auf, ohne echten Binauralizer (SynthDef/Server) zu brauchen.
+FakeBinauralizerForListenerTest {
+	var <reverbMix;
+
+	*new { |reverbMix = 0.3| ^super.new.init(reverbMix) }
+
+	init { |aReverbMix| reverbMix = aReverbMix }
+}
+
 // Test für die Bewegungsmethoden von Listener. Ausführen über run_tests.scd.
 TestListener : UnitTest {
+
+	test_makeBinauralizerUsesConfiguredClass {
+		var listener = Listener.new(#[0, 0, 0], 0, FakeBinauralizerForListenerTest);
+		var binauralizer = listener.makeBinauralizer(0.7);
+
+		this.assert(binauralizer.isKindOf(FakeBinauralizerForListenerTest),
+			"makeBinauralizer erzeugt eine Instanz der konfigurierten binauralizerClass");
+		this.assertEquals(binauralizer.reverbMix, 0.7,
+			"reverbMix wird an den Konstruktor der binauralizerClass weitergereicht");
+	}
 
 	test_moveForwardAtFacingZeroMovesAlongY {
 		var listener = Listener.new(#[0, 0, 0], 0);
