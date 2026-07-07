@@ -1,5 +1,9 @@
 // Test-Doubles für Room: zeichnen nur Aufrufreihenfolge/-argumente auf, ohne echten Server/
-// Bus zu brauchen — analog zu FakeSoundObjectForOrchestraTest (TestOrchestra.sc).
+// Bus zu brauchen — analog zu FakeSoundObjectForOrchestraTest (TestOrchestra.sc). log ist ein
+// List statt eines rohen Array: Array>>add mutiert nur in-place, solange genug Kapazität
+// übrig ist, und reallokiert sonst still (Rückgabewert verworfen, da wir ihn hier nicht
+// auffangen) — bei mehreren Aufrufen über zwei Fake-Instanzen hinweg blieb dadurch nur der
+// erste Log-Eintrag erhalten. List>>add mutiert dagegen immer dasselbe Objekt, egal wie oft.
 FakeOrchestraForRoomTest {
 	var <log;
 
@@ -37,44 +41,44 @@ FakeReverbForRoomTest {
 TestRoom : UnitTest {
 
 	test_playStartsOrchestraBeforeReverb {
-		var log = [];
+		var log = List.new;
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
 
 		room.play;
 
-		this.assertEquals(log, [\orchestraPlay, \reverbPlay],
+		this.assertEquals(log.asArray, [\orchestraPlay, \reverbPlay],
 			"orchestra.play muss vor reverb.play laufen (RoomReverb braucht addToTail)");
 	}
 
 	test_stopStopsBoth {
-		var log = [];
+		var log = List.new;
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
 
 		room.stop;
 
-		this.assertEquals(log, [\orchestraStop, \reverbStop]);
+		this.assertEquals(log.asArray, [\orchestraStop, \reverbStop]);
 	}
 
 	test_registerDelegatesToOrchestra {
-		var log = [];
+		var log = List.new;
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
 
 		room.register(\someSoundObject);
 
-		this.assertEquals(log, [\someSoundObject]);
+		this.assertEquals(log.asArray, [\someSoundObject]);
 	}
 
 	test_callDelegatesToOrchestra {
-		var log = [];
+		var log = List.new;
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
 
 		room.call(\someCaller);
 
-		this.assertEquals(log, [\someCaller]);
+		this.assertEquals(log.asArray, [\someCaller]);
 	}
 
 	test_sizeChangeUpdatesReverbLive {
-		var log = [];
+		var log = List.new;
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
 
 		room.size = 12;
@@ -83,7 +87,7 @@ TestRoom : UnitTest {
 	}
 
 	test_heightChangeUpdatesReverbLive {
-		var log = [];
+		var log = List.new;
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
 
 		room.height = 6;
@@ -92,7 +96,7 @@ TestRoom : UnitTest {
 	}
 
 	test_surfaceChangeUpdatesReverbLive {
-		var log = [];
+		var log = List.new;
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
 
 		room.surface = 0.9;
@@ -101,7 +105,7 @@ TestRoom : UnitTest {
 	}
 
 	test_mixChangeUpdatesReverbLive {
-		var log = [];
+		var log = List.new;
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
 
 		room.mix = 0.7;
@@ -112,27 +116,27 @@ TestRoom : UnitTest {
 	// reverbParams-Mapping — reine sclang-Logik, direkt testbar ohne Server (wie
 	// TestCircularMoveRule/TestMovable).
 	test_reverbParamsUsesSizeDirectlyAsRoomSize {
-		var room = Room.forTest(FakeOrchestraForRoomTest.new([]), FakeReverbForRoomTest.new([]),
-			size: 12);
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new), size: 12);
 
 		this.assertEquals(room.reverbParams[0], 12);
 	}
 
 	test_reverbParamsSmootherSurfaceMeansLessDamping {
-		var rough = Room.forTest(FakeOrchestraForRoomTest.new([]), FakeReverbForRoomTest.new([]),
-			surface: 0);
-		var smooth = Room.forTest(FakeOrchestraForRoomTest.new([]), FakeReverbForRoomTest.new([]),
-			surface: 1);
+		var rough = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new), surface: 0);
+		var smooth = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new), surface: 1);
 
 		this.assert(smooth.reverbParams[2] < rough.reverbParams[2],
 			"glattere Oberfläche dämpft weniger (kleinerer damping-Wert)");
 	}
 
 	test_reverbParamsLargerVolumeMeansLongerRevTime {
-		var small = Room.forTest(FakeOrchestraForRoomTest.new([]), FakeReverbForRoomTest.new([]),
-			size: 4, height: 2);
-		var big = Room.forTest(FakeOrchestraForRoomTest.new([]), FakeReverbForRoomTest.new([]),
-			size: 20, height: 10);
+		var small = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new), size: 4, height: 2);
+		var big = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new), size: 20, height: 10);
 
 		this.assert(big.reverbParams[1] > small.reverbParams[1],
 			"größeres Raumvolumen führt zu längerer Nachhallzeit");
