@@ -4,6 +4,7 @@
 FakeSoundObjectForOrchestraTest {
 	var <pos;
 	var <playedServer;
+	var <playCount;
 	var <steppedDt;
 	var <lastAzimuth;
 	var <lastDistance;
@@ -16,10 +17,12 @@ FakeSoundObjectForOrchestraTest {
 	init { |aPos|
 		pos = aPos;
 		stopped = false;
+		playCount = 0;
 	}
 
 	play { |server|
 		playedServer = server;
+		playCount = playCount + 1;
 	}
 
 	step { |dt|
@@ -72,7 +75,7 @@ TestOrchestra : UnitTest {
 		orchestra.stop;
 	}
 
-	test_stopStopsAllRegisteredSoundObjectsAndClearsRegistry {
+	test_stopStopsAllRegisteredSoundObjectsButKeepsRegistry {
 		var listener = Listener.new;
 		var soundObject1 = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
 		var soundObject2 = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
@@ -84,7 +87,24 @@ TestOrchestra : UnitTest {
 
 		this.assert(soundObject1.stopped, "stop() wird auf jedem registrierten Objekt aufgerufen");
 		this.assert(soundObject2.stopped, "stop() wird auf jedem registrierten Objekt aufgerufen");
-		this.assertEquals(orchestra.soundObjects.size, 0, "Registry ist nach stop leer");
+		this.assertEquals(orchestra.soundObjects.size, 2,
+			"Registry bleibt nach stop erhalten — play soll danach wieder möglich sein");
+	}
+
+	test_playAfterStopStartsSoundObjectsAgain {
+		var listener = Listener.new;
+		var soundObject = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
+		var orchestra = Orchestra.new(listener);
+
+		orchestra.register(soundObject);
+		orchestra.play(\fakeServer);
+		orchestra.stop;
+		orchestra.play(\fakeServer);
+
+		this.assertEquals(soundObject.playCount, 2,
+			"play nach stop startet die registrierten Objekte erneut");
+
+		orchestra.stop;
 	}
 
 	test_chooseResponderNeverReturnsCallerItself {
