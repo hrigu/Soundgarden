@@ -1,12 +1,12 @@
-// sample_demo.scd — Prototyp: mehrere Klangobjekte, gleichmässig auf einem Kreis um den
+// sample.scd — Prototyp: mehrere Klangobjekte, gleichmässig auf einem Kreis um den
 // Hörer verteilt, spielen je ein Audiosample in festem Rhythmus. Eigenständiges Experiment
-// (Intent 20) — unabhängig von insect_demo.scd, nutzt aber dieselbe Spatial-Audio-
+// (Intent 20) — unabhängig von insects.scd, nutzt aber dieselbe Spatial-Audio-
 // Infrastruktur (Listener/Orchestra/SoundObject/Movable/Binauralizer).
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) load_classes.scd — bindet SampleSound/SteadyMoveRule/AtkBinauralizer/RoomReverb/
+//   1) boot/load_classes.scd — bindet SampleSound/SteadyMoveRule/AtkBinauralizer/RoomReverb/
 //                          SoundObject/Orchestra/SpaceView in den Klassenpfad ein
-//   2) boot.scd        — Server muss laufen
+//   2) boot/boot.scd   — Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
 //
@@ -39,7 +39,7 @@ AtkBinauralizer.setup(s, reverbBus: ~roomReverb.bus);
 // gültige Audiodateien aus sounds/ — rekursiv (filesDo statt entries.select), da die
 // Samples in Unterordnern liegen (z.B. sounds/apple/, sounds/compmusic/); keine feste
 // Dateiliste, damit das Demo mit den lokal vorhandenen Samples läuft.
-soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ "sounds");
+soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ ".." +/+ "sounds");
 sampleFiles = [];
 soundsDir.filesDo({ |pe|
 	if(BootTrackDetection.isValidExtension(pe.extension)) { sampleFiles = sampleFiles.add(pe) };

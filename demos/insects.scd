@@ -1,12 +1,12 @@
-// insect_demo.scd — Prototyp: zwei binaurale "Insekten" kreisen um den Hörer, dazu ein
+// insects.scd — Prototyp: zwei binaurale "Insekten" kreisen um den Hörer, dazu ein
 // stationäres ("steady") Soundobjekt, dessen Position live per Code verändert werden kann,
 // und ein per Tastatur beweglicher Listener.
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) load_classes.scd — bindet Movable/Listener/CircularMoveRule/SteadyMoveRule/InsectSound/
+//   1) boot/load_classes.scd — bindet Movable/Listener/CircularMoveRule/SteadyMoveRule/InsectSound/
 //                          Binauralizer/AtkBinauralizer/RoomReverb/SoundObject/Orchestra/
 //                          KeyboardListenerControl/SpaceView in den Klassenpfad ein
-//   2) boot.scd        — Server muss laufen
+//   2) boot/boot.scd   — Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
 //

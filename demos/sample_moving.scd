@@ -1,13 +1,13 @@
-// sample_demo_moving.scd — Variante von sample_demo.scd (Intent 20): dieselben rhythmischen
+// sample_moving.scd — Variante von sample.scd (Intent 20): dieselben rhythmischen
 // Sample-Objekte, aber statt fest auf dem Kreis zu stehen, bewegen sie sich auf einer
 // gemeinsamen Kreisbahn um den Hörer — gleicher Radius, gleiche Drehrichtung, aber
 // unterschiedliches Tempo pro Objekt. Nutzt nur Samples aus sounds/compmusic/ (nicht
 // sounds/apple/, siehe Intent 21).
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) load_classes.scd — bindet SampleSound/CircularMoveRule/AtkBinauralizer/RoomReverb/
+//   1) boot/load_classes.scd — bindet SampleSound/CircularMoveRule/AtkBinauralizer/RoomReverb/
 //                          SoundObject/Orchestra/SpaceView in den Klassenpfad ein
-//   2) boot.scd        — Server muss laufen
+//   2) boot/boot.scd   — Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
 //
@@ -40,7 +40,7 @@ AtkBinauralizer.setup(s, reverbBus: ~roomReverb.bus);
 ~orchestra = Orchestra.new(~listener);
 
 // nur sounds/compmusic/ (nicht der ganze sounds/-Baum — auf Wunsch, apple/ bleibt aussen vor).
-soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ "sounds" +/+ "compmusic");
+soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ ".." +/+ "sounds" +/+ "compmusic");
 sampleFiles = [];
 soundsDir.filesDo({ |pe|
 	if(BootTrackDetection.isValidExtension(pe.extension)) { sampleFiles = sampleFiles.add(pe) };
@@ -59,7 +59,7 @@ maxSpeed = 0.3;  // rad/s — schnellstes Objekt: eine Umdrehung in ca. 21s
 	var angularSpeed = minSpeed + (((n - 1).max(1).reciprocal * i) * (maxSpeed - minSpeed));
 	var startPos = [radius * sin(startAngle), radius * cos(startAngle), 0];
 	var moveRule = CircularMoveRule.new(radius, 0, 0, angularSpeed, startAngle);
-	var movable = Movable.new(startPos, moveRule, radius + 2); // Marge, s. sample_demo.scd
+	var movable = Movable.new(startPos, moveRule, radius + 2); // Marge, s. sample.scd
 	var phase = i / n;
 	var sound = SampleSound.new(pe.fullPath, rate, phase);
 	var soundObject = SoundObject.new(movable, sound, AtkBinauralizer.new);
