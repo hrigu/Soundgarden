@@ -21,7 +21,9 @@ SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
 
 ~room = Room.new(s);
-~room.addSynthDef(Binauralizer);
+//~room.addSynthDef(Binauralizer);
+~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+
 
 // gültige Audiodateien aus sounds/ — rekursiv (filesDo statt entries.select), wie in
 // sample.scd; nimmt einfach die erste gefundene Datei als Testklang.
@@ -53,15 +55,15 @@ sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in B
 // startet Orchestra vor RoomReverb in der richtigen Reihenfolge (siehe Room>>play).
 ~room.play;
 
+// Zeigt Listener (Position + Blickrichtung) und die Klangquelle von oben betrachtet.
+~spaceView = SpaceView.new(~room.orchestra);
+~spaceView.play;
+
 // --- 3) Tastatursteuerung + Raum-Draufsicht ---
 // W/S vor/zurück, A/D seitlich, Q/E drehen — verändert Azimuth/Distanz zur Klangquelle live,
 // hörbar an Pan/ITD und am Direkt/Hall-Verhältnis (weiter weg = mehr Hall-Anteil).
 ~listenerControl = KeyboardListenerControl.new(~room.listener);
 ~listenerControl.play;
-
-// Zeigt Listener (Position + Blickrichtung) und die Klangquelle von oben betrachtet.
-~spaceView = SpaceView.new(~room.orchestra);
-~spaceView.play;
 
 // --- 4) Live-Coding: Quelle umplatzieren (Alternative zum Herumlaufen) ---
 ~testObject.movable.moveTo([-2, 4, 0]);
@@ -69,10 +71,10 @@ sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in B
 // --- 5) Live-Tuning: Raumeigenschaften ---
 // size/height/surface/mix per Zuweisung ändern — Room leitet daraus die Hall-Parameter ab
 // und schreibt sie sofort auf den laufenden Reverb-Synth (siehe Room>>reverbParams).
-~room.size = 12;
+~room.size = 6;
 ~room.height = 6;
-~room.surface = 0.8; // 0 = rau/absorbierend, 1 = glatt/hart
-~room.mix = 1;
+~room.surface = 1; // 0 = rau/absorbierend, 1 = glatt/hart
+~room.mix = 0;
 ~testObject.binauralizer.synth.set(\reverbMix, 0.8);
 
 // --- 6) Stoppen ---
