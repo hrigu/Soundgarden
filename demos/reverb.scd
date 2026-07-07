@@ -19,6 +19,7 @@ var soundsDir, sampleFiles, sampleFile, pos, movable, sound;
 
 SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
+
 ~room = Room.new(s);
 ~room.addSynthDef(Binauralizer);
 
@@ -30,6 +31,7 @@ soundsDir.filesDo({ |pe|
 	if(BootTrackDetection.isValidExtension(pe.extension)) { sampleFiles = sampleFiles.add(pe) };
 });
 sampleFile = sampleFiles.first;
+
 
 pos = [0, 3, 0]; // 3m direkt vor dem Listener (facing=0 zeigt entlang +y, siehe Listener)
 movable = Movable.new(pos, SteadyMoveRule.new, 5); // roomRadius ohne Wirkung, da

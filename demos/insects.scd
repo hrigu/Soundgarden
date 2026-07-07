@@ -30,7 +30,9 @@
 // anderen Anweisung (SuperCollider-Syntaxregel) — deshalb hier gesammelt,
 // auch wenn sie erst weiter unten mit Werten befüllt werden.
 var moveRule1, movable1, insectSound1;
-var moveRule2, fountainMoveRule;
+var moveRule2, movable2, insectSound2;
+var fountainMoveRule, fountainMovable, fountainSound;
+
 // ~insect1 als Environment-Variable statt var: Block 3b (Call-and-Response) braucht eine
 // Referenz darauf über den Block hinaus. ~movable2/~insectSound2/~fountainMovable/
 // ~fountainSound ebenso — Block 2b/später live nachträglich registrierbar (siehe unten).
@@ -63,8 +65,9 @@ insectSound1 = InsectSound.new;
 // (negatives angularSpeed); heller/schneller Klang (höhere Flügelschlag- und
 // Resonanzfrequenzen, kürzeres Ausklingen) statt Standard-Brummen.
 moveRule2 = CircularMoveRule.new(3.0, 1.0, 0.15, -1.0);
-~movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
-~insectSound2 = InsectSound.new(280, 0.2, 5200, 7000, 0.015, 0.01, 0.3);
+movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
+insectSound2 = InsectSound.new(wingRate: 280, wingDuty: 0.2, ringFreq1: 5200, ringFreq2: 7000,
+	ringDecay1: 0.015, ringDecay2: 0.01, amp: 0.3);
 
 ~insect1 = ~room.register(movable1, insectSound1);
 
@@ -73,11 +76,28 @@ moveRule2 = CircularMoveRule.new(3.0, 1.0, 0.15, -1.0);
 // Unterscheidung von den Insekten. Position per Live-Coding änderbar, siehe
 // Block 2b weiter unten (~fountainMovable.moveTo(...)).
 fountainMoveRule = SteadyMoveRule.new;
-~fountainMovable = Movable.new([2, 1, 0], fountainMoveRule, 5);
-~fountainSound = InsectSound.new(60, 0.6, 800, 1400, 0.08, 0.06, 0.25);
+fountainMovable = Movable.new([2, 1, 0], fountainMoveRule, 5);
+fountainSound = InsectSound.new(wingRate: 60, wingDuty: 0.6, ringFreq1: 800, ringFreq2: 1400,
+	ringDecay1: 0.08, ringDecay2: 0.06, amp: 0.05);
 
-//~insect2 = ~room.register(~movable2, ~insectSound2);
-//~fountain = ~room.register(~fountainMovable, ~fountainSound);
+~insect2 = ~room.register(movable2, insectSound2);
+~fountain = ~room.register(fountainMovable, fountainSound);
+)
+(
+// --- 3) Tastatursteuerung für den Listener starten ---
+// Bewusst separat und erst NACH Block 2 ausführen (Orchester muss schon spielen).
+// Öffnet ein kleines Fenster, das während der Steuerung fokussiert sein muss
+// (SuperCollider-Standardidiom für Tastatur-Input). Tasten halten:
+// W/S vor/zurück, A/D seitlich, Q/E drehen.
+~listenerControl = KeyboardListenerControl.new(~room.listener);
+~listenerControl.play;
+
+// --- 3c) Raum-Draufsicht öffnen ---
+// Live aktualisiertes Fenster: Listener (Position + Blickrichtung als Pfeil) und
+// alle registrierten Soundobjekte, von oben betrachtet. Bewegt selbst nichts —
+// liest bei jedem Neuzeichnen einfach den aktuellen Zustand von ~room.orchestra.
+~spaceView = SpaceView.new(~room.orchestra);
+~spaceView.play;
 )
 
 // --- 2) Abspielen ---
@@ -91,26 +111,11 @@ fountainMoveRule = SteadyMoveRule.new;
 // ohne die roomRadius-Rückführung, die für die Insekten-Eigenbewegung gedacht ist.
 ~fountainMovable.moveTo([-3, 2, 0]);
 
-// --- 3) Tastatursteuerung für den Listener starten ---
-// Bewusst separat und erst NACH Block 2 ausführen (Orchester muss schon spielen).
-// Öffnet ein kleines Fenster, das während der Steuerung fokussiert sein muss
-// (SuperCollider-Standardidiom für Tastatur-Input). Tasten halten:
-// W/S vor/zurück, A/D seitlich, Q/E drehen.
-~listenerControl = KeyboardListenerControl.new(~room.listener);
-~listenerControl.play;
-
 // --- 3b) Live-Coding: Insekt 1 zurufen lassen ---
 // Löst bei insect1 einen kurzen Klang-Akzent aus (Tonhöhe/Pegel blitzen kurz
 // auf); nach kurzer, leicht zufälliger Verzögerung ruft ein zufälliges anderes
 // registriertes Objekt (insect2 oder fountain) zurück (Call-and-Response).
 ~room.call(~insect1);
-
-// --- 3c) Raum-Draufsicht öffnen ---
-// Live aktualisiertes Fenster: Listener (Position + Blickrichtung als Pfeil) und
-// alle registrierten Soundobjekte, von oben betrachtet. Bewegt selbst nichts —
-// liest bei jedem Neuzeichnen einfach den aktuellen Zustand von ~room.orchestra.
-~spaceView = SpaceView.new(~room.orchestra);
-~spaceView.play;
 
 // --- 4) Stoppen ---
 // room.stop stoppt das Ticken, ruft stop auf allen registrierten Soundobjekten auf
@@ -128,3 +133,11 @@ AtkBinauralizer.teardown;
 // Raum-Draufsicht separat stoppen (schließt das Fenster) — nur nötig, falls
 // Block 3c überhaupt ausgeführt wurde.
 ~spaceView.stop;
+
+
+
+//den Raum verändern
+~room.size = 12;
+~room.height = 3;
+~room.surface = 0.4; // 0 = rau/absorbierend, 1 = glatt/hart
+~room.mix = 1;
