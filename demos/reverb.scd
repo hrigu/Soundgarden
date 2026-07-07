@@ -15,7 +15,7 @@
 // --- 1) Setup: SynthDefs registrieren + Soundobjekt anlegen ---
 (
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen (SuperCollider-Syntaxregel).
-var soundsDir, sampleFiles, sampleFile, pos, movable, sound, binauralizer;
+var soundsDir, sampleFiles, sampleFile, pos, movable, sound;
 
 SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
@@ -37,13 +37,12 @@ movable = Movable.new(pos, SteadyMoveRule.new, 5); // roomRadius ohne Wirkung, d
 	// siehe Movable>>step)
 sound = SampleSound.new(sampleFile.fullPath, 1, 0); // 1 Hz — einmal pro Sekunde, damit der
 	// Nachklang zwischen den Wiederholungen gut hörbar ausklingen kann
-binauralizer = Binauralizer.new(reverbMix: 0.6); // höher als der Default (0.3) — der Hall
-	// soll bei diesem Testsetup bewusst gut hörbar sein
-
-~testObject = SoundObject.new(movable, sound, binauralizer);
 sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in Block 2 — gibt
 	// der asynchronen Dateileseoperation Zeit (siehe SampleSound>>preload)
-~room.register(~testObject);
+// reverbMix höher als der Default (0.3) — der Hall soll bei diesem Testsetup bewusst gut
+// hörbar sein. Der Binauralizer selbst wird vom Room über dessen Listener gebaut (Room>>
+// register, Listener>>makeBinauralizer) — dieses Skript kennt Binauralizer nicht mehr direkt.
+~testObject = ~room.register(movable, sound, 0.6);
 
 "Testklang: %\n".postf(sampleFile.fileNameWithoutExtension);
 )

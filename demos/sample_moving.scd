@@ -54,11 +54,11 @@ maxSpeed = 0.3;  // rad/s — schnellstes Objekt: eine Umdrehung in ca. 21s
 	var movable = Movable.new(startPos, moveRule, radius + 2); // Marge, s. sample.scd
 	var phase = i / n;
 	var sound = SampleSound.new(pe.fullPath, rate, phase);
-	var soundObject = SoundObject.new(movable, sound, AtkBinauralizer.new);
 	sound.preload(s); // laedt den Buffer schon jetzt, statt erst bei room.play in
 		// Block 2 — gibt der asynchronen Dateileseoperation Zeit (siehe SampleSound>>preload)
-	~room.register(soundObject);
-	soundObject
+	// Binauralizer wird vom Room über dessen Listener gebaut (Room>>register,
+	// Listener>>makeBinauralizer) — dieses Skript kennt AtkBinauralizer nicht mehr direkt.
+	~room.register(movable, sound);
 });
 
 "% Sample(s) auf gemeinsamer Kreisbahn: %\n".postf(n, sampleFiles.collect({ |pe| pe.fileNameWithoutExtension }));

@@ -13,15 +13,11 @@
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning/HRTF) funktionieren nicht über
 // Lautsprecher richtig.
 //
-// Hinweis zur Räumlichkeit: Zwei Binauralisierungs-Varianten zum direkten Vergleich.
-// Insekt 1 nutzt AtkBinauralizer (Intent 5) — echtes HRTF-Rendering über das Ambisonic
-// Toolkit (FoaEncode/FoaTransform/FoaDecoderKernel), Vorne/Hinten sollte hier eindeutig
-// hörbar sein. Insekt 2 und der Brunnen nutzen weiterhin die einfache Binauralizer-Variante
-// (Core-UGens, kein echtes HRTF) — Panning + winzige Laufzeitdifferenz zwischen den Ohren
-// (ITD) + entfernungsabhängiger Pegel/Tiefpass. Vorne/hinten bleibt dadurch etwas mehrdeutig
-// (das bekannte "Cone of Confusion"-Problem echter Ohren lässt sich ohne Kunstkopf-
-// Impulsantworten nicht ganz auflösen) — ein leichtes zusätzliches Dämpfen "hinter" dem
-// Hörer gibt zumindest einen groben Anhaltspunkt.
+// Ein Room hat eine Ohren-Strategie (siehe Room>>addSynthDef, Listener>>makeBinauralizer) —
+// alle drei Objekte hier hören mit AtkBinauralizer (echtes HRTF-Rendering über das Ambisonic
+// Toolkit). Für einen Vergleich mit der einfachen Binauralizer-Variante (Core-UGens, kein
+// echtes HRTF): unten `~room.addSynthDef(Binauralizer)` statt `AtkBinauralizer` verwenden und
+// neu ausführen.
 
 // --- 1) Setup: SynthDefs registrieren + alle Soundobjekte anlegen ---
 // Ein Block statt zwei — SynthDef-Registrierung (/d_recv, asynchron) muss nicht
@@ -33,47 +29,44 @@
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen, vor jeder
 // anderen Anweisung (SuperCollider-Syntaxregel) — deshalb hier gesammelt,
 // auch wenn sie erst weiter unten mit Werten befüllt werden.
-var moveRule1, movable1, insectSound1, binauralizer1;
-var moveRule2, movable2, insectSound2, binauralizer2;
-var fountainMoveRule, fountainSound, fountainBinauralizer, fountain;
-// ~insect1/~insect2 als Environment-Variablen statt var: Block 3b (Call-and-Response)
-// braucht Referenzen darauf über den Block hinaus.
+var moveRule1, movable1, insectSound1;
+var moveRule2, fountainMoveRule;
+// ~insect1 als Environment-Variable statt var: Block 3b (Call-and-Response) braucht eine
+// Referenz darauf über den Block hinaus. ~movable2/~insectSound2/~fountainMovable/
+// ~fountainSound ebenso — Block 2b/später live nachträglich registrierbar (siehe unten).
 
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
 ~room = Room.new(s);
-~room.addSynthDef(Binauralizer);
 // AtkBinauralizer lädt den HRTF-Kernel (asynchron) und registriert danach selbst die SynthDef
-// (siehe AtkBinauralizer>>*setup) — braucht deshalb den bereits gebooteten Server (s). Etwas
-// mehr zeitlichen Abstand zu Block 2 lassen als bei den übrigen addSynthDef-Aufrufen hier:
-// der Kernel lädt spürbar länger als eine normale SynthDef-Registrierung.
+// (siehe AtkBinauralizer>>*setup); legt zugleich fest, dass dieser Room ab jetzt mit
+// AtkBinauralizer "hört" (siehe Room>>addSynthDef, Listener>>makeBinauralizer) — braucht
+// deshalb den bereits gebooteten Server (s). Etwas mehr zeitlichen Abstand zu Block 2 lassen
+// als bei einer normalen SynthDef-Registrierung: der Kernel lädt spürbar länger.
 ~room.addSynthDef(AtkBinauralizer, subjectID: 21);
 
 // Ein gemeinsamer Listener (Position/Blickrichtung per Tastatur beweglich, siehe Block 3)
 // hört alle Soundobjekte — Teil von ~room, siehe Room>>listener. Jedes Soundobjekt braucht
-// aber sein eigenes Movable/Sound/Binauralizer — die Binauralisierung hängt von der Position
-// ab, die pro Objekt verschieden ist, und jeder Synth braucht seinen eigenen Bus/State. Room
-// tickt alle registrierten Objekte über eine einzige Routine statt je einer eigenen — die
-// Soundobjekte selbst kennen den Listener nicht.
+// aber sein eigenes Movable/Sound — die Binauralisierung hängt von der Position ab, die pro
+// Objekt verschieden ist, und jeder Synth braucht seinen eigenen Bus/State. Room tickt alle
+// registrierten Objekte über eine einzige Routine statt je einer eigenen — die Soundobjekte
+// selbst kennen den Listener nicht, den Binauralizer bekommen sie von Room>>register über
+// den Listener (siehe Kopfkommentar).
 
-// Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s
-// im Uhrzeigersinn), Standard-Klang. AtkBinauralizer statt Binauralizer — echtes
-// HRTF, zum direkten Vergleich mit Insekt 2/Brunnen (siehe Kopfkommentar).
+// Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s im Uhrzeigersinn),
+// Standard-Klang.
 moveRule1 = CircularMoveRule.new;
 movable1 = Movable.new([0, 2.5, 0], moveRule1, 5);
 insectSound1 = InsectSound.new;
-binauralizer1 = AtkBinauralizer.new;
 
 // Insekt 2: etwas schneller (1.0 statt 0.6 rad/s) und in Gegenrichtung
 // (negatives angularSpeed); heller/schneller Klang (höhere Flügelschlag- und
 // Resonanzfrequenzen, kürzeres Ausklingen) statt Standard-Brummen.
 moveRule2 = CircularMoveRule.new(3.0, 1.0, 0.15, -1.0);
-movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
-insectSound2 = InsectSound.new(280, 0.2, 5200, 7000, 0.015, 0.01, 0.3);
-binauralizer2 = Binauralizer.new;
+~movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
+~insectSound2 = InsectSound.new(280, 0.2, 5200, 7000, 0.015, 0.01, 0.3);
 
-~insect1 = SoundObject.new(movable1, insectSound1, binauralizer1);
-~insect2 = SoundObject.new(movable2, insectSound2, binauralizer2);
+~insect1 = ~room.register(movable1, insectSound1);
 
 // "Brunnen": steady Soundobjekt — SteadyMoveRule bewegt sich nicht von selbst
 // (next() gibt die Position unverändert zurück), tiefer/langsamer Klang zur
@@ -81,13 +74,10 @@ binauralizer2 = Binauralizer.new;
 // Block 2b weiter unten (~fountainMovable.moveTo(...)).
 fountainMoveRule = SteadyMoveRule.new;
 ~fountainMovable = Movable.new([2, 1, 0], fountainMoveRule, 5);
-fountainSound = InsectSound.new(60, 0.6, 800, 1400, 0.08, 0.06, 0.25);
-fountainBinauralizer = Binauralizer.new;
-fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer);
+~fountainSound = InsectSound.new(60, 0.6, 800, 1400, 0.08, 0.06, 0.25);
 
-~room.register(~insect1);
-//~room.register(~insect2);
-//~room.register(fountain);
+//~insect2 = ~room.register(~movable2, ~insectSound2);
+//~fountain = ~room.register(~fountainMovable, ~fountainSound);
 )
 
 // --- 2) Abspielen ---
