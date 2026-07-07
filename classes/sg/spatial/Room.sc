@@ -7,6 +7,10 @@
 // Bewusst kein physikalisch exaktes Modell (keine Sabine-Formel o.ä.) — ein plausibles, per
 // Ohr nachjustierbares Mapping in reverbParams. Rohe Reverb-Parameter sind deshalb nicht mehr
 // von aussen erreichbar, nur size/height/surface/mix.
+//
+// register() baut auch den Binauralizer für jedes SoundObject — über den Listener (siehe
+// Listener>>makeBinauralizer), nicht durch das aufrufende Skript. Binauralisierung ist eine
+// Eigenschaft der Ohren des Hörers, nicht der Klangquelle (Intent 27).
 Room {
 	var <listener;
 	var <orchestra;
@@ -17,16 +21,22 @@ Room {
 	var <surface;     // 0 (rau/absorbierend) .. 1 (glatt/hart) — siehe reverbParams
 	var <mix;         // Hall-Gesamtpegel, kein Raum-Merkmal, reiner Mix-Knopf
 
-	*new { |server, size = 8, height = 3, surface = 0.5, mix = 1|
-		var aListener = Listener.new;
+	// listener optional: normalerweise legt Room seinen eigenen Listener an, aber ein
+	// künftiges Multi-Room-Setup (ein Listener wandert zwischen mehreren Rooms, siehe
+	// Intent 27) kann hier einen bestehenden übergeben — keine eigene Mechanik dafür heute,
+	// nur der Konstruktor-Spielraum.
+	*new { |server, listener, size = 8, height = 3, surface = 0.5, mix = 1|
+		var aListener = listener ?? { Listener.new };
 		^super.new.init(server, aListener, Orchestra.new(aListener), RoomReverb.new(server),
 			size, height, surface, mix);
 	}
 
 	// Test-Konstruktor: orchestra/reverb kommen fertig (Fakes) rein, statt dass Room selbst
-	// einen echten Server für RoomReverb.new anfasst — siehe TestRoom.
+	// einen echten Server für RoomReverb.new anfasst — siehe TestRoom. listener ist ein
+	// echter Listener (reine sclang-Logik, kein Server nötig), damit register() über
+	// listener.makeBinauralizer testbar bleibt.
 	*forTest { |orchestra, reverb, size = 8, height = 3, surface = 0.5, mix = 1|
-		^super.new.init(nil, nil, orchestra, reverb, size, height, surface, mix);
+		^super.new.init(nil, Listener.new, orchestra, reverb, size, height, surface, mix);
 	}
 
 	init { |aServer, aListener, anOrchestra, aReverb, aSize, aHeight, aSurface, aMix|
@@ -41,18 +51,30 @@ Room {
 	}
 
 	// registriert die SynthDef eines Binauralizer-Typs, verkabelt mit dem geteilten Reverb-
-	// Bus — Skripte kennen reverbBus/bus gar nicht mehr. Nur 2 bekannte Subtypen mit
-	// unterschiedlicher Signatur (AtkBinauralizer lädt zusätzlich asynchron den HRTF-Kernel,
-	// braucht den Server) — einfacher Klassenvergleich reicht.
+	// Bus, UND legt fest, dass der Listener dieses Room ab jetzt mit dieser Klasse "hört"
+	// (siehe Listener>>makeBinauralizer, register unten) — ein Room hat eine Ohren-Strategie,
+	// kein Nebeneinander mehrerer Typen (Intent 27). Skripte kennen reverbBus/bus gar nicht
+	// mehr. Nur 2 bekannte Subtypen mit unterschiedlicher Signatur (AtkBinauralizer lädt
+	// zusätzlich asynchron den HRTF-Kernel, braucht den Server) — einfacher Klassenvergleich
+	// reicht.
 	addSynthDef { |binauralizerClass, subjectID = 21|
 		if(binauralizerClass === AtkBinauralizer) {
 			AtkBinauralizer.setup(server, subjectID, reverb.bus);
 		} {
 			binauralizerClass.addSynthDef(reverb.bus);
 		};
+		listener.binauralizerClass = binauralizerClass;
 	}
 
-	register { |soundObject| orchestra.register(soundObject) }
+	// baut ein SoundObject aus movable+sound, mit einem Binauralizer passend zu den "Ohren"
+	// des eigenen Listeners (siehe Listener>>makeBinauralizer) — Skripte kennen Binauralizer/
+	// AtkBinauralizer ab hier nicht mehr direkt (Intent 27).
+	register { |movable, sound, reverbMix = 0.3|
+		var binauralizer = listener.makeBinauralizer(reverbMix);
+		var soundObject = SoundObject.new(movable, sound, binauralizer);
+		orchestra.register(soundObject);
+		^soundObject
+	}
 
 	call { |caller| orchestra.call(caller) }
 
