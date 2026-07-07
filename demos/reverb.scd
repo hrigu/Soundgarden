@@ -74,7 +74,7 @@ sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in B
 ~room.size = 6;
 ~room.height = 6;
 ~room.surface = 1; // 0 = rau/absorbierend, 1 = glatt/hart
-~room.mix = 0;
+~room.mix = 0.3; // wenn 0: Reverb ist ganz weg
 ~testObject.binauralizer.synth.set(\reverbMix, 0.8);
 
 // --- 6) Stoppen ---
