@@ -197,5 +197,5 @@ AtkBinauralizer.teardown;
 //den Raum verändern
 ~room.size = 12;
 ~room.height = 3;
-~room.surface = 0.4; // 0 = rau/absorbierend, 1 = glatt/hart
-~room.mix = 1;
+~room.surface = 1; // 0 = rau/absorbierend, 1 = glatt/hart
+~room.mix = 0.2;

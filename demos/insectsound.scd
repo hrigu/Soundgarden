@@ -58,7 +58,7 @@ SynthDef(\monitorMono, { |in = 0, out = 0, amp = 1|
 (
 ~insect = InsectSound.new(
 	wingRate: 280, amp: 0.3,
-	pattern: CallingPattern.fromDurations([0.4, 1.5]) // "kurz an, lang aus"
+	pattern: CallingPattern.fromDurations([0.4, 1.5, 0.02, 0.9, 0.02, 0.8, 0.02, 0.7]) // "kurz an, lang aus"
 );
 ~insect.play(s);
 ~monitor = Synth(\monitorMono, [\in, ~insect.bus.index, \out, 0], target: ~insect.synth,
