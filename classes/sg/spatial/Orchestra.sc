@@ -57,12 +57,13 @@ Orchestra {
 	}
 
 	// beendet das Ticken und stoppt alle registrierten SoundObjects (Synths/Busse
-	// werden dabei freigegeben); danach ist die Registry leer. routine kann hier
-	// noch nil sein, falls play() nie aufgerufen wurde.
+	// werden dabei freigegeben). Die Registry bleibt erhalten — play() ist danach
+	// wieder aufrufbar (stop/play beliebig abwechselbar, z.B. beim Parameter-Testen
+	// in demos/reverb.scd); explizites Entfernen läuft über unregister. routine kann
+	// hier noch nil sein, falls play() nie aufgerufen wurde.
 	stop {
 		routine !? { routine.stop };
 		soundObjects.do { |soundObject| soundObject.stop };
-		soundObjects = [];
 	}
 
 	// wählt ein zufälliges anderes registriertes SoundObject (nie caller selbst) für

@@ -60,8 +60,11 @@ SampleSound : Sound {
 	}
 
 	// gibt zusätzlich zu Synth/Bus (Sound>>stop) auch den geladenen Buffer frei.
+	// buffer danach auf nil setzen, sonst würde makeSynth beim nächsten play die
+	// tote Buffer-Nummer weiterverwenden (buffer ?? lädt nur bei nil nach) — Stille.
 	stop {
 		super.stop;
 		buffer !? { buffer.free };
+		buffer = nil;
 	}
 }
