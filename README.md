@@ -21,9 +21,9 @@ Dateien der Reihe nach öffnen und blockweise ausführen (Cmd+Enter):
    ein und kompiliert neu. `boot/boot.scd` braucht die Klasse `BootTrackDetection` daraus.
 2. **`boot/boot.scd`** – bootet den Server und lädt alle Dateien aus `sounds/`
    automatisch in `~tracks` (z.B. `~tracks[\mytrack01]`).
-3. **`fx.scd`** – definiert die FX-Bausteine (`~fxChains`), die du live
+3. **`experiments/live_coding_rig/fx.scd`** – definiert die FX-Bausteine (`~fxChains`), die du live
    kombinierst.
-4. **`set_template.scd`** – das eigentliche Live-Set. Jeder Block darin ist
+4. **`experiments/live_coding_rig/set_template.scd`** – das eigentliche Live-Set. Jeder Block darin ist
    während der Party einzeln ausführbar: Track starten, FX-Kette
    umschalten, Parameter live verstellen, in den nächsten Track überblenden.
 
@@ -153,7 +153,7 @@ Zwei Dokumente mit mehr Hintergrund (Stand nach Intent 9, `MoveRule`/
 
 - MIDI-Controller oder OSC-Fader anbinden, um Parameter (Cutoff, Mix,
   Gate-Rate) live mit den Händen statt per Tastatur zu steuern.
-- Weitere FX-Bausteine in `fx.scd` ergänzen (z.B. Reverse, Granular).
+- Weitere FX-Bausteine in `experiments/live_coding_rig/fx.scd` ergänzen (z.B. Reverse, Granular).
 - Pattern-basierte Automation (`Pbind`) für sich selbst entwickelnde
   Übergänge zwischen Tracks.
 - `Movable` mit einem `UnitTest` absichern: `step()` ist trotz Seiteneffekt gut

@@ -9,7 +9,8 @@ dort steht das Intent-Driven-Development-Protokoll (IDD), nach dem in diesem Rep
 
 Soundgarden ist ein SuperCollider-Spielplatz mit aktuell zwei Arbeitssträngen:
 
-1. **Live-Coding-Rig** (`boot/boot.scd`, `fx.scd`, `set_template.scd`) — bestehende elektronische
+1. **Live-Coding-Rig** (`boot/boot.scd`, `experiments/live_coding_rig/fx.scd`,
+   `experiments/live_coding_rig/set_template.scd`) — bestehende elektronische
    Tracks live umformen (Filter, Echo, Bitcrush, Stutter, Reverb) während einer
    Fusion-Tanzparty, über JITLib (`Ndef`), rein per Tastatur (kein MIDI-Controller).
 2. **Spatial-Audio-Prototyp** (`classes/sg/`, `demos/insects.scd`) — virtuelle Klangobjekte
@@ -25,7 +26,8 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
   kompiliert neu; danach im Post-Fenster auf `compile done` warten. **Muss vor `boot/boot.scd`
   laufen** — `boot/boot.scd` ruft `BootTrackDetection` auf, das erst nach diesem Schritt existiert.
 - `run_tests.scd` — automatisierte Tests (`UnitTest`) für die reine sclang-Logik.
-- Live-Set-Workflow: `boot/boot.scd` → `fx.scd` → `set_template.scd` (Block für Block, `Cmd+Enter`).
+- Live-Set-Workflow: `boot/boot.scd` → `experiments/live_coding_rig/fx.scd` →
+  `experiments/live_coding_rig/set_template.scd` (Block für Block, `Cmd+Enter`).
 - Spatial-Audio-Prototyp: `boot/boot.scd` → `demos/insects.scd` —
   **Kopfhörer benutzen**, binaurale Effekte funktionieren über Lautsprecher nicht richtig.
 
@@ -61,7 +63,8 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
   deshalb immer als Symbol vergleichen (siehe `classes/BootTrackDetection.sc`, getestet in
   `tests/TestBootTrackDetection.sc`).
 - `Decimator` (Bitcrush-UGen) gehört zu `sc3-plugins`, nicht zum Core — auf einer frischen
-  Installation `ERROR: Class not defined`. In `fx.scd` stattdessen mit `Latch` + `round`
+  Installation `ERROR: Class not defined`. In `experiments/live_coding_rig/fx.scd` stattdessen
+  mit `Latch` + `round`
   nachgebaut.
 - Kein MIDI-Controller vorgesehen — Steuerung ist bewusst reine Tastatur (`Cmd+Enter` je Block).
 - Bluetooth-Headsets (z.B. AirPods, Bose) liefern für ihr Mikrofon oft nur 16kHz, während der

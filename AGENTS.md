@@ -32,7 +32,8 @@ offensichtliche Korrekturen).
   `5 - Feature (Spatial-Audio): ATK-basiertes HRTF für das Insekt`.
 - Typ: `Feature`, `Enhancement`, `Bug`, `Test`, `Research`.
 - Domains in diesem Projekt (bei Bedarf erweiterbar):
-  - `Live-Set` — `boot/boot.scd`/`fx.scd`/`set_template.scd`, der DJ-Live-Coding-Workflow.
+  - `Live-Set` — `boot/boot.scd`/`experiments/live_coding_rig/fx.scd`/
+    `experiments/live_coding_rig/set_template.scd`, der DJ-Live-Coding-Workflow.
   - `Boot-Tracks` — Track-Erkennung/-Loading-Logik.
   - `Spatial-Audio` — `Movable`/`Listener`/`SoundObject`, binaurale Klangobjekte.
 - Pflicht-Abschnitte:
