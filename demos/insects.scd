@@ -63,7 +63,22 @@ insectMovableBase = (pos: [0, 2.5, 0], moveRule: CircularMoveRule.new, roomRadiu
 insectSoundBase = (wingRate: 210, wingDuty: 0.25, ringFreq1: 3200, ringFreq2: 4600,
 	ringDecay1: 0.02, ringDecay2: 0.015, amp: 0.35);
 
-~insect1 = ~room.registerFromBuilder(insectSoundBase, insectMovableBase);
+// Insekt 1 bekommt zusätzlich ein CallingPattern (Intent 30) statt durchgehend zu zirpen:
+// Zahlensatz aus Intent 31 (Bioakustik-Recherche zu Gryllus bimaculatus) — 4 Pulse à 50ms
+// (20ms an, 30ms aus) formen einen ~200ms-Chirp, gefolgt von einer 200ms-Interchirp-Pause.
+// Eigene CallingPattern-Instanz statt in insectSoundBase — ein CallingPattern führt intern
+// Zustand (aktuelle Segment-Position), eine gemeinsame Instanz über mehrere Insekten hinweg
+// (z.B. via insectSoundBase ++ ...) würde von mehreren Routinen gleichzeitig verändert und
+// liefe aus dem Takt.
+~insect1 = ~room.registerFromBuilder(
+	insectSoundBase ++ (pattern: CallingPattern.new([
+		[0.02, true], [0.03, false],
+		[0.02, true], [0.03, false],
+		[0.02, true], [0.03, false],
+		[0.02, true], [0.03, false],
+		[0.2, false]
+	])),
+	insectMovableBase);
 
 // Insekt 2: Variante von Insekt 1 — etwas schneller (1.0 statt 0.6 rad/s) und in
 // Gegenrichtung (negatives angularSpeed) unterwegs, mit hellerem/schnellerem Klang (höhere
