@@ -3,6 +3,23 @@
 Kurzes Projekt-Tagebuch: ein Eintrag pro Arbeitstag, was gemacht wurde und welche Probleme
 dabei aufgetaucht sind. Bezieht sich auf Intents in `.intents/` (siehe dort für Details).
 
+## 07.07.2026
+
+- Freesound-Samples (CompMusic-Pack, Mridangam-Schläge) besorgt und `sounds/` in
+  Unterordner (`apple/`, `compmusic/`) reorganisiert — Bug: `sample_demo.scd`s Scan fand nur
+  die oberste Ebene, `entries.select` durch rekursives `filesDo` ersetzt.
+- Intent 21: `CircularMoveRule` um `startAngle` erweitert (ohne das würden alle Instanzen bei
+  `t=0` auf demselben Winkel starten, unabhängig von der Movable-Startposition) — neues
+  `sample_demo_moving.scd`: Sample-Objekte aus `sounds/compmusic/` bewegen sich auf einer
+  gemeinsamen Kreisbahn (gleicher Radius, gleiche Richtung, gestaffeltes Tempo 0.05–0.3 rad/s).
+  Hörtest bestätigt: Bewegung und Tempo-Unterschiede gut hörbar.
+- Nebenbei: `scsynth`-Boot-Fehler ("address in use") durch verwaisten Server-Prozess behoben.
+- Entdeckt: `sclang` lässt sich headless direkt ausführen (`/Applications/SuperCollider.app/
+  Contents/MacOS/sclang`, `cocoa`- statt `offscreen`-Qt-Plugin) — Tests künftig selbst
+  verifizierbar statt den Nutzer jedes Mal zu fragen.
+- Idee notiert (README): `SampleSound`/`AtkBinauralizer` ressourcenschonender machen
+  (On-Demand-Synths statt dauerhaft laufender pro Objekt).
+
 ## 06.07.2026
 
 - Intents 10–14: `SoundObject`-Umbenennung, `Sound`-Superklasse, `Orchestra`-Klasse,
