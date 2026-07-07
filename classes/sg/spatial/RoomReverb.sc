@@ -8,6 +8,18 @@ RoomReverb {
 	var <bus;     // geteilter Mono-Bus, in den die Binauralizer ihren Hall-Anteil schicken
 	var <synth;
 
+	// legt den geteilten Bus schon hier an, nicht in einem separaten Schritt — Bus.audio ist
+	// rein client-seitige Buchhaltung (keine Server-Kommunikation, kein server.sync nötig),
+	// es gibt also keinen Grund, das dem Aufrufer zu überlassen (vorher: allocBus — vergessen
+	// führte still zu bus == nil, kein Fehler, einfach kein Hall).
+	*new { |server|
+		^super.new.init(server);
+	}
+
+	init { |server|
+		bus = Bus.audio(server, 1);
+	}
+
 	// registriert die \roomReverb-SynthDef beim Server. drylevel=0 fest verdrahtet — der
 	// Direktschall kommt schon über die Binauralizer, hier nur der Nachklang-Anteil.
 	*addSynthDef {
@@ -18,15 +30,6 @@ RoomReverb {
 				roomSize + 1);
 			Out.ar(out, wet);
 		}).add;
-	}
-
-	// legt nur den geteilten Bus an, ohne schon den Verarbeitungs-Synth zu starten — bewusst
-	// getrennt von play(), damit Binauralizer/AtkBinauralizer ihren reverbBus (die Bus-Nummer
-	// wird bei addSynthDef per Closure eingebacken) schon referenzieren können, bevor der
-	// Reverb-Synth selbst im Node-Baum existiert.
-	allocBus { |server|
-		bus = Bus.audio(server, 1);
-		^bus
 	}
 
 	// startet den Reverb-Synth. Bewusst zuletzt aufrufen, nachdem alle SoundObjects schon
@@ -43,6 +46,14 @@ RoomReverb {
 			\mix, mix
 		], server, \addToTail);
 		^this
+	}
+
+	// aktualisiert die Parameter auf dem laufenden Synth live (no-op vor dem ersten play,
+	// gleiches Muster wie Binauralizer>>set).
+	set { |roomSize, revTime, damping, mix|
+		synth !? {
+			synth.set(\roomSize, roomSize, \revTime, revTime, \damping, damping, \mix, mix);
+		};
 	}
 
 	// gibt Synth und Bus wieder frei.
