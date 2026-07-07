@@ -48,6 +48,17 @@ FakeBinauralizerForRoomTest {
 	init { |aReverbMix| reverbMix = aReverbMix }
 }
 
+// Test-Doubles für registerFromBuilder: reine Marker-Klassen mit denselben <>-Setter-Namen wie
+// InsectSound/Movable, damit sichtbar wird, dass SoundObjectBuilder (und nicht Room selbst) die
+// Params-Events anwendet — analog Fake*ForSoundObjectBuilderTest (TestSoundObjectBuilder.sc).
+FakeSoundForRoomRegisterFromBuilderTest {
+	var <>wingRate;
+}
+
+FakeMovableForRoomRegisterFromBuilderTest {
+	var <>roomRadius;
+}
+
 // Test für Room. Ausführen über run_tests.scd.
 TestRoom : UnitTest {
 
@@ -84,6 +95,28 @@ TestRoom : UnitTest {
 			"das registrierte SoundObject bekommt das übergebene movable");
 		this.assertEquals(registered.sound, sound,
 			"das registrierte SoundObject bekommt den übergebenen sound");
+		this.assert(registered.binauralizer.isKindOf(FakeBinauralizerForRoomTest),
+			"der Binauralizer stammt aus listener.makeBinauralizer, nicht vom Skript konstruiert");
+		this.assertEquals(registered.binauralizer.reverbMix, 0.7,
+			"reverbMix wird bis zum Binauralizer durchgereicht");
+		this.assertEquals(log.asArray, [registered],
+			"orchestra.register bekommt genau dieses SoundObject");
+	}
+
+	test_registerFromBuilderBuildsSoundObjectViaBuilder {
+		var log = List.new;
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var registered;
+
+		room.listener.binauralizerClass = FakeBinauralizerForRoomTest;
+		registered = room.registerFromBuilder((wingRate: 280), (roomRadius: 4), reverbMix: 0.7,
+			soundClass: FakeSoundForRoomRegisterFromBuilderTest,
+			movableClass: FakeMovableForRoomRegisterFromBuilderTest);
+
+		this.assertEquals(registered.sound.wingRate, 280,
+			"soundParams werden über den Builder auf soundClass angewendet");
+		this.assertEquals(registered.movable.roomRadius, 4,
+			"movableParams werden über den Builder auf movableClass angewendet");
 		this.assert(registered.binauralizer.isKindOf(FakeBinauralizerForRoomTest),
 			"der Binauralizer stammt aus listener.makeBinauralizer, nicht vom Skript konstruiert");
 		this.assertEquals(registered.binauralizer.reverbMix, 0.7,

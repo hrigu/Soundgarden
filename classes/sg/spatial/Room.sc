@@ -71,7 +71,24 @@ Room {
 	// AtkBinauralizer ab hier nicht mehr direkt (Intent 27).
 	register { |movable, sound, reverbMix = 0.3|
 		var binauralizer = listener.makeBinauralizer(reverbMix);
-		var soundObject = SoundObject.new(movable, sound, binauralizer);
+		^this.finishRegistering(SoundObject.new(movable, sound, binauralizer))
+	}
+
+	// wie register, baut movable+sound aber über SoundObjectBuilder aus zwei Params-Events
+	// statt fertiger Instanzen — für Varianten, die per Event-Merge (baseParams ++ (...))
+	// aus einer Basis-Konfiguration abgeleitet werden (Intent 29). SoundObjectBuilder kennt
+	// den Binauralizer nicht selbst (Intent 27) — der kommt wie bei register aus
+	// listener.makeBinauralizer.
+	registerFromBuilder { |soundParams, movableParams, reverbMix = 0.3, soundClass, movableClass|
+		var binauralizer = listener.makeBinauralizer(reverbMix);
+		^this.finishRegistering(
+			SoundObjectBuilder.build(soundParams, movableParams, binauralizer, soundClass,
+				movableClass));
+	}
+
+	// gemeinsamer Abschluss von register/registerFromBuilder: bei Orchestra anmelden, damit es
+	// pro Tick bewegt/räumlich aktualisiert wird.
+	finishRegistering { |soundObject|
 		orchestra.register(soundObject);
 		^soundObject
 	}
