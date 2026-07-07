@@ -20,13 +20,20 @@ RoomReverb {
 		}).add;
 	}
 
-	// legt den geteilten Bus an und startet den Reverb-Synth. Bewusst zuletzt aufrufen,
-	// nachdem alle SoundObjects schon laufen (addToTail) — der Synth liest dann erst den
-	// bereits vollständig summierten Bus-Inhalt jedes Blocks. Bei später live dazu
-	// registrierten Objekten kann es dadurch einen Block Verzögerung geben (akzeptierte
-	// Einschränkung dieser ersten Version).
-	play { |server, roomSize = 8, revTime = 3, damping = 0.5, mix = 1|
+	// legt nur den geteilten Bus an, ohne schon den Verarbeitungs-Synth zu starten — bewusst
+	// getrennt von play(), damit Binauralizer/AtkBinauralizer ihren reverbBus (die Bus-Nummer
+	// wird bei addSynthDef per Closure eingebacken) schon referenzieren können, bevor der
+	// Reverb-Synth selbst im Node-Baum existiert.
+	allocBus { |server|
 		bus = Bus.audio(server, 1);
+		^bus
+	}
+
+	// startet den Reverb-Synth. Bewusst zuletzt aufrufen, nachdem alle SoundObjects schon
+	// laufen (addToTail) — der Synth liest dann erst den bereits vollständig summierten
+	// Bus-Inhalt jedes Blocks. Bei später live dazu registrierten Objekten kann es dadurch
+	// einen Block Verzögerung geben (akzeptierte Einschränkung dieser ersten Version).
+	play { |server, roomSize = 8, revTime = 3, damping = 0.5, mix = 1|
 		synth = Synth(\roomReverb, [
 			\in, bus.index,
 			\out, 0,

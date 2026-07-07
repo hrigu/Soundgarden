@@ -5,8 +5,8 @@
 // sounds/apple/, siehe Intent 21).
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) load_classes.scd — bindet SampleSound/CircularMoveRule/AtkBinauralizer/SoundObject/
-//                          Orchestra/SpaceView in den Klassenpfad ein
+//   1) load_classes.scd — bindet SampleSound/CircularMoveRule/AtkBinauralizer/RoomReverb/
+//                          SoundObject/Orchestra/SpaceView in den Klassenpfad ein
 //   2) boot.scd        — Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
@@ -25,9 +25,16 @@
 var soundsDir, sampleFiles, n, radius, rate, minSpeed, maxSpeed;
 
 SampleSound.addSynthDef;
+RoomReverb.addSynthDef;
+// allocBus (nicht play!) — der geteilte Bus muss existieren, bevor AtkBinauralizer.setup ihn
+// unten als reverbBus referenziert; der eigentliche Reverb-Synth startet erst in Block 2,
+// nachdem alle anderen Synths schon laufen (siehe RoomReverb>>play).
+~roomReverb = RoomReverb.new;
+~roomReverb.allocBus(s);
+
 // AtkBinauralizer.setup lädt den HRTF-Kernel (asynchron) und registriert danach selbst die
 // SynthDef (siehe AtkBinauralizer>>*setup) — etwas zeitlichen Abstand zu Block 2 lassen.
-AtkBinauralizer.setup(s);
+AtkBinauralizer.setup(s, reverbBus: ~roomReverb.bus);
 
 ~listener = Listener.new;
 ~orchestra = Orchestra.new(~listener);
@@ -67,6 +74,9 @@ maxSpeed = 0.3;  // rad/s — schnellstes Objekt: eine Umdrehung in ca. 21s
 
 // --- 2) Abspielen ---
 ~orchestra.play(s);
+// RoomReverb erst jetzt starten (addToTail), nachdem alle SoundObjects schon laufen —
+// siehe RoomReverb>>play.
+~roomReverb.play(s);
 
 // --- 3) Raum-Draufsicht öffnen (optional) ---
 // Zeigt Listener im Zentrum und alle Sample-Objekte, die sich auf der Kreisbahn bewegen.
@@ -79,4 +89,5 @@ maxSpeed = 0.3;  // rad/s — schnellstes Objekt: eine Umdrehung in ca. 21s
 // --- 4) Stoppen ---
 ~orchestra.stop;
 AtkBinauralizer.teardown;
+~roomReverb.stop;
 ~spaceView.stop;

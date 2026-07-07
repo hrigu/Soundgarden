@@ -4,7 +4,7 @@
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
 //   1) load_classes.scd — bindet Movable/Listener/CircularMoveRule/SteadyMoveRule/InsectSound/
-//                          Binauralizer/AtkBinauralizer/SoundObject/Orchestra/
+//                          Binauralizer/AtkBinauralizer/RoomReverb/SoundObject/Orchestra/
 //                          KeyboardListenerControl/SpaceView in den Klassenpfad ein
 //   2) boot.scd        — Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
@@ -40,12 +40,19 @@ var fountainMoveRule, fountainSound, fountainBinauralizer, fountain;
 // braucht Referenzen darauf über den Block hinaus.
 
 InsectSound.addSynthDef;
-Binauralizer.addSynthDef;
+RoomReverb.addSynthDef;
+// allocBus (nicht play!) — der geteilte Bus muss existieren, bevor Binauralizer.addSynthDef
+// und AtkBinauralizer.setup ihn unten als reverbBus referenzieren; der eigentliche
+// Reverb-Synth startet erst in Block 2, nachdem alle anderen Synths schon laufen (siehe
+// RoomReverb>>play).
+~roomReverb = RoomReverb.new;
+~roomReverb.allocBus(s);
+Binauralizer.addSynthDef(~roomReverb.bus);
 // AtkBinauralizer.setup lädt den HRTF-Kernel (asynchron) und registriert danach selbst die
 // SynthDef (siehe AtkBinauralizer>>*setup) — braucht deshalb den bereits gebooteten Server
 // (s). Etwas mehr zeitlichen Abstand zu Block 2 lassen als bei den übrigen addSynthDef-
 // Aufrufen hier: der Kernel lädt spürbar länger als eine normale SynthDef-Registrierung.
-AtkBinauralizer.setup(s);
+AtkBinauralizer.setup(s, reverbBus: ~roomReverb.bus);
 
 // Ein gemeinsamer Listener (Position/Blickrichtung per Tastatur beweglich,
 // siehe Block 3) hört alle Soundobjekte. Jedes Soundobjekt braucht aber sein
@@ -96,6 +103,9 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 // orchestra.play startet den Klang-/Binauralizer-Synth für jedes registrierte
 // Soundobjekt und danach den gemeinsamen Taktgeber (Bewegung + Azimuth/Distanz).
 ~orchestra.play(s);
+// RoomReverb erst jetzt starten (addToTail), nachdem alle SoundObjects schon laufen —
+// siehe RoomReverb>>play.
+~roomReverb.play(s);
 
 // --- 2b) Live-Coding: Brunnen umplatzieren ---
 // Position jederzeit während des Sets änderbar — moveTo setzt sie direkt,
@@ -131,6 +141,7 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 // AtkBinauralizer.teardown gibt den geteilten HRTF-Decoder-Kernel frei (Server-Buffer) —
 // separat, weil der Kernel der Klasse gehört, nicht einer einzelnen Instanz/orchestra.stop.
 AtkBinauralizer.teardown;
+~roomReverb.stop;
 
 // Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
 // falls Block 3 überhaupt ausgeführt wurde.

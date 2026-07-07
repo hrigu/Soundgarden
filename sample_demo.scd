@@ -4,8 +4,8 @@
 // Infrastruktur (Listener/Orchestra/SoundObject/Movable/Binauralizer).
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) load_classes.scd — bindet SampleSound/SteadyMoveRule/AtkBinauralizer/SoundObject/
-//                          Orchestra/SpaceView in den Klassenpfad ein
+//   1) load_classes.scd — bindet SampleSound/SteadyMoveRule/AtkBinauralizer/RoomReverb/
+//                          SoundObject/Orchestra/SpaceView in den Klassenpfad ein
 //   2) boot.scd        — Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
@@ -22,9 +22,16 @@
 var soundsDir, sampleFiles, n, radius, rate;
 
 SampleSound.addSynthDef;
+RoomReverb.addSynthDef;
+// allocBus (nicht play!) — der geteilte Bus muss existieren, bevor AtkBinauralizer.setup ihn
+// unten als reverbBus referenziert; der eigentliche Reverb-Synth startet erst in Block 2,
+// nachdem alle anderen Synths schon laufen (siehe RoomReverb>>play).
+~roomReverb = RoomReverb.new;
+~roomReverb.allocBus(s);
+
 // AtkBinauralizer.setup lädt den HRTF-Kernel (asynchron) und registriert danach selbst die
 // SynthDef (siehe AtkBinauralizer>>*setup) — etwas zeitlichen Abstand zu Block 2 lassen.
-AtkBinauralizer.setup(s);
+AtkBinauralizer.setup(s, reverbBus: ~roomReverb.bus);
 
 ~listener = Listener.new;
 ~orchestra = Orchestra.new(~listener);
@@ -62,6 +69,9 @@ rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (
 
 // --- 2) Abspielen ---
 ~orchestra.play(s);
+// RoomReverb erst jetzt starten (addToTail), nachdem alle SoundObjects schon laufen —
+// siehe RoomReverb>>play.
+~roomReverb.play(s);
 
 // --- 3) Raum-Draufsicht öffnen (optional) ---
 // Zeigt Listener im Zentrum und alle Sample-Objekte auf dem Kreis, von oben betrachtet.
@@ -74,4 +84,5 @@ rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (
 // --- 4) Stoppen ---
 ~orchestra.stop;
 AtkBinauralizer.teardown;
+~roomReverb.stop;
 ~spaceView.stop;
