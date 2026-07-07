@@ -28,18 +28,21 @@ AtkBinauralizer {
 	var <>cutoffMin;       // Tiefpass-Grenzfrequenz in maximaler Distanz, in Hz
 	var <>cutoffMax;       // Tiefpass-Grenzfrequenz in Distanz 0, in Hz
 	var <>ampRolloff;      // wie schnell die Lautstärke mit der Distanz abfällt
+	var <>reverbMix;       // 0..1 — wie stark dieses Objekt insgesamt in RoomReverb einspeist
 	var <synth;            // laufender Synth, sobald play() aufgerufen wurde
 
 	// erzeugt eine Instanz mit den gegebenen (oder Default-)Parametern
-	*new { |lagTime = 0.08, cutoffMin = 600, cutoffMax = 9000, ampRolloff = 0.9|
-		^super.new.init(lagTime, cutoffMin, cutoffMax, ampRolloff);
+	*new { |lagTime = 0.08, cutoffMin = 600, cutoffMax = 9000, ampRolloff = 0.9,
+			reverbMix = 0.3|
+		^super.new.init(lagTime, cutoffMin, cutoffMax, ampRolloff, reverbMix);
 	}
 
-	init { |aLagTime, aCutoffMin, aCutoffMax, aAmpRolloff|
+	init { |aLagTime, aCutoffMin, aCutoffMax, aAmpRolloff, aReverbMix|
 		lagTime = aLagTime;
 		cutoffMin = aCutoffMin;
 		cutoffMax = aCutoffMax;
 		ampRolloff = aAmpRolloff;
+		reverbMix = aReverbMix;
 	}
 
 	// legt den geteilten HRTF-Decoder-Kernel an und registriert danach die SynthDef — ANDERS
@@ -52,11 +55,12 @@ AtkBinauralizer {
 	// wartet zuverlässig, bevor addSynthDef intern aufgerufen wird.
 	// subjectID: 21 = KEMAR-Kunstkopf (generische Messung, kein bestimmtes Individuum) —
 	// siehe FoaDecoderKernel-Hilfe für Alternativen zum Ausprobieren.
-	*setup { |server, subjectID = 21|
+	// reverbBus (optional): siehe addSynthDef.
+	*setup { |server, subjectID = 21, reverbBus|
 		decoderKernel = FoaDecoderKernel.newCIPIC(subjectID, server);
 		Routine({
 			server.sync;
-			this.addSynthDef;
+			this.addSynthDef(reverbBus);
 		}).play;
 	}
 
@@ -68,11 +72,18 @@ AtkBinauralizer {
 
 	// registriert die \atkBinauralizer-SynthDef beim Server. Wird von *setup selbst
 	// aufgerufen, sobald der Kernel geladen ist — nicht separat von außen aufrufen.
-	*addSynthDef {
+	//
+	// reverbBus (optional): Bus einer RoomReverb-Instanz (siehe dort) — per Closure fest
+	// eingebacken (wie decoder), da Out.ar sein Bus-Ziel nicht zur Laufzeit wechseln kann.
+	// Ohne reverbBus (nil) entsteht kein Send. Send-Betrag nutzt den ohnehin berechneten
+	// distAmp: nah (distAmp≈1) sendet kaum etwas, weit (distAmp≈0) fast alles, skaliert mit
+	// reverbMix.
+	*addSynthDef { |reverbBus|
 		var decoder = decoderKernel;
 
 		SynthDef(\atkBinauralizer, { |in = 0, out = 0, azimuth = 0, distance = 1,
-				lagTime = 0.08, cutoffMin = 600, cutoffMax = 9000, ampRolloff = 0.9|
+				lagTime = 0.08, cutoffMin = 600, cutoffMax = 9000, ampRolloff = 0.9,
+				reverbMix = 0.3|
 			// azimuth kommt von Listener>>relativeAzimuth auf (-pi, pi] gewrappt an; beim
 			// Vorbeiziehen hinter dem Hörer springt der Rohwert um ~2pi (+pi -> -pi). Lag.kr
 			// direkt auf azimuth würde diesen Sprung linear durchfahren (hörbarer Klick, da
@@ -88,6 +99,9 @@ AtkBinauralizer {
 			var bFormat = PanB2.ar(mono, az / pi, 1);
 			var binaural = FoaDecode.ar(bFormat, decoder);
 			Out.ar(out, binaural);
+			if(reverbBus.notNil) {
+				Out.ar(reverbBus, mono * (1 - distAmp) * reverbMix);
+			};
 		}).add;
 	}
 
@@ -100,7 +114,8 @@ AtkBinauralizer {
 			\lagTime, lagTime,
 			\cutoffMin, cutoffMin,
 			\cutoffMax, cutoffMax,
-			\ampRolloff, ampRolloff
+			\ampRolloff, ampRolloff,
+			\reverbMix, reverbMix
 		], target ? server, addAction);
 		^this
 	}

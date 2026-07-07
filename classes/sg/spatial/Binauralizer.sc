@@ -12,21 +12,25 @@ Binauralizer {
 	var <>cutoffMax;      // Tiefpass-Grenzfrequenz in Distanz 0, in Hz
 	var <>ampRolloff;     // wie schnell die Lautstärke mit der Distanz abfällt
 	var <>behindDampMin;  // Lautstärkefaktor, wenn die Quelle genau hinter dem Hörer ist
+	var <>reverbMix;      // 0..1 — wie stark dieses Objekt insgesamt in RoomReverb einspeist
 	var <synth;           // laufender Synth, sobald play() aufgerufen wurde
 
 	// erzeugt eine Instanz mit den gegebenen (oder Default-)Parametern
 	*new { |lagTime = 0.08, itdScale = 0.0006, cutoffMin = 600, cutoffMax = 9000,
-			ampRolloff = 0.9, behindDampMin = 0.55|
-		^super.new.init(lagTime, itdScale, cutoffMin, cutoffMax, ampRolloff, behindDampMin);
+			ampRolloff = 0.9, behindDampMin = 0.55, reverbMix = 0.3|
+		^super.new.init(lagTime, itdScale, cutoffMin, cutoffMax, ampRolloff, behindDampMin,
+			reverbMix);
 	}
 
-	init { |aLagTime, aItdScale, aCutoffMin, aCutoffMax, aAmpRolloff, aBehindDampMin|
+	init { |aLagTime, aItdScale, aCutoffMin, aCutoffMax, aAmpRolloff, aBehindDampMin,
+			aReverbMix|
 		lagTime = aLagTime;
 		itdScale = aItdScale;
 		cutoffMin = aCutoffMin;
 		cutoffMax = aCutoffMax;
 		ampRolloff = aAmpRolloff;
 		behindDampMin = aBehindDampMin;
+		reverbMix = aReverbMix;
 	}
 
 	// registriert die \binauralizer-SynthDef beim Server: Pan (sin(az)), ITD
@@ -35,15 +39,22 @@ Binauralizer {
 	// in (Mono), schreibt Stereo nach out. Asynchron (/d_recv) — vor play()
 	// mit etwas zeitlichem Abstand aufrufen.
 	//
+	// reverbBus (optional): Bus einer RoomReverb-Instanz (siehe dort) — muss vor
+	// addSynthDef existieren, wird per Closure fest in die SynthDef eingebacken (wie
+	// decoder/encoder bei AtkBinauralizer), da Out.ar sein Bus-Ziel nicht zur Laufzeit
+	// wechseln kann. Ohne reverbBus (nil) entsteht schlicht kein Send — kein Fehler.
+	// Send-Betrag nutzt den ohnehin berechneten distAmp: nah (distAmp≈1) sendet kaum
+	// etwas, weit (distAmp≈0) fast alles, skaliert mit reverbMix.
+	//
 	// Die Zahlen-Defaults hier dupliziert *new (bewusst, s. InsectSound für die
 	// ausführliche Begründung): play() übergibt immer alle Instanzvariablen
 	// explizit, die SynthDef-eigenen Defaults greifen also nur bei direktem
 	// Server-Zugriff ohne die Klasse. SynthDef-Argument-Defaults müssen
 	// literale Konstanten sein, können also nicht auf *new verweisen.
-	*addSynthDef {
+	*addSynthDef { |reverbBus|
 		SynthDef(\binauralizer, { |in = 0, out = 0, azimuth = 0, distance = 1,
 				lagTime = 0.08, itdScale = 0.0006, cutoffMin = 600, cutoffMax = 9000,
-				ampRolloff = 0.9, behindDampMin = 0.55|
+				ampRolloff = 0.9, behindDampMin = 0.55, reverbMix = 0.3|
 			// azimuth kommt von Listener>>relativeAzimuth auf (-pi, pi] gewrappt an; beim
 			// Vorbeiziehen hinter dem Hörer springt der Rohwert um ~2pi (+pi -> -pi). Lag.kr
 			// direkt auf azimuth würde diesen Sprung linear durchfahren (hörbarer Klick, da
@@ -61,6 +72,9 @@ Binauralizer {
 			var left = DelayL.ar(stereo[0], 0.01, 0.0015 + itd.max(0));
 			var right = DelayL.ar(stereo[1], 0.01, 0.0015 + itd.neg.max(0));
 			Out.ar(out, [left, right]);
+			if(reverbBus.notNil) {
+				Out.ar(reverbBus, sig * (1 - distAmp) * reverbMix);
+			};
 		}).add;
 	}
 
@@ -78,7 +92,8 @@ Binauralizer {
 			\cutoffMin, cutoffMin,
 			\cutoffMax, cutoffMax,
 			\ampRolloff, ampRolloff,
-			\behindDampMin, behindDampMin
+			\behindDampMin, behindDampMin,
+			\reverbMix, reverbMix
 		], target ? server, addAction);
 		^this
 	}
