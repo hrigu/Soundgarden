@@ -58,14 +58,14 @@ RoomReverb.addSynthDef;
 // Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s im Uhrzeigersinn),
 // Standard-Klang.
 moveRule1 = CircularMoveRule.new;
-movable1 = Movable.new([0, 2.5, 0], moveRule1, 5);
+movable1 = Movable.new([0, 2.5, 0], moveRule1, roomRadius: 5);
 insectSound1 = InsectSound.new;
 
 // Insekt 2: etwas schneller (1.0 statt 0.6 rad/s) und in Gegenrichtung
 // (negatives angularSpeed); heller/schneller Klang (höhere Flügelschlag- und
 // Resonanzfrequenzen, kürzeres Ausklingen) statt Standard-Brummen.
 moveRule2 = CircularMoveRule.new(3.0, 1.0, 0.15, -1.0);
-movable2 = Movable.new([0, -3.0, 0], moveRule2, 5);
+movable2 = Movable.new([0, -3.0, 0], moveRule2, roomRadius: 5);
 insectSound2 = InsectSound.new(wingRate: 280, wingDuty: 0.2, ringFreq1: 5200, ringFreq2: 7000,
 	ringDecay1: 0.015, ringDecay2: 0.01, amp: 0.3);
 
@@ -76,7 +76,7 @@ insectSound2 = InsectSound.new(wingRate: 280, wingDuty: 0.2, ringFreq1: 5200, ri
 // Unterscheidung von den Insekten. Position per Live-Coding änderbar, siehe
 // Block 2b weiter unten (~fountainMovable.moveTo(...)).
 fountainMoveRule = SteadyMoveRule.new;
-fountainMovable = Movable.new([2, 1, 0], fountainMoveRule, 5);
+fountainMovable = Movable.new([2, 1, 0], fountainMoveRule, roomRadius: 5);
 fountainSound = InsectSound.new(wingRate: 60, wingDuty: 0.6, ringFreq1: 800, ringFreq2: 1400,
 	ringDecay1: 0.08, ringDecay2: 0.06, amp: 0.05);
 

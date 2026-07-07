@@ -31,7 +31,7 @@ AtkBinauralizer.setup(s);
 // im Uhrzeigersinn), Standard-Klang. AtkBinauralizer statt Binauralizer — echtes
 // HRTF, zum direkten Vergleich mit Insekt 2/Brunnen (siehe Kopfkommentar).
 moveRule = CircularMoveRule.new;
-movable = Movable.new([0, 2.5, 0], moveRule, 5);
+movable = Movable.new([0, 2.5, 0], moveRule, roomRadius: 5);
 insectSound = InsectSound.new;
 
 atk_binauralizer = AtkBinauralizer.new;

@@ -45,7 +45,7 @@ rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (
 	var angle = (i / n) * 2pi;
 	var pos = [radius * sin(angle), radius * cos(angle), 0];
 	var phase = i / n;
-	var movable = Movable.new(pos, SteadyMoveRule.new, radius + 2); // Marge, da die
+	var movable = Movable.new(pos, SteadyMoveRule.new, roomRadius: radius + 2); // Marge, da die
 		// Objekte exakt auf der Kreislinie sitzen (roomRadius nur fuer die organische
 		// Rueckfuehrung bei bewegten Objekten relevant, siehe Movable>>step)
 	var sound = SampleSound.new(pe.fullPath, rate, phase);

@@ -51,7 +51,7 @@ maxSpeed = 0.3;  // rad/s — schnellstes Objekt: eine Umdrehung in ca. 21s
 	var angularSpeed = minSpeed + (((n - 1).max(1).reciprocal * i) * (maxSpeed - minSpeed));
 	var startPos = [radius * sin(startAngle), radius * cos(startAngle), 0];
 	var moveRule = CircularMoveRule.new(radius, 0, 0, angularSpeed, startAngle);
-	var movable = Movable.new(startPos, moveRule, radius + 2); // Marge, s. sample.scd
+	var movable = Movable.new(startPos, moveRule, roomRadius: radius + 2); // Marge, s. sample.scd
 	var phase = i / n;
 	var sound = SampleSound.new(pe.fullPath, rate, phase);
 	sound.preload(s); // laedt den Buffer schon jetzt, statt erst bei room.play in
