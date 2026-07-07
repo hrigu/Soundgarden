@@ -2,17 +2,32 @@
 // sich bewegen/drehen (siehe moveForward/strafeLeft/rotate etc., z.B. von
 // KeyboardListenerControl genutzt). Rechnet Weltkoordinaten in "was hört er" um: Azimuth
 // relativ zur eigenen Blickrichtung (0 = vorne, positiv = rechts, ±pi = hinten) und Distanz.
+// Kennt zusätzlich seine "Ohren" (binauralizerClass, siehe makeBinauralizer) — Binauralisierung
+// ist eine Eigenschaft des Hörers, nicht der Klangquelle (Intent 27).
 Listener {
 	var <>pos;     // [x, y, z]
 	var <>facing;  // Grad, 0 = entlang +y
+	var <>binauralizerClass;  // welche "Ohren" dieser Listener hat — siehe makeBinauralizer
 
-	*new { |pos = #[0, 0, 0], facing = 0|
-		^super.new.setup(pos, facing);
+	*new { |pos = #[0, 0, 0], facing = 0, binauralizerClass|
+		^super.new.setup(pos, facing, binauralizerClass);
 	}
 
-	setup { |aPos, aFacing|
+	// binauralizerClass-Default (Binauralizer) hier statt in der Parameterliste aufgelöst —
+	// Klassenreferenzen sind dort keine gültigen literalen Default-Werte (SuperCollider-
+	// Syntaxregel, gleiches Muster wie bei Sound/SoundObject).
+	setup { |aPos, aFacing, aBinauralizerClass|
 		pos = aPos;
 		facing = aFacing;
+		binauralizerClass = aBinauralizerClass ?? { Binauralizer };
+	}
+
+	// erzeugt einen neuen Binauralizer passend zu den "Ohren" dieses Listeners — SoundObjects
+	// bekommen ihren Binauralizer nicht mehr direkt zugewiesen, sondern über Room>>register,
+	// das diese Methode aufruft. Interna: welche Klasse/Strategie verwendet wird, ist Sache
+	// des Listeners, nicht des aufrufenden Skripts (siehe Intent 27).
+	makeBinauralizer { |reverbMix = 0.3|
+		^binauralizerClass.new(reverbMix: reverbMix)
 	}
 
 	// Azimuth zur anderen Position relativ zur Blickrichtung
