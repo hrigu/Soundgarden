@@ -5,8 +5,8 @@
 // sounds/apple/, siehe Intent 21).
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) boot/load_classes.scd — bindet SampleSound/CircularMoveRule/AtkBinauralizer/RoomReverb/
-//                          SoundObject/Orchestra/SpaceView in den Klassenpfad ein
+//   1) boot/load_classes.scd — bindet SampleSound/CircularMoveRule/AtkBinauralizer/Room/
+//                          SoundObject/SpaceView in den Klassenpfad ein
 //   2) boot/boot.scd   — Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
@@ -26,18 +26,10 @@ var soundsDir, sampleFiles, n, radius, rate, minSpeed, maxSpeed;
 
 SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
-// allocBus (nicht play!) — der geteilte Bus muss existieren, bevor AtkBinauralizer.setup ihn
-// unten als reverbBus referenziert; der eigentliche Reverb-Synth startet erst in Block 2,
-// nachdem alle anderen Synths schon laufen (siehe RoomReverb>>play).
-~roomReverb = RoomReverb.new;
-~roomReverb.allocBus(s);
-
-// AtkBinauralizer.setup lädt den HRTF-Kernel (asynchron) und registriert danach selbst die
+~room = Room.new(s);
+// AtkBinauralizer lädt den HRTF-Kernel (asynchron) und registriert danach selbst die
 // SynthDef (siehe AtkBinauralizer>>*setup) — etwas zeitlichen Abstand zu Block 2 lassen.
-AtkBinauralizer.setup(s, reverbBus: ~roomReverb.bus);
-
-~listener = Listener.new;
-~orchestra = Orchestra.new(~listener);
+~room.addSynthDef(AtkBinauralizer, subjectID: 21);
 
 // nur sounds/compmusic/ (nicht der ganze sounds/-Baum — auf Wunsch, apple/ bleibt aussen vor).
 soundsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "sounds" +/+ "compmusic");
@@ -63,9 +55,9 @@ maxSpeed = 0.3;  // rad/s — schnellstes Objekt: eine Umdrehung in ca. 21s
 	var phase = i / n;
 	var sound = SampleSound.new(pe.fullPath, rate, phase);
 	var soundObject = SoundObject.new(movable, sound, AtkBinauralizer.new);
-	sound.preload(s); // laedt den Buffer schon jetzt, statt erst bei orchestra.play(s) in
+	sound.preload(s); // laedt den Buffer schon jetzt, statt erst bei room.play in
 		// Block 2 — gibt der asynchronen Dateileseoperation Zeit (siehe SampleSound>>preload)
-	~orchestra.register(soundObject);
+	~room.register(soundObject);
 	soundObject
 });
 
@@ -73,21 +65,18 @@ maxSpeed = 0.3;  // rad/s — schnellstes Objekt: eine Umdrehung in ca. 21s
 )
 
 // --- 2) Abspielen ---
-~orchestra.play(s);
-// RoomReverb erst jetzt starten (addToTail), nachdem alle SoundObjects schon laufen —
-// siehe RoomReverb>>play.
-~roomReverb.play(s);
+// startet Orchestra vor RoomReverb in der richtigen Reihenfolge (siehe Room>>play).
+~room.play;
 
 // --- 3) Raum-Draufsicht öffnen (optional) ---
 // Zeigt Listener im Zentrum und alle Sample-Objekte, die sich auf der Kreisbahn bewegen.
-~spaceView = SpaceView.new(~orchestra);
+~spaceView = SpaceView.new(~room.orchestra);
 ~spaceView.play;
 
-~listenerControl = KeyboardListenerControl.new(~listener);
+~listenerControl = KeyboardListenerControl.new(~room.listener);
 ~listenerControl.play;
 
 // --- 4) Stoppen ---
-~orchestra.stop;
+~room.stop;
 AtkBinauralizer.teardown;
-~roomReverb.stop;
 ~spaceView.stop;

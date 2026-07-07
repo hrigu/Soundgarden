@@ -4,7 +4,7 @@
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
 //   1) boot/load_classes.scd — bindet Movable/Listener/CircularMoveRule/SteadyMoveRule/InsectSound/
-//                          Binauralizer/AtkBinauralizer/RoomReverb/SoundObject/Orchestra/
+//                          Binauralizer/AtkBinauralizer/Room/SoundObject/
 //                          KeyboardListenerControl/SpaceView in den Klassenpfad ein
 //   2) boot/boot.scd   — Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
@@ -41,28 +41,20 @@ var fountainMoveRule, fountainSound, fountainBinauralizer, fountain;
 
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
-// allocBus (nicht play!) — der geteilte Bus muss existieren, bevor Binauralizer.addSynthDef
-// und AtkBinauralizer.setup ihn unten als reverbBus referenzieren; der eigentliche
-// Reverb-Synth startet erst in Block 2, nachdem alle anderen Synths schon laufen (siehe
-// RoomReverb>>play).
-~roomReverb = RoomReverb.new;
-~roomReverb.allocBus(s);
-Binauralizer.addSynthDef(~roomReverb.bus);
-// AtkBinauralizer.setup lädt den HRTF-Kernel (asynchron) und registriert danach selbst die
-// SynthDef (siehe AtkBinauralizer>>*setup) — braucht deshalb den bereits gebooteten Server
-// (s). Etwas mehr zeitlichen Abstand zu Block 2 lassen als bei den übrigen addSynthDef-
-// Aufrufen hier: der Kernel lädt spürbar länger als eine normale SynthDef-Registrierung.
-AtkBinauralizer.setup(s, reverbBus: ~roomReverb.bus);
+~room = Room.new(s);
+~room.addSynthDef(Binauralizer);
+// AtkBinauralizer lädt den HRTF-Kernel (asynchron) und registriert danach selbst die SynthDef
+// (siehe AtkBinauralizer>>*setup) — braucht deshalb den bereits gebooteten Server (s). Etwas
+// mehr zeitlichen Abstand zu Block 2 lassen als bei den übrigen addSynthDef-Aufrufen hier:
+// der Kernel lädt spürbar länger als eine normale SynthDef-Registrierung.
+~room.addSynthDef(AtkBinauralizer, subjectID: 21);
 
-// Ein gemeinsamer Listener (Position/Blickrichtung per Tastatur beweglich,
-// siehe Block 3) hört alle Soundobjekte. Jedes Soundobjekt braucht aber sein
-// eigenes Movable/Sound/Binauralizer — die Binauralisierung hängt von der
-// Position ab, die pro Objekt verschieden ist, und jeder Synth braucht seinen
-// eigenen Bus/State. Ein gemeinsames Orchestra hält den Listener und tickt
-// alle Objekte über eine einzige Routine statt je einer eigenen — die
+// Ein gemeinsamer Listener (Position/Blickrichtung per Tastatur beweglich, siehe Block 3)
+// hört alle Soundobjekte — Teil von ~room, siehe Room>>listener. Jedes Soundobjekt braucht
+// aber sein eigenes Movable/Sound/Binauralizer — die Binauralisierung hängt von der Position
+// ab, die pro Objekt verschieden ist, und jeder Synth braucht seinen eigenen Bus/State. Room
+// tickt alle registrierten Objekte über eine einzige Routine statt je einer eigenen — die
 // Soundobjekte selbst kennen den Listener nicht.
-~listener = Listener.new; // Environment-Variable statt var: Block 3 (Tastatursteuerung)
-                          // braucht eine Referenz darauf über den Block hinaus.
 
 // Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s
 // im Uhrzeigersinn), Standard-Klang. AtkBinauralizer statt Binauralizer — echtes
@@ -93,19 +85,16 @@ fountainSound = InsectSound.new(60, 0.6, 800, 1400, 0.08, 0.06, 0.25);
 fountainBinauralizer = Binauralizer.new;
 fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer);
 
-~orchestra = Orchestra.new(~listener);
-~orchestra.register(~insect1);
-//~orchestra.register(~insect2);
-//~orchestra.register(fountain);
+~room.register(~insect1);
+//~room.register(~insect2);
+//~room.register(fountain);
 )
 
 // --- 2) Abspielen ---
-// orchestra.play startet den Klang-/Binauralizer-Synth für jedes registrierte
-// Soundobjekt und danach den gemeinsamen Taktgeber (Bewegung + Azimuth/Distanz).
-~orchestra.play(s);
-// RoomReverb erst jetzt starten (addToTail), nachdem alle SoundObjects schon laufen —
-// siehe RoomReverb>>play.
-~roomReverb.play(s);
+// room.play startet den Klang-/Binauralizer-Synth für jedes registrierte Soundobjekt, den
+// gemeinsamen Taktgeber (Bewegung + Azimuth/Distanz) und danach den Hall — in der richtigen
+// Reihenfolge (siehe Room>>play).
+~room.play;
 
 // --- 2b) Live-Coding: Brunnen umplatzieren ---
 // Position jederzeit während des Sets änderbar — moveTo setzt sie direkt,
@@ -117,31 +106,30 @@ fountain = SoundObject.new(~fountainMovable, fountainSound, fountainBinauralizer
 // Öffnet ein kleines Fenster, das während der Steuerung fokussiert sein muss
 // (SuperCollider-Standardidiom für Tastatur-Input). Tasten halten:
 // W/S vor/zurück, A/D seitlich, Q/E drehen.
-~listenerControl = KeyboardListenerControl.new(~listener);
+~listenerControl = KeyboardListenerControl.new(~room.listener);
 ~listenerControl.play;
 
 // --- 3b) Live-Coding: Insekt 1 zurufen lassen ---
 // Löst bei insect1 einen kurzen Klang-Akzent aus (Tonhöhe/Pegel blitzen kurz
 // auf); nach kurzer, leicht zufälliger Verzögerung ruft ein zufälliges anderes
 // registriertes Objekt (insect2 oder fountain) zurück (Call-and-Response).
-~orchestra.call(~insect1);
+~room.call(~insect1);
 
 // --- 3c) Raum-Draufsicht öffnen ---
 // Live aktualisiertes Fenster: Listener (Position + Blickrichtung als Pfeil) und
 // alle registrierten Soundobjekte, von oben betrachtet. Bewegt selbst nichts —
-// liest bei jedem Neuzeichnen einfach den aktuellen Zustand von ~orchestra.
-~spaceView = SpaceView.new(~orchestra);
+// liest bei jedem Neuzeichnen einfach den aktuellen Zustand von ~room.orchestra.
+~spaceView = SpaceView.new(~room.orchestra);
 ~spaceView.play;
 
 // --- 4) Stoppen ---
-// orchestra.stop stoppt das Ticken UND ruft stop auf allen registrierten
-// Soundobjekten auf (Synths/Busse werden freigegeben).
-~orchestra.stop;
+// room.stop stoppt das Ticken, ruft stop auf allen registrierten Soundobjekten auf
+// (Synths/Busse werden freigegeben) und stoppt danach den Hall.
+~room.stop;
 
 // AtkBinauralizer.teardown gibt den geteilten HRTF-Decoder-Kernel frei (Server-Buffer) —
-// separat, weil der Kernel der Klasse gehört, nicht einer einzelnen Instanz/orchestra.stop.
+// separat, weil der Kernel der Klasse gehört, nicht einer einzelnen Instanz/room.stop.
 AtkBinauralizer.teardown;
-~roomReverb.stop;
 
 // Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
 // falls Block 3 überhaupt ausgeführt wurde.
