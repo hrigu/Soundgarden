@@ -10,3 +10,4 @@ TestSteadyMoveRule.run;
 TestMovable.run;
 TestListener.run;
 TestRoom.run;
+TestSoundObjectBuilder.run;
