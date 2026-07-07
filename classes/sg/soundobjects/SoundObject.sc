@@ -25,7 +25,7 @@ SoundObject {
 		sound.play(server);
 		// addAfter: Binauralizer muss im Node-Baum nach dem Sound laufen,
 		// um dessen Bus im selben Audio-Block lesen zu können.
-		binauralizer.play(server, sound.bus, 0, sound.synth, \addAfter);
+		binauralizer.play(server, sound.bus, outBus: 0, target: sound.synth, addAction: \addAfter);
 		^this
 	}
 
