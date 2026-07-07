@@ -29,13 +29,12 @@
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen, vor jeder
 // anderen Anweisung (SuperCollider-Syntaxregel) — deshalb hier gesammelt,
 // auch wenn sie erst weiter unten mit Werten befüllt werden.
-var moveRule1, movable1, insectSound1;
-var moveRule2, movable2, insectSound2;
+var insectMovableBase, insectSoundBase;
 var fountainMoveRule, fountainMovable, fountainSound;
 
-// ~insect1 als Environment-Variable statt var: Block 3b (Call-and-Response) braucht eine
-// Referenz darauf über den Block hinaus. ~movable2/~insectSound2/~fountainMovable/
-// ~fountainSound ebenso — Block 2b/später live nachträglich registrierbar (siehe unten).
+// ~insect1/~insect2 als Environment-Variablen statt var: Block 3b (Call-and-Response) braucht
+// eine Referenz auf ~insect1 über den Block hinaus. ~fountainMovable/~fountainSound ebenso —
+// Block 2b/später live nachträglich änderbar (siehe unten).
 
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
@@ -56,32 +55,38 @@ RoomReverb.addSynthDef;
 // den Listener (siehe Kopfkommentar).
 
 // Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s im Uhrzeigersinn),
-// Standard-Klang.
-moveRule1 = CircularMoveRule.new;
-movable1 = Movable.new([0, 2.5, 0], moveRule1, roomRadius: 5);
-insectSound1 = InsectSound.new;
+// Standard-Klang. Als Basis-Konfiguration explizit als Event formuliert (Werte entsprechen
+// InsectSound/Movable-Defaults), damit Insekt 2 unten per Event-Merge (++) nur die
+// tatsächlichen Abweichungen angeben muss, statt alle Parameter erneut vollständig
+// aufzuzählen (Intent 29).
+insectMovableBase = (pos: [0, 2.5, 0], moveRule: CircularMoveRule.new, roomRadius: 5);
+insectSoundBase = (wingRate: 210, wingDuty: 0.25, ringFreq1: 3200, ringFreq2: 4600,
+	ringDecay1: 0.02, ringDecay2: 0.015, amp: 0.35);
 
-// Insekt 2: etwas schneller (1.0 statt 0.6 rad/s) und in Gegenrichtung
-// (negatives angularSpeed); heller/schneller Klang (höhere Flügelschlag- und
-// Resonanzfrequenzen, kürzeres Ausklingen) statt Standard-Brummen.
-moveRule2 = CircularMoveRule.new(baseRadius: 3.0, breathAmount: 1.0, breathRate: 0.15,
-	angularSpeed: -1.0);
-movable2 = Movable.new([0, -3.0, 0], moveRule2, roomRadius: 5);
-insectSound2 = InsectSound.new(wingRate: 280, wingDuty: 0.2, ringFreq1: 5200, ringFreq2: 7000,
-	ringDecay1: 0.015, ringDecay2: 0.01, amp: 0.3);
+~insect1 = ~room.registerFromBuilder(insectSoundBase, insectMovableBase);
 
-~insect1 = ~room.register(movable1, insectSound1);
+// Insekt 2: Variante von Insekt 1 — etwas schneller (1.0 statt 0.6 rad/s) und in
+// Gegenrichtung (negatives angularSpeed) unterwegs, mit hellerem/schnellerem Klang (höhere
+// Flügelschlag- und Resonanzfrequenzen, kürzeres Ausklingen) statt Standard-Brummen. Nur die
+// Abweichungen von der Basis werden angegeben, ++ übernimmt den Rest unverändert (z.B.
+// roomRadius: 5).
+~insect2 = ~room.registerFromBuilder(
+	insectSoundBase ++ (wingRate: 280, wingDuty: 0.2, ringFreq1: 5200, ringFreq2: 7000,
+		ringDecay1: 0.015, ringDecay2: 0.01, amp: 0.3),
+	insectMovableBase ++ (pos: [0, -3.0, 0], moveRule: CircularMoveRule.new(baseRadius: 3.0,
+		breathAmount: 1.0, breathRate: 0.15, angularSpeed: -1.0)));
 
 // "Brunnen": steady Soundobjekt — SteadyMoveRule bewegt sich nicht von selbst
 // (next() gibt die Position unverändert zurück), tiefer/langsamer Klang zur
 // Unterscheidung von den Insekten. Position per Live-Coding änderbar, siehe
-// Block 2b weiter unten (~fountainMovable.moveTo(...)).
+// Block 2b weiter unten (~fountainMovable.moveTo(...)). Kein Kandidat für eine
+// Basis/Variante-Konfiguration wie die Insekten oben — bleibt deshalb bei movable+sound
+// von Hand und ~room.register.
 fountainMoveRule = SteadyMoveRule.new;
 fountainMovable = Movable.new([2, 1, 0], fountainMoveRule, roomRadius: 5);
 fountainSound = InsectSound.new(wingRate: 60, wingDuty: 0.6, ringFreq1: 800, ringFreq2: 1400,
 	ringDecay1: 0.08, ringDecay2: 0.06, amp: 0.05);
 
-~insect2 = ~room.register(movable2, insectSound2);
 ~fountain = ~room.register(fountainMovable, fountainSound);
 )
 (
