@@ -105,6 +105,15 @@ Ausführen: `boot/load_classes.scd` → `boot/boot.scd` → `demos/insects.scd` 
 Block), mit Kopfhörern. Für die Tastatursteuerung muss das
 `KeyboardListenerControl`-Fenster fokussiert sein.
 
+### Reverb-Testsetup (`demos/reverb.scd`)
+
+Zum gezielten Einstellen der `RoomReverb`-Parameter: eine einzige, stationäre Klangquelle
+(trockenes Sample, fester Rhythmus), um die man sich per Tastatur frei bewegen und drehen kann
+(W/S/A/D/Q/E) — anders als bei `demos/sample.scd`/`sample_moving.scd` mit mehreren
+gleichzeitigen Objekten lässt sich der Nachklang hier klar heraushören. Enthält einen
+Live-Tuning-Block (`roomSize`/`revTime`/`damping`/`mix`/`reverbMix` per `synth.set(...)`) sowie
+eine Möglichkeit, die Quelle selbst umzuplatzieren (`moveTo(...)`).
+
 Zwei Binauralisierungs-Varianten stehen zum direkten Vergleich zur Verfügung
 (in `demos/insects.scd`: Insekt 1 nutzt `AtkBinauralizer`, Insekt 2 und der
 Brunnen `Binauralizer`):
