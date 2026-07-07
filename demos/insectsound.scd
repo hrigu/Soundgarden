@@ -22,8 +22,8 @@ SynthDef(\monitorMono, { |in = 0, out = 0, amp = 1|
 ~insect = InsectSound.new(
 	pattern: CallingPattern.new([
 		[0.02, true], [0.03, false],
-		[0.02, true], [0.03, false],
-		[0.02, true], [0.03, false],
+		[0.02, true], [0.3, false],
+		[0.02, true], [0.3, false],
 		[0.02, true], [0.03, false],
 		[0.2, false]
 	])
@@ -47,14 +47,31 @@ SynthDef(\monitorMono, { |in = 0, out = 0, amp = 1|
 ~insect.stop;
 ~monitor.free;
 
-// --- Beispiel 3: eigenes Pattern zusammenstellen ---
-// pattern ist zwar <>-beschreibbar, play() liest pattern aber nur beim Start (siehe
-// InsectSound>>play) — für ein neues Pattern also stop + neue Instanz + play, kein
-// Hot-Swap auf derselben laufenden Instanz.
+// --- Beispiel 3: eigenes Pattern zusammenstellen, per fromDurations ---
+// fromDurations statt new([[dauer, istAn], ...]): reine Dauern, per Konvention beginnt das
+// erste Segment "an", dann wechselt es strikt ab — kürzer zu schreiben für den häufigsten
+// Fall (regelmäßiges An/Aus). new([[dauer, istAn], ...]) bleibt nötig, sobald die Abfolge NICHT
+// strikt abwechselt (siehe Beispiel 1: zwei "aus"-Segmente in Folge für die längere
+// Interchirp-Pause). pattern ist zwar <>-beschreibbar, play() liest pattern aber nur beim
+// Start (siehe InsectSound>>play) — für ein neues Pattern also stop + neue Instanz + play,
+// kein Hot-Swap auf derselben laufenden Instanz.
 (
 ~insect = InsectSound.new(
 	wingRate: 280, amp: 0.3,
-	pattern: CallingPattern.new([[0.4, true], [1.5, false]]) // "kurz an, lang aus"
+	pattern: CallingPattern.fromDurations([0.4, 1.5]) // "kurz an, lang aus"
+);
+~insect.play(s);
+~monitor = Synth(\monitorMono, [\in, ~insect.bus.index, \out, 0], target: ~insect.synth,
+	addAction: \addAfter);
+)
+
+~insect.stop;
+~monitor.free;
+
+// --- Beispiel 4: fromDurations mit mehr als zwei Segmenten ---
+(
+~insect = InsectSound.new(
+	pattern: CallingPattern.fromDurations([0.02, 0.03, 0.02, 0.2]) // an, aus, an, aus
 );
 ~insect.play(s);
 ~monitor = Synth(\monitorMono, [\in, ~insect.bus.index, \out, 0], target: ~insect.synth,

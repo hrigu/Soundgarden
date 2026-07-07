@@ -64,20 +64,17 @@ insectSoundBase = (wingRate: 210, wingDuty: 0.25, ringFreq1: 3200, ringFreq2: 46
 	ringDecay1: 0.02, ringDecay2: 0.015, amp: 0.35);
 
 // Insekt 1 bekommt zusätzlich ein CallingPattern (Intent 30) statt durchgehend zu zirpen:
-// Zahlensatz aus Intent 31 (Bioakustik-Recherche zu Gryllus bimaculatus) — 4 Pulse à 50ms
-// (20ms an, 30ms aus) formen einen ~200ms-Chirp, gefolgt von einer 200ms-Interchirp-Pause.
-// Eigene CallingPattern-Instanz statt in insectSoundBase — ein CallingPattern führt intern
-// Zustand (aktuelle Segment-Position), eine gemeinsame Instanz über mehrere Insekten hinweg
-// (z.B. via insectSoundBase ++ ...) würde von mehreren Routinen gleichzeitig verändert und
-// liefe aus dem Takt.
+// Zahlensatz aus Intent 31 (Bioakustik-Recherche zu Gryllus bimaculatus) — 4 Pulse à 20ms an/
+// 30ms aus, die letzte Pulspause verlängert zur Interchirp-Pause (0.2s) statt eines
+// zusätzlichen Segments — dadurch wechselt die Liste strikt an/aus/an/aus/... ab und
+// fromDurations reicht (kein new([[dauer, istAn], ...]) nötig). Chirpdauer (4×0.02 + 3×0.03 =
+// 0.17s) trifft den sourced-Bereich ~160-171ms fast exakt. Eigene CallingPattern-Instanz statt
+// in insectSoundBase — ein CallingPattern führt intern Zustand (aktuelle Segment-Position),
+// eine gemeinsame Instanz über mehrere Insekten hinweg (z.B. via insectSoundBase ++ ...) würde
+// von mehreren Routinen gleichzeitig verändert und liefe aus dem Takt.
 ~insect1 = ~room.registerFromBuilder(
-	insectSoundBase ++ (pattern: CallingPattern.new([
-		[0.02, true], [0.03, false],
-		[0.02, true], [0.03, false],
-		[0.02, true], [0.03, false],
-		[0.02, true], [0.03, false],
-		[0.2, false]
-	])),
+	insectSoundBase ++ (pattern: CallingPattern.fromDurations(
+		[0.02, 0.03, 0.02, 0.03, 0.02, 0.03, 0.02, 0.2])),
 	insectMovableBase);
 
 // Insekt 2: Variante von Insekt 1 — etwas schneller (1.0 statt 0.6 rad/s) und in

@@ -12,6 +12,13 @@ CallingPattern {
 		^super.new.init(segments);
 	}
 
+	// Kurzschreibweise: reine Dauern statt [dauer, istAn]-Paaren — per Konvention beginnt das
+	// erste Segment "an", danach wechselt es strikt ab (an/aus/an/aus/...). Deckt den
+	// häufigsten Fall ab (siehe Intent 30, Nutzer-Feedback zur Verbosität von *new).
+	*fromDurations { |durations|
+		^this.new(durations.collect { |dur, i| [dur, i.even] });
+	}
+
 	init { |aSegments|
 		segments = aSegments;
 		index = 0;
