@@ -89,8 +89,12 @@ InsectSound : Sound {
 			// gate schaltet das CallingPattern (Intent 30) An/Aus; Lag.kr glättet den
 			// Sprung zu einer kurzen Rampe, damit das Umschalten nicht klickt. Default 1
 			// (immer an) — ohne pattern bleibt gate unverändert, bisheriges durchgehendes
-			// Verhalten.
-			Out.ar(out, buzz * amp * ampBoost * Lag.kr(gate, 0.02));
+			// Verhalten. Lag-Zeit bewusst sehr kurz (5ms, nicht z.B. 20ms): CallingPattern-
+			// Segmente können selbst nur 15-20ms lang sein (siehe Intent 31s Puls-Zahlensatz)
+			// — eine Lag-Zeit in derselben Größenordnung würde das Gate nie nahe an 0/1
+			// heranlassen, bevor das nächste Segment schon wieder umschaltet, und dadurch
+			// jede hörbare An/Aus-Struktur wegglätten (siehe Intent 30, Challenges).
+			Out.ar(out, buzz * amp * ampBoost * Lag.kr(gate, 0.005));
 		}).add;
 	}
 
