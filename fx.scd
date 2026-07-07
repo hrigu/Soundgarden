@@ -1,5 +1,5 @@
 // fx.scd — wiederverwendbare Live-FX-Bausteine (JITLib / Ndef)
-// Nach boot.scd ausführen. Jeder Eintrag nimmt ein Stereo-Signal und
+// Nach boot/boot.scd ausführen. Jeder Eintrag nimmt ein Stereo-Signal und
 // gibt das bearbeitete Signal zurück — wird in set_template.scd in
 // Ndef(\fx) eingesetzt.
 

@@ -1,5 +1,5 @@
 // set_template.scd — Live-Set-Vorlage
-// Nach boot.scd und fx.scd öffnen. Während des Sets Block für Block
+// Nach boot/boot.scd und fx.scd öffnen. Während des Sets Block für Block
 // ausführen (Cmd+Enter). Ndef(\track) / Ndef(\fx) einfach neu ausführen —
 // JITLib überblendet automatisch (fadeTime), kein Klicken, kein Stottern.
 

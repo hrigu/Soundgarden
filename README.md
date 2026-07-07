@@ -8,7 +8,7 @@ Bitcrush, Reverb) – ohne Aussetzer, per JITLib (`Ndef`).
 
 1. SuperCollider installieren: https://supercollider.github.io/downloads
    (oder `brew install supercollider`)
-2. Repo öffnen, `boot.scd` in der IDE öffnen.
+2. Repo öffnen, `boot/boot.scd` in der IDE öffnen.
 3. Eigene Tracks (`.wav`/`.aiff`/`.flac`) in den Ordner `sounds/` legen.
    Der Ordner ist per `.gitignore` von Git ausgeschlossen – deine Musik landet
    nicht im Repo.
@@ -17,9 +17,9 @@ Bitcrush, Reverb) – ohne Aussetzer, per JITLib (`Ndef`).
 
 Dateien der Reihe nach öffnen und blockweise ausführen (Cmd+Enter):
 
-1. **`load_classes.scd`** – muss zuerst laufen (einmal pro Sitzung): bindet `classes/`/`tests/`
-   ein und kompiliert neu. `boot.scd` braucht die Klasse `BootTrackDetection` daraus.
-2. **`boot.scd`** – bootet den Server und lädt alle Dateien aus `sounds/`
+1. **`boot/load_classes.scd`** – muss zuerst laufen (einmal pro Sitzung): bindet `classes/`/`tests/`
+   ein und kompiliert neu. `boot/boot.scd` braucht die Klasse `BootTrackDetection` daraus.
+2. **`boot/boot.scd`** – bootet den Server und lädt alle Dateien aus `sounds/`
    automatisch in `~tracks` (z.B. `~tracks[\mytrack01]`).
 3. **`fx.scd`** – definiert die FX-Bausteine (`~fxChains`), die du live
    kombinierst.
@@ -31,7 +31,7 @@ Kernidee: `Ndef(\track, { ... })` und `Ndef(\fx, { ... })` einfach neu
 ausführen – JITLib überblendet automatisch (`fadeTime`), es gibt keine
 Klicks oder Unterbrechungen.
 
-## classes/, tests/ und load_classes.scd
+## classes/, tests/ und boot/load_classes.scd
 
 Eigene Produktiv-Klassen liegen in `classes/`, die zugehörigen Test-Klassen
 (`UnitTest`-Subklassen) getrennt davon in `tests/`. `BootTrackDetection` (Live-Set-Domäne)
@@ -44,20 +44,20 @@ Namespaces):
   `KeyboardListenerControl`, `SpaceView`
 - passende Tests spiegelbildlich unter `tests/sg/soundobjects/`, `tests/sg/spatial/`
 
-Damit SuperCollider alles kennt, einmal pro Sitzung **als allererstes** (vor `boot.scd`!)
-**`load_classes.scd`** ausführen (bindet `classes/` und `tests/` rekursiv ein) und im
+Damit SuperCollider alles kennt, einmal pro Sitzung **als allererstes** (vor `boot/boot.scd`!)
+**`boot/load_classes.scd`** ausführen (bindet `classes/` und `tests/` rekursiv ein) und im
 Post-Fenster auf `compile done` warten — danach stehen alle Klassen überall zur Verfügung.
-Ohne diesen Schritt scheitert `boot.scd` mit `ERROR: Class not defined.` (auf einer frisch
+Ohne diesen Schritt scheitert `boot/boot.scd` mit `ERROR: Class not defined.` (auf einer frisch
 gestarteten SuperCollider-Sitzung ist die Klassenbibliothek noch im Auslieferungszustand).
 
 ## Tests
 
 Die reine sclang-Logik (aktuell: Extension-Erkennung für Tracks) wird über
 SuperCollders eingebautes `UnitTest`-Framework getestet — ohne Server, ohne
-echte Audiodateien. Nach `load_classes.scd` einfach **`run_tests.scd`**
+echte Audiodateien. Nach `boot/load_classes.scd` einfach **`run_tests.scd`**
 ausführen; Ergebnis (grün/rot pro Testfall) erscheint im Post-Fenster.
 
-## Zweiter Prototyp: binaurales Insekt (`insect_demo.scd`)
+## Zweiter Prototyp: binaurales Insekt (`demos/insects.scd`)
 
 Ein virtuelles Klangobjekt ("Insekt"), das nach einer Bewegungsregel durch
 einen definierten Raum kurvt; der Hörer bekommt es über Kopfhörer binaural
@@ -98,12 +98,12 @@ Objektmodell:
   betrachtet. Bewegt selbst nichts, liest bei jedem Neuzeichnen einfach den
   aktuellen Zustand der `Orchestra`.
 
-Ausführen: `load_classes.scd` → `boot.scd` → `insect_demo.scd` (Block für
+Ausführen: `boot/load_classes.scd` → `boot/boot.scd` → `demos/insects.scd` (Block für
 Block), mit Kopfhörern. Für die Tastatursteuerung muss das
 `KeyboardListenerControl`-Fenster fokussiert sein.
 
 Zwei Binauralisierungs-Varianten stehen zum direkten Vergleich zur Verfügung
-(in `insect_demo.scd`: Insekt 1 nutzt `AtkBinauralizer`, Insekt 2 und der
+(in `demos/insects.scd`: Insekt 1 nutzt `AtkBinauralizer`, Insekt 2 und der
 Brunnen `Binauralizer`):
 
 - **`Binauralizer`** — einfache Näherung mit reinen Core-UGens (Pan +
@@ -161,7 +161,7 @@ Zwei Dokumente mit mehr Hintergrund (Stand nach Intent 9, `MoveRule`/
   `roomRadius`-Überschreitung ist reine Mathematik ohne Server-Bezug).
 - `SampleSound`/`AtkBinauralizer` ressourcenschonender machen: aktuell läuft pro
   Sample-Objekt ein dauerhafter Synth (inkl. teurer HRTF-Faltung), auch wenn es
-  die meiste Zeit nur Stille verarbeitet (z.B. `sample_demo.scd` mit vielen
+  die meiste Zeit nur Stille verarbeitet (z.B. `demos/sample.scd` mit vielen
   Objekten im Kreis, die sich den Rhythmus per Phasenversatz weitergeben — real
   hörbar ist meist nur eines gleichzeitig). Idee: On-Demand-Synths statt eines
   durchgehend laufenden pro Objekt — bei jedem Trigger neu erzeugen, nach

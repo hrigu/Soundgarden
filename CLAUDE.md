@@ -9,10 +9,10 @@ dort steht das Intent-Driven-Development-Protokoll (IDD), nach dem in diesem Rep
 
 Soundgarden ist ein SuperCollider-Spielplatz mit aktuell zwei Arbeitssträngen:
 
-1. **Live-Coding-Rig** (`boot.scd`, `fx.scd`, `set_template.scd`) — bestehende elektronische
+1. **Live-Coding-Rig** (`boot/boot.scd`, `fx.scd`, `set_template.scd`) — bestehende elektronische
    Tracks live umformen (Filter, Echo, Bitcrush, Stutter, Reverb) während einer
    Fusion-Tanzparty, über JITLib (`Ndef`), rein per Tastatur (kein MIDI-Controller).
-2. **Spatial-Audio-Prototyp** (`classes/sg/`, `insect_demo.scd`) — virtuelle Klangobjekte
+2. **Spatial-Audio-Prototyp** (`classes/sg/`, `demos/insects.scd`) — virtuelle Klangobjekte
    ("Insekten"), die sich nach einer Bewegungsregel durch einen definierten Raum bewegen und
    dem Hörer über Kopfhörer binaural zugespielt werden.
 
@@ -21,12 +21,12 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 ## Befehle
 
 - SuperCollider-IDE (scide) öffnen (Spotlight oder `open -a SuperCollider`).
-- `load_classes.scd` einmal pro Sitzung ausführen — bindet `classes/` in den Klassenpfad ein und
-  kompiliert neu; danach im Post-Fenster auf `compile done` warten. **Muss vor `boot.scd`
-  laufen** — `boot.scd` ruft `BootTrackDetection` auf, das erst nach diesem Schritt existiert.
+- `boot/load_classes.scd` einmal pro Sitzung ausführen — bindet `classes/` in den Klassenpfad ein und
+  kompiliert neu; danach im Post-Fenster auf `compile done` warten. **Muss vor `boot/boot.scd`
+  laufen** — `boot/boot.scd` ruft `BootTrackDetection` auf, das erst nach diesem Schritt existiert.
 - `run_tests.scd` — automatisierte Tests (`UnitTest`) für die reine sclang-Logik.
-- Live-Set-Workflow: `boot.scd` → `fx.scd` → `set_template.scd` (Block für Block, `Cmd+Enter`).
-- Spatial-Audio-Prototyp: `boot.scd` → `insect_demo.scd` —
+- Live-Set-Workflow: `boot/boot.scd` → `fx.scd` → `set_template.scd` (Block für Block, `Cmd+Enter`).
+- Spatial-Audio-Prototyp: `boot/boot.scd` → `demos/insects.scd` —
   **Kopfhörer benutzen**, binaurale Effekte funktionieren über Lautsprecher nicht richtig.
 
 ## Architektur
@@ -34,7 +34,7 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 - sclang + scsynth (Client/Server), JITLib (`Ndef`) fürs klickfreie Live-Editing laufender Synths.
 - `classes/` enthält Produktiv-Klassen (`BootTrackDetection`), `tests/` die zugehörigen
   `UnitTest`-Klassen (`TestBootTrackDetection`) — beide projekt-lokal eingebunden via
-  `LanguageConfig.addIncludePath` + `thisProcess.recompile` in `load_classes.scd` (kein
+  `LanguageConfig.addIncludePath` + `thisProcess.recompile` in `boot/load_classes.scd` (kein
   globaler Extensions-Ordner; beide Pfade werden rekursiv eingelesen).
 - Spatial-Audio-Klassen liegen unter `classes/sg/` (kein echter SC-Namespace — SuperCollider
   hat nur einen globalen, flachen Klassen-Namensraum — sondern reine Ordnerkonvention, drei
@@ -70,7 +70,7 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
   hörbar), solange das Headset in den **macOS-Systemeinstellungen** (Ton → Eingabe) noch als
   Standard-Mikrofon eingestellt ist. Der eigentliche Fix ist dort: Eingabegerät auf ein
   Nicht-Bluetooth-Gerät umstellen, dann handelt macOS A2DP (sauberes Stereo) neu aus.
-  `s.options.numInputBusChannels = 0` in `boot.scd` ist zusätzlich vorbereitet (aktuell
+  `s.options.numInputBusChannels = 0` in `boot/boot.scd` ist zusätzlich vorbereitet (aktuell
   auskommentiert), falls der Server trotzdem mit aktivem Bluetooth-Mikrofon gebootet wird.
 
 Für das vollständige IDD-Protokoll (Intent-Format, Ordner-Workflow, Task-Bestätigungen,

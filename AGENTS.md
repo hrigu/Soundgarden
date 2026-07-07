@@ -32,7 +32,7 @@ offensichtliche Korrekturen).
   `5 - Feature (Spatial-Audio): ATK-basiertes HRTF für das Insekt`.
 - Typ: `Feature`, `Enhancement`, `Bug`, `Test`, `Research`.
 - Domains in diesem Projekt (bei Bedarf erweiterbar):
-  - `Live-Set` — `boot.scd`/`fx.scd`/`set_template.scd`, der DJ-Live-Coding-Workflow.
+  - `Live-Set` — `boot/boot.scd`/`fx.scd`/`set_template.scd`, der DJ-Live-Coding-Workflow.
   - `Boot-Tracks` — Track-Erkennung/-Loading-Logik.
   - `Spatial-Audio` — `Movable`/`Listener`/`SoundObject`, binaurale Klangobjekte.
 - Pflicht-Abschnitte:
@@ -82,7 +82,7 @@ sinnvoll test-first entwickeln:
   Hörtest (Kopfhörer bei binauralen Sachen) — "klingt es richtig" lässt sich nicht sinnvoll als
   Vorher-Test formulieren.
 - Produktiv-Klassen kommen nach `classes/`, Test-Klassen (`UnitTest`-Subklassen) nach `tests/`;
-  `load_classes.scd` (einmal pro Sitzung: `LanguageConfig.addIncludePath` für beide Ordner,
+  `boot/load_classes.scd` (einmal pro Sitzung: `LanguageConfig.addIncludePath` für beide Ordner,
   rekursiv, + `thisProcess.recompile`) muss laufen, bevor sie verfügbar sind.
 - Spatial-Audio-Klassen kommen nach `classes/sg/{sounds,soundobjects,spatial}/` (reine
   Ordnerkonvention, SuperCollider selbst hat keine echten Namespaces — siehe CLAUDE.md
