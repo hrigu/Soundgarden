@@ -1,6 +1,6 @@
-// insects.scd — Prototyp: zwei binaurale "Insekten" kreisen um den Hörer, dazu ein
-// stationäres ("steady") Soundobjekt, dessen Position live per Code verändert werden kann,
-// und ein per Tastatur beweglicher Listener.
+// insects.scd — Prototyp: mehrere binaurale "Insekten" (2 fest benannte + 10 leicht variierte)
+// kreisen um den Hörer, dazu ein stationäres ("steady") Soundobjekt, dessen Position live per
+// Code verändert werden kann, und ein per Tastatur beweglicher Listener.
 //
 // Vorher (einmal pro Sitzung, in dieser Reihenfolge):
 //   1) boot/load_classes.scd — bindet Movable/Listener/CircularMoveRule/SteadyMoveRule/InsectSound/
@@ -75,6 +75,26 @@ insectSoundBase = (wingRate: 210, wingDuty: 0.25, ringFreq1: 3200, ringFreq2: 46
 		ringDecay1: 0.015, ringDecay2: 0.01, amp: 0.3),
 	insectMovableBase ++ (pos: [0, -3.0, 0], moveRule: CircularMoveRule.new(baseRadius: 3.0,
 		breathAmount: 1.0, breathRate: 0.15, angularSpeed: -1.0)));
+
+// 10 weitere Insekten, rund um den Hörer verteilt, jedes eine leichte Variante derselben
+// Basis-Konfiguration — genau der Fall, für den Intent 29 gedacht ist: nur die Abweichungen
+// (Startwinkel/-radius, Drehrichtung/-geschwindigkeit, Klangfarbe/Lautstärke) angeben, alles
+// andere kommt unverändert von insectSoundBase/insectMovableBase per ++.
+~extraInsects = 10.collect { |i|
+	var angle = (i / 10) * 2pi;
+	var radius = rrand(2.0, 4.0);
+	var soundParams = insectSoundBase ++ (
+		wingRate: insectSoundBase.wingRate + rrand(-60, 80),
+		ringFreq1: insectSoundBase.ringFreq1 + rrand(-500, 800),
+		amp: insectSoundBase.amp * rrand(0.6, 1.2)
+	);
+	var movableParams = insectMovableBase ++ (
+		pos: [radius * cos(angle), radius * sin(angle), 0],
+		moveRule: CircularMoveRule.new(baseRadius: radius, angularSpeed: rrand(0.3, 1.4)
+			* [1, -1].choose)
+	);
+	~room.registerFromBuilder(soundParams, movableParams)
+};
 
 // "Brunnen": steady Soundobjekt — SteadyMoveRule bewegt sich nicht von selbst
 // (next() gibt die Position unverändert zurück), tiefer/langsamer Klang zur
