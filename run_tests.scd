@@ -11,3 +11,4 @@ TestMovable.run;
 TestListener.run;
 TestRoom.run;
 TestSoundObjectBuilder.run;
+TestCallingPattern.run;
