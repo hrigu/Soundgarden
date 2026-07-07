@@ -44,7 +44,7 @@ sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in B
 // reverbMix höher als der Default (0.3) — der Hall soll bei diesem Testsetup bewusst gut
 // hörbar sein. Der Binauralizer selbst wird vom Room über dessen Listener gebaut (Room>>
 // register, Listener>>makeBinauralizer) — dieses Skript kennt Binauralizer nicht mehr direkt.
-~testObject = ~room.register(movable, sound, 0.6);
+~testObject = ~room.register(movable, sound, reverbMix: 0.6);
 
 "Testklang: %\n".postf(sampleFile.fileNameWithoutExtension);
 )

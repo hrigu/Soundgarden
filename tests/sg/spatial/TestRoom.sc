@@ -78,7 +78,7 @@ TestRoom : UnitTest {
 		var registered;
 
 		room.listener.binauralizerClass = FakeBinauralizerForRoomTest;
-		registered = room.register(movable, sound, 0.7);
+		registered = room.register(movable, sound, reverbMix: 0.7);
 
 		this.assertEquals(registered.movable, movable,
 			"das registrierte SoundObject bekommt das übergebene movable");
