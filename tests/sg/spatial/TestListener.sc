@@ -12,7 +12,8 @@ FakeBinauralizerForListenerTest {
 TestListener : UnitTest {
 
 	test_makeBinauralizerUsesConfiguredClass {
-		var listener = Listener.new(#[0, 0, 0], 0, FakeBinauralizerForListenerTest);
+		var listener = Listener.new(#[0, 0, 0], facing: 0,
+			binauralizerClass: FakeBinauralizerForListenerTest);
 		var binauralizer = listener.makeBinauralizer(0.7);
 
 		this.assert(binauralizer.isKindOf(FakeBinauralizerForListenerTest),
@@ -22,7 +23,7 @@ TestListener : UnitTest {
 	}
 
 	test_moveForwardAtFacingZeroMovesAlongY {
-		var listener = Listener.new(#[0, 0, 0], 0);
+		var listener = Listener.new(#[0, 0, 0], facing: 0);
 		listener.moveForward(1);
 
 		this.assertEquals(
@@ -33,7 +34,7 @@ TestListener : UnitTest {
 	}
 
 	test_moveBackwardAtFacingZeroMovesAlongMinusY {
-		var listener = Listener.new(#[0, 0, 0], 0);
+		var listener = Listener.new(#[0, 0, 0], facing: 0);
 		listener.moveBackward(1);
 
 		this.assertEquals(
@@ -44,7 +45,7 @@ TestListener : UnitTest {
 	}
 
 	test_strafeRightAtFacingZeroMovesAlongX {
-		var listener = Listener.new(#[0, 0, 0], 0);
+		var listener = Listener.new(#[0, 0, 0], facing: 0);
 		listener.strafeRight(1);
 
 		this.assertEquals(
@@ -55,7 +56,7 @@ TestListener : UnitTest {
 	}
 
 	test_strafeLeftAtFacingZeroMovesAlongMinusX {
-		var listener = Listener.new(#[0, 0, 0], 0);
+		var listener = Listener.new(#[0, 0, 0], facing: 0);
 		listener.strafeLeft(1);
 
 		this.assertEquals(
@@ -66,14 +67,14 @@ TestListener : UnitTest {
 	}
 
 	test_rotateChangesFacing {
-		var listener = Listener.new(#[0, 0, 0], 0);
+		var listener = Listener.new(#[0, 0, 0], facing: 0);
 		listener.rotate(90);
 
 		this.assertEquals(listener.facing, 90, "rotate addiert deltaDegrees auf facing");
 	}
 
 	test_rotationChangesMoveForwardDirection {
-		var listener = Listener.new(#[0, 0, 0], 90);
+		var listener = Listener.new(#[0, 0, 0], facing: 90);
 		listener.moveForward(1);
 
 		this.assertEquals(
