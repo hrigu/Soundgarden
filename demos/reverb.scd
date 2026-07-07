@@ -37,7 +37,7 @@ pos = [0, 3, 0]; // 3m direkt vor dem Listener (facing=0 zeigt entlang +y, siehe
 movable = Movable.new(pos, SteadyMoveRule.new, roomRadius: 5); // roomRadius ohne Wirkung, da
 	// SteadyMoveRule sich nicht von selbst bewegt (nur für bewegte Objekte relevant,
 	// siehe Movable>>step)
-sound = SampleSound.new(sampleFile.fullPath, 1, 0); // 1 Hz — einmal pro Sekunde, damit der
+sound = SampleSound.new(sampleFile.fullPath, rate: 1, phase: 0); // 1 Hz — einmal pro Sekunde, damit der
 	// Nachklang zwischen den Wiederholungen gut hörbar ausklingen kann
 sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in Block 2 — gibt
 	// der asynchronen Dateileseoperation Zeit (siehe SampleSound>>preload)
