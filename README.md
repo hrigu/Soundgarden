@@ -107,16 +107,17 @@ Block), mit Kopfhörern. Für die Tastatursteuerung muss das
 
 ### Reverb-Testsetup (`demos/reverb.scd`)
 
-Zum gezielten Einstellen der `RoomReverb`-Parameter: eine einzige, stationäre Klangquelle
+Zum gezielten Einstellen der Raumeigenschaften: eine einzige, stationäre Klangquelle
 (trockenes Sample, fester Rhythmus), um die man sich per Tastatur frei bewegen und drehen kann
 (W/S/A/D/Q/E) — anders als bei `demos/sample.scd`/`sample_moving.scd` mit mehreren
 gleichzeitigen Objekten lässt sich der Nachklang hier klar heraushören. Enthält einen
-Live-Tuning-Block (`roomSize`/`revTime`/`damping`/`mix`/`reverbMix` per `synth.set(...)`) sowie
-eine Möglichkeit, die Quelle selbst umzuplatzieren (`moveTo(...)`).
+Live-Tuning-Block (`room.size`/`.height`/`.surface`/`.mix` per Zuweisung, `reverbMix` weiterhin
+per `synth.set(...)`, siehe unten) sowie eine Möglichkeit, die Quelle selbst umzuplatzieren
+(`moveTo(...)`).
 
-Zwei Binauralisierungs-Varianten stehen zum direkten Vergleich zur Verfügung
-(in `demos/insects.scd`: Insekt 1 nutzt `AtkBinauralizer`, Insekt 2 und der
-Brunnen `Binauralizer`):
+Ein `Room` hat eine einzige Binauralisierungs-"Ohren"-Strategie (`Binauralizer` oder
+`AtkBinauralizer`, festgelegt über `room.addSynthDef(...)`, siehe `Listener>>makeBinauralizer`)
+— Demo-Skripte konstruieren keinen Binauralizer mehr selbst:
 
 - **`Binauralizer`** — einfache Näherung mit reinen Core-UGens (Pan +
   winzige Laufzeitdifferenz zwischen den Ohren + entfernungsabhängiger
