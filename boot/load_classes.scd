@@ -5,10 +5,10 @@
 // oder insect_demo.scd benutzt wird.
 (
 LanguageConfig.addIncludePath(
-	PathName(thisProcess.nowExecutingPath.dirname +/+ "classes").fullPath
+	PathName(thisProcess.nowExecutingPath.dirname +/+ ".." +/+ "classes").fullPath
 );
 LanguageConfig.addIncludePath(
-	PathName(thisProcess.nowExecutingPath.dirname +/+ "tests").fullPath
+	PathName(thisProcess.nowExecutingPath.dirname +/+ ".." +/+ "tests").fullPath
 );
 thisProcess.recompile;
 )

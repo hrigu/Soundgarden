@@ -10,7 +10,7 @@ s.options.memSize = 8192 * 16;
                                     // mit Bluetooth-Headsets (deren Mikrofon oft nur 16kHz liefert)
 
 s.waitForBoot({
-	var soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ "sounds");
+	var soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ ".." +/+ "sounds");
 
 	~tracks = ();
 
@@ -37,7 +37,3 @@ s.freeAll;
 
 // Server neu starten (z.B. nach Absturz):
 // s.reboot;
-
-{ Pan2.ar(SinOsc.ar(440, 0, 0.2), 1) }.play;  // sollte NUR rechts zu hören sein
-
-{ Pan2.ar(SinOsc.ar(440, 0, 0.2), -1) }.play; // sollte NUR links zu hören sein
