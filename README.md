@@ -31,6 +31,9 @@ Kernidee: `Ndef(\track, { ... })` und `Ndef(\fx, { ... })` einfach neu
 ausführen – JITLib überblendet automatisch (`fadeTime`), es gibt keine
 Klicks oder Unterbrechungen.
 
+Mehr Details zur Bedienung (verfügbare FX-Ketten, typische Abläufe wie Build-up/Drop/Break)
+siehe `experiments/live_coding_rig/README.md`.
+
 ## classes/, tests/ und boot/load_classes.scd
 
 Eigene Produktiv-Klassen liegen in `classes/`, die zugehörigen Test-Klassen
