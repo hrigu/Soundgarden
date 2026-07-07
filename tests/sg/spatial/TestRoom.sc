@@ -37,6 +37,17 @@ FakeReverbForRoomTest {
 	stop { log.add(\reverbStop) }
 }
 
+// Test-Double für Listener>>makeBinauralizer: zeichnet nur den übergebenen reverbMix auf,
+// ohne echten Binauralizer (SynthDef/Server) zu brauchen — analog
+// FakeBinauralizerForListenerTest (TestListener.sc).
+FakeBinauralizerForRoomTest {
+	var <reverbMix;
+
+	*new { |reverbMix = 0.3| ^super.new.init(reverbMix) }
+
+	init { |aReverbMix| reverbMix = aReverbMix }
+}
+
 // Test für Room. Ausführen über run_tests.scd.
 TestRoom : UnitTest {
 
@@ -59,13 +70,26 @@ TestRoom : UnitTest {
 		this.assertEquals(log.asArray, [\orchestraStop, \reverbStop]);
 	}
 
-	test_registerDelegatesToOrchestra {
+	test_registerBuildsSoundObjectUsingListenersBinauralizer {
 		var log = List.new;
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var movable = \someMovable;
+		var sound = \someSound;
+		var registered;
 
-		room.register(\someSoundObject);
+		room.listener.binauralizerClass = FakeBinauralizerForRoomTest;
+		registered = room.register(movable, sound, 0.7);
 
-		this.assertEquals(log.asArray, [\someSoundObject]);
+		this.assertEquals(registered.movable, movable,
+			"das registrierte SoundObject bekommt das übergebene movable");
+		this.assertEquals(registered.sound, sound,
+			"das registrierte SoundObject bekommt den übergebenen sound");
+		this.assert(registered.binauralizer.isKindOf(FakeBinauralizerForRoomTest),
+			"der Binauralizer stammt aus listener.makeBinauralizer, nicht vom Skript konstruiert");
+		this.assertEquals(registered.binauralizer.reverbMix, 0.7,
+			"reverbMix wird bis zum Binauralizer durchgereicht");
+		this.assertEquals(log.asArray, [registered],
+			"orchestra.register bekommt genau dieses SoundObject");
 	}
 
 	test_callDelegatesToOrchestra {
