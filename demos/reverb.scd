@@ -83,6 +83,8 @@ sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei orchestra.play
 ~testObject.binauralizer.synth.set(\reverbMix, 0.8);
 
 // --- 6) Stoppen ---
+// ~orchestra.stop / ~orchestra.play(s) sind beliebig abwechselbar (Intent 25) — zum
+// Zwischendurch-Anhalten reicht die erste Zeile, das Setup (Block 1) bleibt gültig.
 ~orchestra.stop;
 ~roomReverb.stop;
 ~listenerControl.stop;
