@@ -40,7 +40,7 @@ AtkBinauralizer.setup(s, reverbBus: ~roomReverb.bus);
 ~orchestra = Orchestra.new(~listener);
 
 // nur sounds/compmusic/ (nicht der ganze sounds/-Baum — auf Wunsch, apple/ bleibt aussen vor).
-soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ ".." +/+ "sounds" +/+ "compmusic");
+soundsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "sounds" +/+ "compmusic");
 sampleFiles = [];
 soundsDir.filesDo({ |pe|
 	if(BootTrackDetection.isValidExtension(pe.extension)) { sampleFiles = sampleFiles.add(pe) };

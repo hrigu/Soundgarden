@@ -39,7 +39,7 @@ AtkBinauralizer.setup(s, reverbBus: ~roomReverb.bus);
 // gültige Audiodateien aus sounds/ — rekursiv (filesDo statt entries.select), da die
 // Samples in Unterordnern liegen (z.B. sounds/apple/, sounds/compmusic/); keine feste
 // Dateiliste, damit das Demo mit den lokal vorhandenen Samples läuft.
-soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ ".." +/+ "sounds");
+soundsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "sounds");
 sampleFiles = [];
 soundsDir.filesDo({ |pe|
 	if(BootTrackDetection.isValidExtension(pe.extension)) { sampleFiles = sampleFiles.add(pe) };

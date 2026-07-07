@@ -10,7 +10,7 @@ s.options.memSize = 8192 * 16;
                                     // mit Bluetooth-Headsets (deren Mikrofon oft nur 16kHz liefert)
 
 s.waitForBoot({
-	var soundsDir = PathName(thisProcess.nowExecutingPath.dirname +/+ ".." +/+ "sounds");
+	var soundsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "sounds");
 
 	~tracks = ();
 
