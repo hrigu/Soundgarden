@@ -64,7 +64,8 @@ insectSound1 = InsectSound.new;
 // Insekt 2: etwas schneller (1.0 statt 0.6 rad/s) und in Gegenrichtung
 // (negatives angularSpeed); heller/schneller Klang (höhere Flügelschlag- und
 // Resonanzfrequenzen, kürzeres Ausklingen) statt Standard-Brummen.
-moveRule2 = CircularMoveRule.new(3.0, 1.0, 0.15, -1.0);
+moveRule2 = CircularMoveRule.new(baseRadius: 3.0, breathAmount: 1.0, breathRate: 0.15,
+	angularSpeed: -1.0);
 movable2 = Movable.new([0, -3.0, 0], moveRule2, roomRadius: 5);
 insectSound2 = InsectSound.new(wingRate: 280, wingDuty: 0.2, ringFreq1: 5200, ringFreq2: 7000,
 	ringDecay1: 0.015, ringDecay2: 0.01, amp: 0.3);

@@ -2,7 +2,8 @@
 TestCircularMoveRule : UnitTest {
 
 	test_startsAtBaseRadiusOnPositiveYAxis {
-		var rule = CircularMoveRule.new(2.5, 1.2, 0.15, 0.6);
+		var rule = CircularMoveRule.new(baseRadius: 2.5, breathAmount: 1.2, breathRate: 0.15,
+			angularSpeed: 0.6);
 		var pos = rule.next(#[0, 0, 0], 0, 0.033);
 
 		this.assertEquals(pos[0].round(0.0001), 0.0, "bei t=0 kein Winkel, also x = 0");
@@ -11,7 +12,8 @@ TestCircularMoveRule : UnitTest {
 	}
 
 	test_radiusBreathesWithTime {
-		var rule = CircularMoveRule.new(2.5, 1.2, 0.15, 0.6);
+		var rule = CircularMoveRule.new(baseRadius: 2.5, breathAmount: 1.2, breathRate: 0.15,
+			angularSpeed: 0.6);
 		var pos = rule.next(#[0, 0, 0], (0.5pi) / 0.15, 0.033);
 		var dist = (pos.pow(2).sum).sqrt;
 
@@ -19,7 +21,8 @@ TestCircularMoveRule : UnitTest {
 	}
 
 	test_angleAdvancesWithAngularSpeed {
-		var rule = CircularMoveRule.new(2.5, 0, 0.15, 0.6);
+		var rule = CircularMoveRule.new(baseRadius: 2.5, breathAmount: 0, breathRate: 0.15,
+			angularSpeed: 0.6);
 		var pos = rule.next(#[0, 0, 0], 0.5pi / 0.6, 0.033);
 
 		this.assertEquals(pos[0].round(0.0001), 2.5, "bei angle = pi/2 liegt die Position auf der x-Achse");
@@ -27,7 +30,8 @@ TestCircularMoveRule : UnitTest {
 	}
 
 	test_startAngleOffsetsPositionAtTimeZero {
-		var rule = CircularMoveRule.new(2.5, 0, 0.15, 0.6, 0.5pi);
+		var rule = CircularMoveRule.new(baseRadius: 2.5, breathAmount: 0, breathRate: 0.15,
+			angularSpeed: 0.6, startAngle: 0.5pi);
 		var pos = rule.next(#[0, 0, 0], 0, 0.033);
 
 		this.assertEquals(pos[0].round(0.0001), 2.5, "bei t=0 und startAngle=pi/2 liegt die Position auf der x-Achse");
