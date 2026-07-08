@@ -17,7 +17,7 @@ config = (
     roomHeight: 3,
     roomSurface: 0.35,
     roomMix: 0.16, //0
-    reverbMix: 0.1, //0
+    reverbMix: 0.41, //0
 
 //	roomSize: 8,
 //	roomHeight: 3,
@@ -126,8 +126,14 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 	~room.stop;
 	~listenerControl !? { ~listenerControl.stop };
 	~spaceView !? { ~spaceView.stop };
-	AtkBinauralizer.teardown;
 	"Raumhall-Analyse: Demo gestoppt.\n".post;
+};
+
+~freeDemo = {
+	~stopDemo.();
+	~room.teardown;
+	AtkBinauralizer.teardown;
+	"Raumhall-Analyse: ATK-Kernel freigegeben.\n".post;
 };
 
 "Raumhall-Analyse: 4 stationaere Insekten mit sequenziellen Zirp-Fenstern registriert.\n".post;
@@ -146,3 +152,7 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 
 // --- 5) Stoppen ---
 ~stopDemo.();
+
+// --- 6) Vollstaendig freigeben ---
+// Nur noetig, wenn die Session wirklich beendet wird.
+~freeDemo.();

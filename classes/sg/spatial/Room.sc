@@ -108,6 +108,13 @@ Room {
 		reverb.stop;
 	}
 
+	// finaler Ressourcenabbau für das Ende einer Session: stop/play nutzt weiter stop(),
+	// teardown gibt zusätzlich den Reverb-Bus frei.
+	teardown {
+		this.stop;
+		reverb.free;
+	}
+
 	// size/height/surface/mix per Zuweisung änderbar (~room.size = 12;) — jede Änderung
 	// schreibt die neu abgeleiteten Parameter sofort auf den laufenden Hall.
 	size_ { |aSize| size = aSize; this.updateAcoustics; }

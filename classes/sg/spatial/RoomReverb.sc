@@ -5,6 +5,7 @@
 // den geteilten Bus — mehrere gleichzeitige Out.ar auf denselben Bus summieren sich
 // automatisch, kein manuelles Mischen nötig. GVerb selbst ist Core-UGen (keine sc3-plugins).
 RoomReverb {
+	var server;
 	var <bus;     // geteilter Mono-Bus, in den die Binauralizer ihren Hall-Anteil schicken
 	var <synth;
 
@@ -16,7 +17,8 @@ RoomReverb {
 		^super.new.init(server);
 	}
 
-	init { |server|
+	init { |aServer|
+		server = aServer;
 		bus = Bus.audio(server, 1);
 	}
 
@@ -56,9 +58,18 @@ RoomReverb {
 		};
 	}
 
-	// gibt Synth und Bus wieder frei.
+	// stop ist restart-sicher: beendet nur den laufenden Reverb-Synth, der geteilte Bus
+	// bleibt erhalten, damit Room.play denselben Room später erneut starten kann.
 	stop {
-		synth.free;
-		bus.free;
+		synth !? { synth.free };
+		synth = nil;
+	}
+
+	// finaler Ressourcenabbau: zusätzlich zum laufenden Synth auch den geteilten Bus
+	// freigeben. Für echte Session-Enden gedacht, nicht für stop/play-Zyklen.
+	free {
+		this.stop;
+		bus !? { bus.free };
+		bus = nil;
 	}
 }

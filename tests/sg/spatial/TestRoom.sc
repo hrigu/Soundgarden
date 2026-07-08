@@ -35,6 +35,8 @@ FakeReverbForRoomTest {
 	set { |roomSize, revTime, damping, mix| log.add(\reverbSet) }
 
 	stop { log.add(\reverbStop) }
+
+	free { log.add(\reverbFree) }
 }
 
 // Test-Double für Listener>>makeBinauralizer: zeichnet nur den übergebenen reverbMix auf,
@@ -79,6 +81,16 @@ TestRoom : UnitTest {
 		room.stop;
 
 		this.assertEquals(log.asArray, [\orchestraStop, \reverbStop]);
+	}
+
+	test_teardownStopsAndFreesReverb {
+		var log = List.new;
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+
+		room.teardown;
+
+		this.assertEquals(log.asArray, [\orchestraStop, \reverbStop, \reverbFree],
+			"teardown stoppt zuerst und gibt danach die Reverb-Ressourcen frei");
 	}
 
 	test_registerBuildsSoundObjectUsingListenersBinauralizer {
