@@ -4,7 +4,7 @@
 
 // --- 1) Setup: SynthDefs registrieren + vier stationaere Insekten anlegen ---
 (
-var insectBase, insectVariants, positions, sequencePatterns;
+var insectBase, insectVariants, positions, makeSequencePattern, chirpWindow;
 
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
@@ -46,22 +46,22 @@ positions = [
 ];
 
 // Ein voller Sequenzumlauf dauert 8s: jedes Insekt bekommt ein 2s-Fenster.
-// Innerhalb seines Fensters zirpt es dreimal kurz (An/Aus), danach ist bis zum
-// naechsten Umlauf Stille. Jede CallingPattern-Instanz hat eigenen Zustand.
-sequencePatterns = [
-	CallingPattern.new([[0.02, true], [0.18, false], [0.02, true], [0.18, false],
-		[0.02, true], [1.58, false], [6.0, false]]),
-	CallingPattern.new([[2.0, false], [0.02, true], [0.18, false], [0.02, true],
-		[0.18, false], [0.02, true], [1.58, false], [4.0, false]]),
-	CallingPattern.new([[4.0, false], [0.02, true], [0.18, false], [0.02, true],
-		[0.18, false], [0.02, true], [1.58, false], [2.0, false]]),
-	CallingPattern.new([[6.0, false], [0.02, true], [0.18, false], [0.02, true],
-		[0.18, false], [0.02, true], [1.58, false]])
-];
+// Die eigentlichen Zirpsegmente kommen aus der Kurzform; nur Vor-/Nachlauf-
+// Stille wird explizit als Aus-Segment davor/danach gesetzt.
+chirpWindow = CallingPattern.fromDurations([0.02, 0.18, 0.02, 0.18, 0.02, 1.58]);
+makeSequencePattern = { |prefixSilence, suffixSilence|
+	var segments = Array.new;
+
+	if(prefixSilence > 0) { segments = segments.add([prefixSilence, false]) };
+	segments = segments ++ chirpWindow.segments;
+	if(suffixSilence > 0) { segments = segments.add([suffixSilence, false]) };
+
+	CallingPattern.new(segments)
+};
 
 ~insects = positions.collect { |pos, index|
 	~room.registerFromBuilder(
-		insectBase ++ insectVariants[index] ++ (pattern: sequencePatterns[index]),
+		insectBase ++ insectVariants[index] ++ (pattern: makeSequencePattern.(index * 2, 6 - (index * 2))),
 		(pos: pos, moveRule: SteadyMoveRule.new, roomRadius: 6),
 		reverbMix: 0.7
 	)
