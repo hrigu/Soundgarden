@@ -39,6 +39,7 @@ soundsDir.filesDo({ |pe|
 });
 n = sampleFiles.size;
 radius = 3;
+~viewRadius = radius + 1;
 rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (~1s), da
           // SampleSound (Intent 20) noch kein Overlap-Handling hat
 
@@ -66,7 +67,7 @@ rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (
 
 // --- 3) Gemeinsames Spatial-GUI öffnen (optional) ---
 // Zeigt Listener und alle Sample-Objekte in einem Fenster; W/S/A/D/Q/E steuern den Listener.
-~controlPanel = SpatialControlPanel.new(~room, viewRadius: radius + 1, editable: true);
+~controlPanel = SpatialControlPanel.new(~room, viewRadius: ~viewRadius, editable: true);
 ~controlPanel.play;
 
 // --- 4) Stoppen ---
