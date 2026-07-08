@@ -12,3 +12,4 @@ TestListener.run;
 TestRoom.run;
 TestSoundObjectBuilder.run;
 TestCallingPattern.run;
+TestRhythmPatternCreator.run;
