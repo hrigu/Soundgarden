@@ -1,17 +1,10 @@
 // reverb_analysis.scd - kontrolliertes Analyse-Setup fuer den Room-Hall:
 // vier stationaere Insekten an festen Positionen, gehoert ueber AtkBinauralizer.
 //
-// Vorher (in dieser Reihenfolge):
-//   1) boot/load_classes.scd - nur beim Erst-Setup noetig (danach automatisch)
-//   2) boot/boot.scd         - bei jedem Start: Server muss laufen
-//   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README)
-//
-// Kopfhoerer benutzen - HRTF/Binauralisierung ist ueber Lautsprecher nicht sinnvoll
-// beurteilbar.
 
 // --- 1) Setup: SynthDefs registrieren + vier stationaere Insekten anlegen ---
 (
-var insectBase, insectVariants, positions;
+var insectBase, insectVariants, positions, sequencePatterns;
 
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
@@ -22,8 +15,8 @@ RoomReverb.addSynthDef;
 // Vor Block 2 etwas Zeit lassen, damit Kernel/SynthDef sicher bereit sind.
 ~room.addSynthDef(AtkBinauralizer, subjectID: 21);
 
-// Gemeinsame Basis: bewusst ohne pattern. Task 2 setzt daraus ein sequenzielles
-// Zirp-Muster pro Insekt; Task 1 etabliert nur die stationaeren Quellen.
+// Gemeinsame Basis fuer die Insekten; pattern wird pro Objekt unten gesetzt,
+// damit immer nur ein Insekt in seinem eigenen Zeitfenster zirpt.
 insectBase = (
 	wingRate: 210,
 	wingDuty: 0.25,
@@ -52,15 +45,29 @@ positions = [
 	[-3, 0, 0]
 ];
 
+// Ein voller Sequenzumlauf dauert 8s: jedes Insekt bekommt ein 2s-Fenster.
+// Innerhalb seines Fensters zirpt es dreimal kurz (An/Aus), danach ist bis zum
+// naechsten Umlauf Stille. Jede CallingPattern-Instanz hat eigenen Zustand.
+sequencePatterns = [
+	CallingPattern.new([[0.02, true], [0.18, false], [0.02, true], [0.18, false],
+		[0.02, true], [1.58, false], [6.0, false]]),
+	CallingPattern.new([[2.0, false], [0.02, true], [0.18, false], [0.02, true],
+		[0.18, false], [0.02, true], [1.58, false], [4.0, false]]),
+	CallingPattern.new([[4.0, false], [0.02, true], [0.18, false], [0.02, true],
+		[0.18, false], [0.02, true], [1.58, false], [2.0, false]]),
+	CallingPattern.new([[6.0, false], [0.02, true], [0.18, false], [0.02, true],
+		[0.18, false], [0.02, true], [1.58, false]])
+];
+
 ~insects = positions.collect { |pos, index|
 	~room.registerFromBuilder(
-		insectBase ++ insectVariants[index],
+		insectBase ++ insectVariants[index] ++ (pattern: sequencePatterns[index]),
 		(pos: pos, moveRule: SteadyMoveRule.new, roomRadius: 6),
 		reverbMix: 0.7
 	)
 };
 
-"Raumhall-Analyse: 4 stationaere Insekten registriert.\n".post;
+"Raumhall-Analyse: 4 stationaere Insekten mit sequenziellen Zirp-Fenstern registriert.\n".post;
 )
 
 // --- 2) Abspielen ---
