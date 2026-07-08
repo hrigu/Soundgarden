@@ -10,6 +10,7 @@ SpatialControlPanel {
 	var <>editable;
 	var <window;
 	var view;
+	var controlsView;
 	var routine;
 	var heldKeys;
 	var draggedSoundObject;
@@ -35,9 +36,12 @@ SpatialControlPanel {
 
 		window = Window.new("Spatial-Control-Panel", Rect(100, 100, totalWidth, totalHeight));
 		view = UserView(window, Rect(0, 0, leftWidth, totalHeight));
+		controlsView = CompositeView(window, Rect(leftWidth, 0, totalWidth - leftWidth, totalHeight));
+		controlsView.decorator = FlowLayout(controlsView.bounds.insetBy(10, 10));
 		view.drawFunc = { this.draw(view) };
 		this.installMouseActions;
 		this.installKeyActions;
+		this.installControls;
 		window.front;
 
 		routine = Routine({
@@ -73,6 +77,28 @@ SpatialControlPanel {
 		window.view.keyUpAction = { |aView, char|
 			heldKeys.remove(char.asString.toLower);
 		};
+	}
+
+	installControls {
+		var makeSlider = { |label, initValue, spec, action|
+			EZSlider(controlsView, 170@24, label, spec, { |ez| action.(ez.value) }, initValue);
+		};
+
+		makeSlider.("Size", room.size, ControlSpec(2, 30, \lin, 0.1), { |value|
+			room.size = value;
+		});
+		makeSlider.("Height", room.height, ControlSpec(1, 20, \lin, 0.1), { |value|
+			room.height = value;
+		});
+		makeSlider.("Surface", room.surface, ControlSpec(0, 1, \lin, 0.01), { |value|
+			room.surface = value;
+		});
+		makeSlider.("Mix", room.mix, ControlSpec(0, 1, \lin, 0.01), { |value|
+			room.mix = value;
+		});
+		makeSlider.("ReverbSend", this.currentReverbMix, ControlSpec(0, 1, \lin, 0.01), { |value|
+			this.applyReverbMix(value);
+		});
 	}
 
 	applyHeldKeys { |dt|
@@ -149,6 +175,22 @@ SpatialControlPanel {
 	moveSoundObjectToScreenPoint { |aView, soundObject, x, y|
 		var newPos = this.screenToWorld(aView.bounds, x, y, soundObject.pos[2]);
 		soundObject.movable.moveTo(newPos);
+	}
+
+	currentReverbMix {
+		var first = room.orchestra.soundObjects.detect({ |soundObject|
+			soundObject.binauralizer.notNil
+		});
+		^if(first.notNil) { first.binauralizer.reverbMix } { 0.3 }
+	}
+
+	applyReverbMix { |value|
+		room.orchestra.soundObjects.do { |soundObject|
+			soundObject.binauralizer.reverbMix = value;
+			soundObject.binauralizer.synth !? {
+				soundObject.binauralizer.synth.set(\reverbMix, value);
+			};
+		};
 	}
 
 	stop {
