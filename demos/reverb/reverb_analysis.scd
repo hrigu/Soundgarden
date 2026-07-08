@@ -4,13 +4,49 @@
 
 // --- 1) Setup: SynthDefs registrieren + vier stationaere Insekten anlegen ---
 (
-var insectMovableBase, insectSoundBase, insectSoundVariants, positions, makeSequencePattern,
-	chirpWindow;
+var config, insectMovableBase, insectSoundBase, insectSoundVariants, positions,
+	makeSequencePattern, chirpWindow;
 
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
 
-~room = Room.new(s, size: 8, height: 3, surface: 1, mix: 0.7);
+// Zentrale Session-Konfiguration: diese Werte werden beim Hoertest am haeufigsten
+// variiert, deshalb liegen sie gebuendelt an einer Stelle statt verteilt im Skript.
+config = (
+	roomSize: 8,
+	roomHeight: 3,
+	roomSurface: 1,
+	roomMix: 0.25,
+	reverbMix: 0.2,
+	roomRadius: 6,
+	positions: [
+		[4, 3, 0],
+		[2, 3, 0],
+		[0, 3, 0],
+		[-2, 0, 0]
+	],
+	chirpWindowDurations: [0.02, 0.18, 0.02, 0.18, 0.02, 1.58],
+	insectSoundBase: (
+		// Etwas tiefere Basis: weniger scharfer, glasiger Eindruck und zugleich
+		// gut fuer Hallbeurteilung, weil die Ortung nicht nur ueber hohe Resonanzen kommt.
+		wingRate: 185,
+		wingDuty: 0.28,
+		ringFreq1: 2400,
+		ringFreq2: 3600,
+		ringDecay1: 0.025,
+		ringDecay2: 0.02,
+		amp: 0.22
+	),
+	insectSoundVariants: [
+		(),
+		(wingRate: 225, ringFreq1: 3000, ringFreq2: 4500, amp: 0.2),
+		(wingRate: 150, wingDuty: 0.38, ringFreq1: 1900, ringFreq2: 2900, amp: 0.24),
+		(wingRate: 270, wingDuty: 0.2, ringFreq1: 3800, ringFreq2: 5600, amp: 0.18)
+	]
+);
+
+~room = Room.new(s, size: config[\roomSize], height: config[\roomHeight],
+	surface: config[\roomSurface], mix: config[\roomMix]);
 
 // AtkBinauralizer laedt den HRTF-Kernel asynchron und registriert danach die SynthDef.
 // Vor Block 2 etwas Zeit lassen, damit Kernel/SynthDef sicher bereit sind.
@@ -18,39 +54,23 @@ RoomReverb.addSynthDef;
 
 // Gemeinsame Basis fuer die Insekten; pattern wird pro Objekt unten gesetzt,
 // damit immer nur ein Insekt in seinem eigenen Zeitfenster zirpt.
-insectSoundBase = (
-	wingRate: 210,
-	wingDuty: 0.25,
-	ringFreq1: 3200,
-	ringFreq2: 4600,
-	ringDecay1: 0.02,
-	ringDecay2: 0.015,
-	amp: 0.22
-);
+insectSoundBase = config[\insectSoundBase];
 
 // Kleine Klangunterschiede helfen, die vier festen Positionen beim Hoertest
 // auseinanderzuhalten, ohne das Hall-Verhalten durch Bewegung zu vermischen.
-insectSoundVariants = [
-	(),
-	(wingRate: 260, ringFreq1: 4200, ringFreq2: 6100, amp: 0.2),
-	(wingRate: 170, wingDuty: 0.35, ringFreq1: 2600, ringFreq2: 3900, amp: 0.24),
-	(wingRate: 320, wingDuty: 0.18, ringFreq1: 5600, ringFreq2: 7600, amp: 0.18)
-];
+insectSoundVariants = config[\insectSoundVariants];
 
 // Listener facing=0 schaut entlang +y (siehe Listener). Die Quellen liegen
-// vorne, rechts, hinten, links - alle mit SteadyMoveRule, also ohne Eigenbewegung.
-positions = [
-	[0, 3, 0],
-	[3, 0, 0],
-	[0, -3, 0],
-	[-3, 0, 0]
-];
-insectMovableBase = (pos: [0, 3, 0], moveRule: SteadyMoveRule.new, roomRadius: 6);
+// wieder klar auf vorne/rechts/hinten/links, damit die Seitenortung nicht
+// durch fast-frontale Winkel oder zu viel Hall verschmiert wird.
+positions = config[\positions];
+insectMovableBase = (pos: [0, 3, 0], moveRule: SteadyMoveRule.new,
+	roomRadius: config[\roomRadius]);
 
 // Ein voller Sequenzumlauf dauert 8s: jedes Insekt bekommt ein 2s-Fenster.
 // Die eigentlichen Zirpsegmente kommen aus der Kurzform; nur Vor-/Nachlauf-
 // Stille wird explizit als Aus-Segment davor/danach gesetzt.
-chirpWindow = CallingPattern.fromDurations([0.02, 0.18, 0.02, 0.18, 0.02, 1.58]);
+chirpWindow = CallingPattern.fromDurations(config[\chirpWindowDurations]);
 makeSequencePattern = { |prefixSilence, suffixSilence|
 	var segments = Array.new;
 
@@ -66,7 +86,7 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 		insectSoundBase ++ insectSoundVariants[index]
 			++ (pattern: makeSequencePattern.(index * 2, 6 - (index * 2))),
 		insectMovableBase ++ (pos: pos),
-		reverbMix: 0.7
+		reverbMix: config[\reverbMix]
 	)
 };
 
@@ -85,7 +105,15 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 ~spaceView = SpaceView.new(~room.orchestra);
 ~spaceView.play;
 
-// --- 4) Stoppen ---
+// --- 4) Live-Tuning ---
+// Raum- und Send-Werte fuer diese Session gesammelt anpassen.
+~room.size = config[\roomSize];
+~room.height = config[\roomHeight];
+~room.surface = config[\roomSurface];
+~room.mix = config[\roomMix];
+~insects.do { |insect| insect.binauralizer.synth.set(\reverbMix, config[\reverbMix]) };
+
+// --- 5) Stoppen ---
 ~room.stop;
 ~listenerControl.stop;
 ~spaceView.stop;
