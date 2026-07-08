@@ -1,4 +1,4 @@
-// insects.scd — Prototyp: mehrere binaurale "Insekten" (3 fest benannte + 20 generierte, alle
+// three_insects.scd — Prototyp: mehrere binaurale "Insekten" (3 fest benannte + 20 generierte, alle
 // mit demselben Zirp-Zykluslänge, aber unterschiedlicher innerer Rhythmus-Aufteilung) kreisen
 // um den Hörer, dazu ein stationäres ("steady") Soundobjekt, dessen Position live per Code
 // verändert werden kann, und ein per Tastatur beweglicher Listener.
@@ -32,7 +32,6 @@
 // auch wenn sie erst weiter unten mit Werten befüllt werden.
 var insectMovableBase, insectSoundBase;
 var rhythmPatternBase, rhythmPatternBase2, rhythmPatternBase3;
-var fountainMoveRule, fountainMovable, fountainSound;
 
 // ~insect1/~insect2 als Environment-Variablen statt var: Block 3b (Call-and-Response) braucht
 // eine Referenz auf ~insect1 über den Block hinaus. ~fountainMovable/~fountainSound ebenso —
@@ -65,9 +64,9 @@ insectMovableBase = (pos: [0, 2.5, 0], moveRule: CircularMoveRule.new, roomRadiu
 insectSoundBase = (wingRate: 210, wingDuty: 0.25, ringFreq1: 3200, ringFreq2: 4600,
 	ringDecay1: 0.02, ringDecay2: 0.015, amp: 0.35);
 
-rhythmPatternBase = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.7, 0.02, 0.3, 0.2, 0.9]);
-rhythmPatternBase2 = CallingPattern.fromDurations([0.9, 0.02, 0.5, 0.02, 0.3, 0.02, 0.3, 0.2]);
-rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 0.8, 0.2, 0.3]);
+rhythmPatternBase = CallingPattern.fromDurations([0.02, 0.3, 0.02, 1.7, 0.02, 0.3, 0.2, 0.9]);
+rhythmPatternBase2 = CallingPattern.fromDurations([1.9, 0.02, 0.5, 0.02, 0.3, 0.02, 0.3, 0.2]);
+rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 1.8, 0.2, 0.3]);
 
 // Insekt 1 bekommt zusätzlich ein CallingPattern (Intent 30) statt durchgehend zu zirpen:
 // Zahlensatz aus Intent 31 (Bioakustik-Recherche zu Gryllus bimaculatus) — 4 Pulse à 20ms an/
@@ -99,47 +98,6 @@ rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 0
 	insectMovableBase ++ (pos: [0, 3.0, 0], moveRule: CircularMoveRule.new(baseRadius: 3.0,
 		breathAmount: 1.0, breathRate: 0.35, angularSpeed: -1.0)));
 
-// 20 weitere Insekten, rund um den Hörer verteilt, jedes eine leichte Variante derselben
-// Basis-Konfiguration (Intent 29) plus ein eigenes, zufälliges CallingPattern (Intent 30) —
-// alle mit derselben Gesamt-Zykluslänge (~totalCycleDur), aber unterschiedlicher Anzahl/
-// Gewichtung der Segmente. Dadurch bleibt der Chor als Ganzes in einem gemeinsamen Takt, ohne
-// dass alle Insekten identisch klingen.
-~totalCycleDur = 1.2;
-
-// erzeugt ein CallingPattern mit numSegments Segmenten, deren Dauern zufällig gewichtet, aber
-// so skaliert sind, dass sie exakt totalDur ergeben — jeder Aufruf eine neue, unabhängige
-// CallingPattern-Instanz (kein geteilter Zustand zwischen Insekten, siehe Kommentar bei
-// ~insect1 oben).
-~makeRhythmPattern = { |totalDur, numSegments|
-	var weights = Array.fill(numSegments, { rrand(0.3, 1.0) });
-	var scale = totalDur / weights.sum;
-	CallingPattern.fromDurations(weights * scale);
-};
-
-~extraInsects = 20.collect { |i|
-	var angle = (i / 20) * 2pi;
-	var radius = rrand(2.0, 4.0);
-	var soundParams = insectSoundBase ++ (
-		wingRate: insectSoundBase.wingRate + rrand(-80, 100),
-		ringFreq1: insectSoundBase.ringFreq1 + rrand(-800, 1000),
-		amp: insectSoundBase.amp * rrand(0.5, 1.3),
-		pattern: ~makeRhythmPattern.(~totalCycleDur, [4, 6, 8, 10].choose)
-	);
-	var movableParams = insectMovableBase ++ (
-		pos: [radius * cos(angle), radius * sin(angle), 0],
-		moveRule: CircularMoveRule.new(baseRadius: radius, angularSpeed: rrand(0.3, 1.4)
-			* [1, -1].choose)
-	);
-	~room.registerFromBuilder(soundParams, movableParams)
-};
-
-
-// "Brunnen": steady Soundobjekt — SteadyMoveRule bewegt sich nicht von selbst
-// (next() gibt die Position unverändert zurück), tiefer/langsamer Klang zur
-// Unterscheidung von den Insekten. Position per Live-Coding änderbar, siehe
-// Block 2b weiter unten (~fountainMovable.moveTo(...)). Kein Kandidat für eine
-// Basis/Variante-Konfiguration wie die Insekten oben — bleibt deshalb bei movable+sound
-// von Hand und ~room.register.
 )
 (
 // --- 3) Tastatursteuerung für den Listener starten ---
@@ -163,11 +121,6 @@ rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 0
 // gemeinsamen Taktgeber (Bewegung + Azimuth/Distanz) und danach den Hall — in der richtigen
 // Reihenfolge (siehe Room>>play).
 ~room.play;
-
-// --- 2b) Live-Coding: Brunnen umplatzieren ---
-// Position jederzeit während des Sets änderbar — moveTo setzt sie direkt,
-// ohne die roomRadius-Rückführung, die für die Insekten-Eigenbewegung gedacht ist.
-~fountainMovable.moveTo([-3, 2, 0]);
 
 // --- 3b) Live-Coding: Insekt 1 zurufen lassen ---
 // Löst bei insect1 einen kurzen Klang-Akzent aus (Tonhöhe/Pegel blitzen kurz
