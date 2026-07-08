@@ -1,0 +1,68 @@
+class:: RoomReverb
+summary:: Geteilter Raumklang (GVerb) für alle Soundobjekte eines Room
+categories:: Soundgarden>Spatial-Audio
+related:: Classes/Room
+
+description::
+RoomReverb ist ein einziger, geteilter Raumklang für den ganzen virtuellen Raum, statt eines
+Halls pro Soundobjekt — akustisch richtig (ein Raum hat ein Nachklangfeld, nicht eines pro
+Klangquelle) und ausserdem deutlich günstiger. Registrierte Soundobjekte speisen über ihren
+Binauralizer (link::Classes/Binauralizer:: oder link::Classes/AtkBinauralizer::) einen
+distanzabhängigen Anteil ihres trockenen Signals in den geteilten link::#-bus:: — mehrere
+gleichzeitige Quellen summieren sich dort automatisch, ohne manuelles Mischen.
+
+In normalem Gebrauch wird RoomReverb nicht direkt angesprochen: link::Classes/Room:: legt
+beim Konstruieren selbst eine Instanz an und leitet code::size::/code::height::/
+code::surface::/code::mix:: auf die hier dokumentierten Parameter
+(code::roomSize::/code::revTime::/code::damping::/code::mix::) ab — siehe
+link::Classes/Room#Hall live einstellen:: für die eigentliche Bedienung. Diese Hilfeseite
+dokumentiert die interne Plumbing für den Fall, dass jemand das Mapping in
+code::Room>>reverbParams:: nachvollziehen oder RoomReverb eigenständig verwenden will.
+
+CLASSMETHODS::
+
+method:: new
+Erzeugt eine neue RoomReverb-Instanz und legt sofort den geteilten Audio-Bus an (client-
+seitige Buchhaltung, kein code::server.sync:: nötig).
+
+argument:: server
+Der bereits gebootete link::Classes/Server::.
+
+method:: addSynthDef
+Registriert die code::\roomReverb::-SynthDef (GVerb, Core-UGen, kein code::sc3-plugins::
+nötig) beim Server. Muss einmalig vor link::#-play:: aufgerufen worden sein — bei Verwendung
+über link::Classes/Room:: übernimmt code::Room>>addSynthDef:: das implizit nicht, diese
+Methode hier bezieht sich nur auf die Reverb-SynthDef selbst und wird typischerweise direkt
+im Demo-Skript aufgerufen (siehe code::RoomReverb.addSynthDef;:: in den Demos).
+
+INSTANCEMETHODS::
+
+method:: bus
+Der geteilte Mono-Audio-Bus (nur lesbar), in den Binauralizer ihren Hall-Anteil schreiben.
+
+method:: play
+Startet den Reverb-Synth. Bewusst erst aufrufen, nachdem alle Soundobjekte schon laufen
+(code::addToTail::) — der Synth liest sonst nicht den vollständig summierten Bus-Inhalt.
+
+argument:: server
+Der link::Classes/Server::.
+argument:: roomSize
+Raumgrösse-Parameter für GVerb. Default 8.
+argument:: revTime
+Nachhallzeit in Sekunden. Default 3.
+argument:: damping
+Dämpfung hoher Frequenzen (0..1). Default 0.5.
+argument:: mix
+Hall-Gesamtpegel. Default 1.
+
+method:: set
+Aktualisiert die Parameter auf dem bereits laufenden Reverb-Synth live. No-op, falls
+link::#-play:: noch nicht aufgerufen wurde.
+
+argument:: roomSize
+argument:: revTime
+argument:: damping
+argument:: mix
+
+method:: stop
+Gibt Synth und Bus wieder frei.
