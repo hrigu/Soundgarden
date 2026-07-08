@@ -58,6 +58,11 @@ von `sclang_conf.yaml` oder auf einer neuen Maschine). Ohne diesen Schritt (bzw.
 allerersten Mal) scheitert `boot/boot.scd` mit `ERROR: Class not defined.` (auf einer frisch
 installierten SuperCollider-Instanz ist die Klassenbibliothek noch im Auslieferungszustand).
 
+Eigene SCDoc-Hilfeseiten liegen unter `HelpSource/Classes/` und erscheinen im normalen
+SuperCollider-HelpBrowser. Nach Änderungen an Klassen oder `.schelp`-Dateien in scide
+**Help → Rebuild All Documentation** ausführen; danach öffnet z.B. `cmd-d` auf `Room` die
+projektspezifische Hilfeseite mit den Hall-Parametern (`size`, `height`, `surface`, `mix`).
+
 ## Tests
 
 Die reine sclang-Logik (aktuell: Extension-Erkennung für Tracks) wird über
