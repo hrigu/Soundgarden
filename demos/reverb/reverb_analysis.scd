@@ -2,7 +2,7 @@
 // vier stationaere Insekten an festen Positionen, gehoert ueber AtkBinauralizer.
 //
 
-// --- 1) Setup: SynthDefs registrieren + vier stationaere Insekten anlegen ---
+// --- 1) Setup + Start: alles an einer Stelle vorbereiten ---
 (
 var config, insectMovableBase, insectSoundBase, insectSoundVariants, positions,
 	makeSequencePattern, chirpWindow;
@@ -13,11 +13,17 @@ RoomReverb.addSynthDef;
 // Zentrale Session-Konfiguration: diese Werte werden beim Hoertest am haeufigsten
 // variiert, deshalb liegen sie gebuendelt an einer Stelle statt verteilt im Skript.
 config = (
-	roomSize: 8,
-	roomHeight: 3,
-	roomSurface: 1,
-	roomMix: 0.25,
-	reverbMix: 0.2,
+    roomSize: 10,
+    roomHeight: 3,
+    roomSurface: 0.35,
+    roomMix: 0.16, //0
+    reverbMix: 0.1, //0
+
+//	roomSize: 8,
+//	roomHeight: 3,
+//	roomSurface: 1,
+//	roomMix: 0.25,
+//	reverbMix: 0.2,
 	roomRadius: 6,
 	positions: [
 		[4, 3, 0],
@@ -90,31 +96,53 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 	)
 };
 
+"Raumhall-Analyse: Demo vorbereitet. Mit ~startDemo.() abspielen.\n".post;
+
+~applyTuning = {
+	~room.size = config[\roomSize];
+	~room.height = config[\roomHeight];
+	~room.surface = config[\roomSurface];
+	~room.mix = config[\roomMix];
+	~insects.do { |insect| insect.binauralizer.synth.set(\reverbMix, config[\reverbMix]) };
+};
+
+~startDemo = {
+	~room.play;
+	~applyTuning.();
+	"Raumhall-Analyse: Demo laeuft.\n".post;
+};
+
+~showControls = {
+	~listenerControl !? { ~listenerControl.stop };
+	~spaceView !? { ~spaceView.stop };
+	~listenerControl = KeyboardListenerControl.new(~room.listener);
+	~listenerControl.play;
+	~spaceView = SpaceView.new(~room.orchestra);
+	~spaceView.play;
+	"Raumhall-Analyse: Steuerung und Draufsicht aktiv.\n".post;
+};
+
+~stopDemo = {
+	~room.stop;
+	~listenerControl !? { ~listenerControl.stop };
+	~spaceView !? { ~spaceView.stop };
+	AtkBinauralizer.teardown;
+	"Raumhall-Analyse: Demo gestoppt.\n".post;
+};
+
 "Raumhall-Analyse: 4 stationaere Insekten mit sequenziellen Zirp-Fenstern registriert.\n".post;
 )
 
 // --- 2) Abspielen ---
-// Startet Insekten, Binauralizer, Orchestra-Tick und danach den gemeinsamen Hall.
-~room.play;
+~startDemo.();
 
 // --- 3) Optional: Listener-Steuerung + Draufsicht ---
 // W/S vor/zurueck, A/D seitlich, Q/E drehen. Fenster muss fokussiert sein.
-~listenerControl = KeyboardListenerControl.new(~room.listener);
-~listenerControl.play;
-
-~spaceView = SpaceView.new(~room.orchestra);
-~spaceView.play;
+~showControls.();
 
 // --- 4) Live-Tuning ---
 // Raum- und Send-Werte fuer diese Session gesammelt anpassen.
-~room.size = config[\roomSize];
-~room.height = config[\roomHeight];
-~room.surface = config[\roomSurface];
-~room.mix = config[\roomMix];
-~insects.do { |insect| insect.binauralizer.synth.set(\reverbMix, config[\reverbMix]) };
+~applyTuning.();
 
 // --- 5) Stoppen ---
-~room.stop;
-~listenerControl.stop;
-~spaceView.stop;
-AtkBinauralizer.teardown;
+~stopDemo.();
