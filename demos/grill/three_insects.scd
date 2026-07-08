@@ -8,7 +8,7 @@
 //   1) boot/load_classes.scd — nur beim Erst-Setup nötig (danach automatisch bei jedem Start,
 //                          siehe Kommentar dort) — bindet Movable/Listener/CircularMoveRule/
 //                          InsectSound/AtkBinauralizer/Room/SoundObject/CallingPattern/
-//                          KeyboardListenerControl/SpaceView in den Klassenpfad ein
+//                          SpatialControlPanel in den Klassenpfad ein
 //   2) boot/boot.scd   — bei jedem Start: Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
@@ -102,20 +102,12 @@ rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 1
 
 )
 (
-// --- 3) Tastatursteuerung für den Listener starten ---
-// Bewusst separat und erst NACH Block 2 ausführen (Orchester muss schon spielen).
-// Öffnet ein kleines Fenster, das während der Steuerung fokussiert sein muss
-// (SuperCollider-Standardidiom für Tastatur-Input). Tasten halten:
-// W/S vor/zurück, A/D seitlich, Q/E drehen.
-~listenerControl = KeyboardListenerControl.new(~room.listener);
-~listenerControl.play;
-
-// --- 3c) Raum-Draufsicht öffnen ---
-// Live aktualisiertes Fenster: Listener (Position + Blickrichtung als Pfeil) und
-// alle registrierten Soundobjekte, von oben betrachtet. Bewegt selbst nichts —
-// liest bei jedem Neuzeichnen einfach den aktuellen Zustand von ~room.orchestra.
-~spaceView = SpaceView.new(~room.orchestra);
-~spaceView.play;
+// --- 3) Gemeinsames Spatial-GUI ---
+// Bewusst separat und erst NACH Block 2 ausführen (Room muss schon spielen).
+// W/S vor/zurück, A/D seitlich, Q/E drehen; dazu dieselbe Oberfläche für
+// Draufsicht und Room-/Reverb-Regler.
+~controlPanel = SpatialControlPanel.new(~room, viewRadius: 6, editable: true);
+~controlPanel.play;
 )
 
 // --- 2) Abspielen ---
@@ -139,13 +131,7 @@ rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 1
 // separat, weil der Kernel der Klasse gehört, nicht einer einzelnen Instanz/room.stop.
 AtkBinauralizer.teardown;
 
-// Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
-// falls Block 3 überhaupt ausgeführt wurde.
-~listenerControl.stop;
-
-// Raum-Draufsicht separat stoppen (schließt das Fenster) — nur nötig, falls
-// Block 3c überhaupt ausgeführt wurde.
-~spaceView.stop;
+~controlPanel.stop;
 
 
 

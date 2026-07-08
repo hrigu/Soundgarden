@@ -66,11 +66,8 @@ num_insects = 30;
 ~room.play;
 
 (
-~listenerControl = KeyboardListenerControl.new(~room.listener);
-~listenerControl.play;
-
-~spaceView = SpaceView.new(~room.orchestra);
-~spaceView.play;
+~controlPanel = SpatialControlPanel.new(~room, viewRadius: 6, editable: true);
+~controlPanel.play;
 )
 
 
@@ -85,11 +82,7 @@ AtkBinauralizer.teardown;
 
 // Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
 // falls Block 3 überhaupt ausgeführt wurde.
-~listenerControl.stop;
-
-// Raum-Draufsicht separat stoppen (schließt das Fenster) — nur nötig, falls
-// Block 3c überhaupt ausgeführt wurde.
-~spaceView.stop;
+~controlPanel.stop;
 
 
 

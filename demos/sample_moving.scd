@@ -7,7 +7,7 @@
 // Vorher (in dieser Reihenfolge):
 //   1) boot/load_classes.scd — nur beim Erst-Setup nötig (danach automatisch bei jedem Start,
 //                          siehe Kommentar dort) — bindet SampleSound/CircularMoveRule/
-//                          AtkBinauralizer/Room/SoundObject/SpaceView in den Klassenpfad ein
+//                          AtkBinauralizer/Room/SoundObject/SpatialControlPanel in den Klassenpfad ein
 //   2) boot/boot.scd   — bei jedem Start: Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
@@ -70,15 +70,12 @@ maxSpeed = 0.3;  // rad/s — schnellstes Objekt: eine Umdrehung in ca. 21s
 // startet Orchestra vor RoomReverb in der richtigen Reihenfolge (siehe Room>>play).
 ~room.play;
 
-// --- 3) Raum-Draufsicht öffnen (optional) ---
-// Zeigt Listener im Zentrum und alle Sample-Objekte, die sich auf der Kreisbahn bewegen.
-~spaceView = SpaceView.new(~room.orchestra);
-~spaceView.play;
-
-~listenerControl = KeyboardListenerControl.new(~room.listener);
-~listenerControl.play;
+// --- 3) Gemeinsames Spatial-GUI öffnen (optional) ---
+// Zeigt Listener und alle bewegten Sample-Objekte in einem Fenster; W/S/A/D/Q/E steuern den Listener.
+~controlPanel = SpatialControlPanel.new(~room, viewRadius: radius + 1, editable: true);
+~controlPanel.play;
 
 // --- 4) Stoppen ---
 ~room.stop;
 AtkBinauralizer.teardown;
-~spaceView.stop;
+~controlPanel.stop;

@@ -7,8 +7,7 @@
 // Vorher (in dieser Reihenfolge):
 //   1) boot/load_classes.scd — nur beim Erst-Setup nötig (danach automatisch bei jedem Start,
 //                               siehe Kommentar dort) — bindet SampleSound/SteadyMoveRule/
-//                               Binauralizer/Room/SoundObject/KeyboardListenerControl/
-//                               SpaceView ein
+//                               Binauralizer/Room/SoundObject/SpatialControlPanel ein
 //   2) boot/boot.scd        — bei jedem Start: Server muss laufen
 //
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning) funktionieren nicht über Lautsprecher
@@ -57,15 +56,11 @@ sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in B
 // startet Orchestra vor RoomReverb in der richtigen Reihenfolge (siehe Room>>play).
 ~room.play;
 
-// Zeigt Listener (Position + Blickrichtung) und die Klangquelle von oben betrachtet.
-~spaceView = SpaceView.new(~room.orchestra);
-~spaceView.play;
-
-// --- 3) Tastatursteuerung + Raum-Draufsicht ---
-// W/S vor/zurück, A/D seitlich, Q/E drehen — verändert Azimuth/Distanz zur Klangquelle live,
-// hörbar an Pan/ITD und am Direkt/Hall-Verhältnis (weiter weg = mehr Hall-Anteil).
-~listenerControl = KeyboardListenerControl.new(~room.listener);
-~listenerControl.play;
+// --- 3) Gemeinsames Spatial-GUI ---
+// W/S vor/zurück, A/D seitlich, Q/E drehen; dieselbe Oberfläche zeigt Listener,
+// Klangquelle und Room-/Reverb-Regler.
+~controlPanel = SpatialControlPanel.new(~room, viewRadius: 6, editable: true);
+~controlPanel.play;
 
 // --- 4) Live-Coding: Quelle umplatzieren (Alternative zum Herumlaufen) ---
 ~testObject.movable.moveTo([-2, 4, 0]);
@@ -83,5 +78,4 @@ sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in B
 // ~room.stop / ~room.play sind beliebig abwechselbar (Intent 25, jetzt über Room>>stop/play) —
 // zum Zwischendurch-Anhalten reicht die erste Zeile, das Setup (Block 1) bleibt gültig.
 ~room.stop;
-~listenerControl.stop;
-~spaceView.stop;
+~controlPanel.stop;
