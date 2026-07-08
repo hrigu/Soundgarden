@@ -1,0 +1,187 @@
+class:: Room
+summary:: Virtueller Raum für binaurale Soundobjekte, inklusive Hall-Steuerung
+categories:: Soundgarden>Spatial-Audio
+related:: Classes/RoomReverb, Classes/Listener, Classes/Orchestra, Classes/SoundObject, Classes/AtkBinauralizer, Classes/Binauralizer
+
+description::
+Ein Room bündelt einen link::Classes/Listener::, ein link::Classes/Orchestra:: und einen
+gemeinsamen link::Classes/RoomReverb:: zu einem virtuellen Raum: alle über
+link::#-register:: bzw. link::#-registerFromBuilder:: angelegten Soundobjekte hören sich
+binaural über denselben Listener und teilen sich denselben Hall.
+
+Room modelliert bewusst kein physikalisch exaktes Raumverhalten (keine Sabine-Formel o.ä.),
+sondern ein plausibles, per Ohr nachjustierbares Mapping von vier einfachen Stellschrauben
+(code::size::, code::height::, code::surface::, code::mix::) auf die eigentlichen
+link::Classes/RoomReverb:: -Parameter (code::roomSize::/code::revTime::/code::damping::).
+Diese vier Parameter sind live per Zuweisung änderbar, während der Klang bereits läuft —
+jede Änderung aktualisiert den laufenden Hall sofort.
+
+Für den in code::demos/grill/:: üblichen Ablauf: code::Room.new(s):: erzeugen,
+code::room.addSynthDef(AtkBinauralizer):: (oder code::Binauralizer::) einmalig aufrufen, dann
+pro Soundobjekt code::room.registerFromBuilder(soundParams, movableParams):: oder
+code::room.register(movable, sound):: — siehe link::#-register:: für den Unterschied.
+
+subsection:: Hall live einstellen
+
+Die vier Hall-Stellschrauben sind gewöhnliche Instanzvariablen mit Settern — nach
+code::room.play:: einfach zuweisen:
+
+code::
+~room.size = 12;    // Grundfläche (Kantenlänge, Meter) — größer = längerer Nachhall
+~room.height = 3;   // Deckenhöhe (Meter) — größer = längerer Nachhall
+~room.surface = 1;  // 0 (rau/absorbierend) .. 1 (glatt/hart) — glatter = länger + heller
+~room.mix = 0.2;    // Hall-Gesamtpegel, kein Raum-Merkmal, reiner Mix-Knopf
+::
+
+Faustregel hinter der Ableitung (siehe code::reverbParams:: in Room.sc): das Raumvolumen
+ergibt sich aus code::size.squared * height:: (Raum als Würfel mit Kantenlänge code::size::
+gedacht); die Nachhallzeit wächst mit der Kubikwurzel des Volumens und mit glatterer
+Oberfläche; die Dämpfung hoher Frequenzen fällt mit code::surface:: (glatt/hart dämpft
+weniger als rau/absorbierend).
+
+CLASSMETHODS::
+
+method:: new
+Erzeugt einen neuen Room mit eigenem link::Classes/Listener:: (falls keiner übergeben wird),
+eigenem link::Classes/Orchestra:: und eigenem link::Classes/RoomReverb::.
+
+argument:: server
+Der bereits gebootete link::Classes/Server::.
+argument:: listener
+Optional ein bestehender link::Classes/Listener::, z.B. für ein künftiges Multi-Room-Setup,
+in dem ein Listener zwischen mehreren Rooms wandert. Normalerweise weglassen — Room legt dann
+selbst einen neuen Listener an.
+argument:: size
+Grundfläche (Kantenlänge in Metern). Default 8.
+argument:: height
+Deckenhöhe in Metern. Default 3.
+argument:: surface
+Oberflächenbeschaffenheit zwischen 0 (rau/absorbierend) und 1 (glatt/hart). Default 0.5.
+argument:: mix
+Hall-Gesamtpegel. Default 1.
+
+INSTANCEMETHODS::
+
+subsection:: Setup
+
+method:: addSynthDef
+Registriert die SynthDef eines Binauralizer-Typs (link::Classes/Binauralizer:: oder
+link::Classes/AtkBinauralizer::) beim Server, verkabelt mit dem geteilten Reverb-Bus, und
+legt fest, dass der Listener dieses Room ab jetzt mit dieser Klasse "hört". Ein Room hat
+immer nur eine Ohren-Strategie, kein Nebeneinander mehrerer Binauralizer-Typen. Muss vor
+code::play:: aufgerufen werden.
+
+argument:: binauralizerClass
+code::Binauralizer:: (einfache Näherung, reine Core-UGens) oder code::AtkBinauralizer::
+(echtes HRTF-Rendering über das Ambisonic Toolkit, braucht eine installierte ATK-Quark, siehe
+Haupt-README).
+argument:: subjectID
+Nur relevant für code::AtkBinauralizer:: — CIPIC-Subjekt-ID für den HRTF-Kernel (Default 21 =
+KEMAR-Kunstkopf).
+
+subsection:: Soundobjekte registrieren
+
+method:: register
+Baut ein link::Classes/SoundObject:: aus einem fertigen link::Classes/Movable:: und
+link::Classes/Sound:: und meldet es beim Orchestra an. Der Binauralizer kommt automatisch
+vom Listener (code::listener.makeBinauralizer::) — Aufrufer konstruieren nie selbst einen
+Binauralizer.
+
+argument:: movable
+Ein fertiges link::Classes/Movable::.
+argument:: sound
+Ein fertiger link::Classes/Sound:: (z.B. link::Classes/InsectSound::).
+argument:: reverbMix
+Anteil des Trockensignals, der in den geteilten Hall-Bus fliesst (an den Binauralizer
+durchgereicht). Default 0.3.
+returns:: Das neu angelegte, bereits registrierte SoundObject.
+
+method:: registerFromBuilder
+Wie code::register::, baut movable+sound aber über link::Classes/SoundObjectBuilder:: aus
+zwei Params-Events statt fertiger Instanzen — praktisch für Varianten, die per Event-Merge
+(code::baseParams ++ (...)::) aus einer Basis-Konfiguration abgeleitet werden (siehe
+code::demos/grill/three_insects.scd::).
+
+argument:: soundParams
+Ein link::Classes/Event:: mit den Setter-Parametern für die Sound-Klasse.
+argument:: movableParams
+Ein link::Classes/Event:: mit den Setter-Parametern für Movable (code::pos::,
+code::moveRule::, code::roomRadius::, ...).
+argument:: reverbMix
+Wie bei code::register::. Default 0.3.
+argument:: soundClass
+Optional, überschreibt die Standard-Sound-Klasse (link::Classes/InsectSound::) des Builders.
+argument:: movableClass
+Optional, überschreibt die Standard-Movable-Klasse (link::Classes/Movable::) des Builders.
+returns:: Das neu angelegte, bereits registrierte SoundObject.
+
+subsection:: Abspielen und Live-Coding
+
+method:: play
+Startet Orchestra (und damit alle registrierten SoundObjects) und danach den Hall mit den
+aktuell aus code::size::/code::height::/code::surface::/code::mix:: abgeleiteten Parametern.
+
+method:: stop
+Stoppt das Ticken des Orchestra, ruft code::stop:: auf allen registrierten SoundObjects auf
+und stoppt danach den Hall.
+
+method:: call
+Löst bei code::caller:: einen kurzen Klang-Akzent aus (siehe code::Sound>>call::); nach
+kurzer, leicht zufälliger Verzögerung ruft ein zufälliges anderes registriertes Objekt
+zurück (Call-and-Response). Kein Rückruf, falls code::caller:: das einzige registrierte
+Objekt ist.
+
+argument:: caller
+Das SoundObject, das den Akzent auslöst.
+
+subsection:: Hall live anpassen
+
+method:: size
+Grundfläche (Kantenlänge in Metern). Zuweisung (code::room.size = 12::) aktualisiert den
+laufenden Hall sofort.
+
+method:: height
+Deckenhöhe in Metern. Zuweisung aktualisiert den laufenden Hall sofort.
+
+method:: surface
+Oberflächenbeschaffenheit zwischen 0 (rau/absorbierend) und 1 (glatt/hart). Zuweisung
+aktualisiert den laufenden Hall sofort.
+
+method:: mix
+Hall-Gesamtpegel, kein Raum-Merkmal, reiner Mix-Knopf. Zuweisung aktualisiert den laufenden
+Hall sofort.
+
+subsection:: Zugriff
+
+method:: listener
+Der link::Classes/Listener:: dieses Room (nur lesbar).
+
+method:: orchestra
+Das link::Classes/Orchestra:: dieses Room (nur lesbar).
+
+method:: server
+Der beim Konstruktor übergebene link::Classes/Server:: (nur lesbar).
+
+EXAMPLES::
+
+code::
+(
+~room = Room.new(s, size: 8, height: 3, surface: 0.5, mix: 1);
+~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+
+~insect = ~room.registerFromBuilder(
+	(wingRate: 210, wingDuty: 0.25, ringFreq1: 3200, ringFreq2: 4600, amp: 0.35),
+	(pos: [0, 2.5, 0], moveRule: CircularMoveRule.new, roomRadius: 5)
+);
+
+~room.play;
+)
+
+// Hall bei laufendem Klang live nachjustieren:
+~room.size = 12;
+~room.height = 4;
+~room.surface = 1;
+~room.mix = 0.2;
+
+~room.stop;
+::
