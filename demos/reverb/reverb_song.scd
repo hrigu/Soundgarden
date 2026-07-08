@@ -10,7 +10,7 @@
 
 // --- 1) Setup + Start: Grundgeruest vorbereiten ---
 (
-var config;
+var config, songsDir, songFiles, normalizedSongName, exactMatch, partialMatch;
 
 SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
@@ -37,9 +37,42 @@ config = (
 	surface: config[\roomSurface], mix: config[\roomMix]);
 ~room.addSynthDef(AtkBinauralizer, subjectID: 21);
 
-// Task 2 baut hier die rekursive Song-Suche und Dateiauswahl ein.
-~songFile = nil;
+// Song-Auswahl:
+// - exakter Match auf fileNameWithoutExtension gewinnt
+// - sonst erstes Namensfragment-Match
+// - ohne ~songName oder ohne Treffer: erste gueltige Audiodatei
+songsDir = PathName(config[\songsDir]);
+songFiles = [];
+songsDir.filesDo({ |pe|
+	if(
+		pe.isFile
+		and: { pe.fileName.beginsWith(".").not }
+		and: { BootTrackDetection.isValidExtension(pe.extension) }
+	) {
+		songFiles = songFiles.add(pe);
+	};
+});
+songFiles = songFiles.sortBy({ |pe| pe.fullPath });
+
+if(songFiles.isEmpty) {
+	Error("Reverb-Song-Demo: Keine gueltigen Audiodateien unter % gefunden."
+		.format(config[\songsDir])).throw;
+};
+
+normalizedSongName = ~songName.asString.toLower;
+exactMatch = if(~songName.notNil) {
+	songFiles.detect({ |pe| pe.fileNameWithoutExtension.asString.toLower == normalizedSongName })
+};
+partialMatch = if(~songName.notNil) {
+	songFiles.detect({ |pe|
+		pe.fileNameWithoutExtension.asString.toLower.contains(normalizedSongName)
+	})
+};
+
+~songFile = exactMatch ?? partialMatch ?? songFiles.first;
 ~songObject = nil;
+
+"Reverb-Song-Demo: Gewaehlter Song: %\n".postf(~songFile.fileNameWithoutExtension);
 
 ~applyTuning = {
 	~room.size = ~songConfig[\roomSize];
