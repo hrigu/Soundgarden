@@ -4,7 +4,8 @@
 
 // --- 1) Setup: SynthDefs registrieren + vier stationaere Insekten anlegen ---
 (
-var insectBase, insectVariants, positions, makeSequencePattern, chirpWindow;
+var insectMovableBase, insectSoundBase, insectSoundVariants, positions, makeSequencePattern,
+	chirpWindow;
 
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
@@ -17,7 +18,7 @@ RoomReverb.addSynthDef;
 
 // Gemeinsame Basis fuer die Insekten; pattern wird pro Objekt unten gesetzt,
 // damit immer nur ein Insekt in seinem eigenen Zeitfenster zirpt.
-insectBase = (
+insectSoundBase = (
 	wingRate: 210,
 	wingDuty: 0.25,
 	ringFreq1: 3200,
@@ -29,7 +30,7 @@ insectBase = (
 
 // Kleine Klangunterschiede helfen, die vier festen Positionen beim Hoertest
 // auseinanderzuhalten, ohne das Hall-Verhalten durch Bewegung zu vermischen.
-insectVariants = [
+insectSoundVariants = [
 	(),
 	(wingRate: 260, ringFreq1: 4200, ringFreq2: 6100, amp: 0.2),
 	(wingRate: 170, wingDuty: 0.35, ringFreq1: 2600, ringFreq2: 3900, amp: 0.24),
@@ -44,6 +45,7 @@ positions = [
 	[0, -3, 0],
 	[-3, 0, 0]
 ];
+insectMovableBase = (pos: [0, 3, 0], moveRule: SteadyMoveRule.new, roomRadius: 6);
 
 // Ein voller Sequenzumlauf dauert 8s: jedes Insekt bekommt ein 2s-Fenster.
 // Die eigentlichen Zirpsegmente kommen aus der Kurzform; nur Vor-/Nachlauf-
@@ -61,8 +63,9 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 
 ~insects = positions.collect { |pos, index|
 	~room.registerFromBuilder(
-		insectBase ++ insectVariants[index] ++ (pattern: makeSequencePattern.(index * 2, 6 - (index * 2))),
-		(pos: pos, moveRule: SteadyMoveRule.new, roomRadius: 6),
+		insectSoundBase ++ insectSoundVariants[index]
+			++ (pattern: makeSequencePattern.(index * 2, 6 - (index * 2))),
+		insectMovableBase ++ (pos: pos),
 		reverbMix: 0.7
 	)
 };
