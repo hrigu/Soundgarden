@@ -5,7 +5,7 @@
 // --- 1) Setup + Start: alles an einer Stelle vorbereiten ---
 (
 var config, insectMovableBase, insectSoundBase, insectSoundVariants, positions,
-	makeSequencePattern, chirpWindow;
+	makeSequencePattern, chirpWindow, makeReverbSlider;
 
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
@@ -122,10 +122,34 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 	"Raumhall-Analyse: Steuerung und Draufsicht aktiv.\n".post;
 };
 
+~showReverbControls = {
+	~reverbWindow !? { ~reverbWindow.close };
+	~reverbWindow = Window.new("Room-Hall", Rect(820, 100, 360, 220));
+	~reverbWindow.view.decorator = FlowLayout(~reverbWindow.view.bounds.insetBy(10, 10));
+
+	makeReverbSlider = { |label, key, spec|
+		EZSlider(~reverbWindow, 330@24, label, spec, { |ez|
+			config[key] = ez.value;
+			~applyTuning.();
+		}, config[key]);
+	};
+
+	makeReverbSlider.("Size", \roomSize, ControlSpec(2, 30, \lin, 0.1));
+	makeReverbSlider.("Height", \roomHeight, ControlSpec(1, 20, \lin, 0.1));
+	makeReverbSlider.("Surface", \roomSurface, ControlSpec(0, 1, \lin, 0.01));
+	makeReverbSlider.("Mix", \roomMix, ControlSpec(0, 1, \lin, 0.01));
+	makeReverbSlider.("ReverbSend", \reverbMix, ControlSpec(0, 1, \lin, 0.01));
+
+	~reverbWindow.onClose = { ~reverbWindow = nil };
+	~reverbWindow.front;
+	"Raumhall-Analyse: Reverb-GUI aktiv.\n".post;
+};
+
 ~stopDemo = {
 	~room.stop;
 	~listenerControl !? { ~listenerControl.stop };
 	~spaceView !? { ~spaceView.stop };
+	~reverbWindow !? { ~reverbWindow.close };
 	"Raumhall-Analyse: Demo gestoppt.\n".post;
 };
 
@@ -150,9 +174,12 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 // Raum- und Send-Werte fuer diese Session gesammelt anpassen.
 ~applyTuning.();
 
-// --- 5) Stoppen ---
+// --- 5) Reverb-GUI ---
+~showReverbControls.();
+
+// --- 6) Stoppen ---
 ~stopDemo.();
 
-// --- 6) Vollstaendig freigeben ---
+// --- 7) Vollstaendig freigeben ---
 // Nur noetig, wenn die Session wirklich beendet wird.
 ~freeDemo.();
