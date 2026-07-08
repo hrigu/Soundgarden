@@ -118,8 +118,8 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 	~listenerControl = KeyboardListenerControl.new(~room.listener);
 	~listenerControl.play;
 	~spaceView = SpaceView.new(~room.orchestra);
-	~spaceView.play;
-	"Raumhall-Analyse: Steuerung und Draufsicht aktiv.\n".post;
+	~spaceView.play(editable: true);
+	"Raumhall-Analyse: Steuerung und editierbare Draufsicht aktiv.\n".post;
 };
 
 ~showReverbControls = {
