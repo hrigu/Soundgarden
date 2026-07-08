@@ -12,7 +12,7 @@
 (
 var config, songsDir, songFiles, normalizedSongName, exactMatch, partialMatch;
 
-SampleSound.addSynthDef;
+SongSound.addSynthDef;
 RoomReverb.addSynthDef;
 
 // Zentrale Session-Konfiguration fuer den Hoertest.
@@ -25,8 +25,9 @@ config = (
 	reverbMix: 0.35,
 	viewRadius: 8,
 	songPosition: [0, 3, 0],
+	songAmp: 0.75,
 	songRate: 1,
-	songPhase: 0
+	songLoop: true
 );
 
 // Kann vor dem Setup gesetzt werden, z.B.:
@@ -70,7 +71,14 @@ partialMatch = if(~songName.notNil) {
 };
 
 ~songFile = exactMatch ?? partialMatch ?? songFiles.first;
-~songObject = nil;
+~songSound = SongSound.new(~songFile.fullPath, amp: config[\songAmp], loop: config[\songLoop],
+	rate: config[\songRate]);
+~songSound.preload(s);
+~songObject = ~room.register(
+	Movable.new(config[\songPosition], SteadyMoveRule.new, roomRadius: config[\viewRadius]),
+	~songSound,
+	reverbMix: config[\reverbMix]
+);
 
 "Reverb-Song-Demo: Gewaehlter Song: %\n".postf(~songFile.fileNameWithoutExtension);
 
@@ -114,6 +122,7 @@ partialMatch = if(~songName.notNil) {
 };
 
 "Reverb-Song-Demo: Grundgeruest vorbereitet.\n".post;
+"Reverb-Song-Demo: Mit ~songName kann vor Block 1 ein bestimmter Titel gewaehlt werden.\n".post;
 )
 
 // --- 2) Abspielen ---
