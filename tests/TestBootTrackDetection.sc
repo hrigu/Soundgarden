@@ -2,7 +2,7 @@
 TestBootTrackDetection : UnitTest {
 
 	test_acceptsSymbolExtensions {
-		[\wav, \aiff, \aif, \flac].do { |ext|
+		[\wav, \aiff, \aif, \flac, \m4a].do { |ext|
 			this.assert(
 				BootTrackDetection.isValidExtension(ext),
 				"% (Symbol) sollte erkannt werden".format(ext)
