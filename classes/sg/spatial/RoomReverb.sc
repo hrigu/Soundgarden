@@ -28,8 +28,14 @@ RoomReverb {
 		SynthDef(\roomReverb, { |in = 0, out = 0, roomSize = 8, revTime = 3, damping = 0.5,
 				mix = 1|
 			var sig = In.ar(in, 1);
-			var wet = GVerb.ar(sig, roomSize, revTime, damping, 0.5, 15, 0, mix, mix,
-				roomSize + 1);
+			var roomSizeCtrl = Lag.kr(roomSize, 0.25);
+			var revTimeCtrl = Lag.kr(revTime, 0.25);
+			var dampingCtrl = Lag.kr(damping, 0.2);
+			var mixCtrl = Lag.kr(mix, 0.12);
+			// GVerb reagiert auf harte Parameterspruenge oft mit kurzen Artefakten.
+			// Darum die Room-Controls vor dem UGen leicht glaetten.
+			var wet = GVerb.ar(sig, roomSizeCtrl, revTimeCtrl, dampingCtrl, 0.5, 15, 0,
+				mixCtrl, mixCtrl, roomSizeCtrl + 1);
 			Out.ar(out, wet);
 		}).add;
 	}
