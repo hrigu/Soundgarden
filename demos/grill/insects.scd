@@ -5,15 +5,6 @@
 // per Tastatur beweglich ist. Für 3 fest benannte, individuell konfigurierte Insekten mit
 // Call-and-Response siehe stattdessen demos/grill/three_insects.scd.
 //
-// Vorher (in dieser Reihenfolge):
-//   1) boot/load_classes.scd — nur beim Erst-Setup nötig (danach automatisch bei jedem Start,
-//                          siehe Kommentar dort) — bindet Movable/Listener/CircularMoveRule/
-//                          InsectSound/AtkBinauralizer/Room/SoundObject/RhythmPatternCreator/
-//                          KeyboardListenerControl/SpaceView in den Klassenpfad ein
-//   2) boot/boot.scd   — bei jedem Start: Server muss laufen
-//   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
-//      AtkBinauralizer.setup fehl
-//
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning/HRTF) funktionieren nicht über
 // Lautsprecher richtig.
 (
@@ -22,7 +13,7 @@ var insectMovableBase, insectSoundBase;
 
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
-~room = Room.new(s);
+~room = Room.new(s, size: 8, height: 3, surface: 1, mix: 1);
 ~room.addSynthDef(AtkBinauralizer, subjectID: 21);
 
 
@@ -36,13 +27,13 @@ insectSoundBase = (wingRate: 210, wingDuty: 0.25, ringFreq1: 3200, ringFreq2: 46
 // alle mit derselben Gesamt-Zykluslänge (~totalCycleDur), aber unterschiedlicher Anzahl/
 // Gewichtung der Segmente. Dadurch bleibt der Chor als Ganzes in einem gemeinsamen Takt, ohne
 // dass alle Insekten identisch klingen.
-~totalCycleDur = 3;
+~totalCycleDur = 30;
 // Stellschrauben für RhythmPatternCreator (Intent 33): soundRatio steuert den Anteil der
 // Zirp-Zeit an ~totalCycleDur (0.5 = hälftig, 0.1 = viel mehr Stille als Sound),
 // startWithSound legt fest, ob der Zyklus mit einem Zirp- oder einem Stille-Segment beginnt.
-~insectSoundRatio = 0.1;
+~insectSoundRatio = 0.01;
 ~insectStartWithSound = true;
-num_insects = 3;
+num_insects = 30;
 
 ~insects = num_insects.collect { |i|
 	var angle = (i / 20) * 2pi;
@@ -68,9 +59,11 @@ num_insects = 3;
 };
 
 // --- 2) Abspielen ---
-~room.play;
 
 )
+
+
+~room.play;
 
 (
 ~listenerControl = KeyboardListenerControl.new(~room.listener);
