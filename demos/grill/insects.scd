@@ -23,26 +23,27 @@ insectSoundBase = (wingRate: 210, wingDuty: 0.25, ringFreq1: 3200, ringFreq2: 46
 // Gewichtung der Segmente. Dadurch bleibt der Chor als Ganzes in einem gemeinsamen Takt, ohne
 // dass alle Insekten identisch klingen.
 ~totalCycleDur = 3;
-
-// erzeugt ein CallingPattern mit numSegments Segmenten, deren Dauern zufällig gewichtet, aber
-// so skaliert sind, dass sie exakt totalDur ergeben — jeder Aufruf eine neue, unabhängige
-// CallingPattern-Instanz (kein geteilter Zustand zwischen Insekten, siehe Kommentar bei
-// ~insect1 oben).
-~makeRhythmPattern = { |totalDur, numSegments|
-	var weights = Array.fill(numSegments, { rrand(0.01, 2.0) });
-	var scale = totalDur / weights.sum;
-	CallingPattern.fromDurations(weights * scale);
-};
+// Stellschrauben für RhythmPatternCreator (Intent 33): soundRatio steuert den Anteil der
+// Zirp-Zeit an ~totalCycleDur (0.5 = hälftig, 0.1 = viel mehr Stille als Sound),
+// startWithSound legt fest, ob der Zyklus mit einem Zirp- oder einem Stille-Segment beginnt.
+~insectSoundRatio = 0.5;
+~insectStartWithSound = true;
 num_insects = 3;
 
 ~insects = num_insects.collect { |i|
 	var angle = (i / 20) * 2pi;
 	var radius = rrand(2.0, 4.0);
+	var numSegments = [12, 14, 16, 18, 20, 22, 24, 26].choose;
 	var soundParams = insectSoundBase ++ (
 		wingRate: insectSoundBase.wingRate + rrand(-80, 100),
 		ringFreq1: insectSoundBase.ringFreq1 + rrand(-800, 1000),
 		amp: insectSoundBase.amp * rrand(0.5, 1.3),
-		pattern: ~makeRhythmPattern.(~totalCycleDur, [12, 14, 16, 18, 20, 22, 24, 26].choose)
+		pattern: RhythmPatternCreator.new(
+			totalDur: ~totalCycleDur,
+			numSegments: numSegments,
+			soundRatio: ~insectSoundRatio,
+			startWithSound: ~insectStartWithSound
+		).createNewPattern
 	);
 	var movableParams = insectMovableBase ++ (
 		pos: [radius * cos(angle), radius * sin(angle), 0],
