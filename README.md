@@ -17,8 +17,9 @@ Bitcrush, Reverb) – ohne Aussetzer, per JITLib (`Ndef`).
 
 Dateien der Reihe nach öffnen und blockweise ausführen (Cmd+Enter):
 
-1. **`boot/load_classes.scd`** – muss zuerst laufen (einmal pro Sitzung): bindet `classes/`/`tests/`
-   ein und kompiliert neu. `boot/boot.scd` braucht die Klasse `BootTrackDetection` daraus.
+1. **`boot/load_classes.scd`** – muss vor dem ersten Lauf von `boot/boot.scd` einmalig gelaufen
+   sein (nur beim Erst-Setup, siehe Abschnitt unten): bindet `classes/`/`tests/` ein und
+   kompiliert neu. `boot/boot.scd` braucht die Klasse `BootTrackDetection` daraus.
 2. **`boot/boot.scd`** – bootet den Server und lädt alle Dateien aus `sounds/`
    automatisch in `~tracks` (z.B. `~tracks[\mytrack01]`).
 3. **`experiments/live_coding_rig/fx.scd`** – definiert die FX-Bausteine (`~fxChains`), die du live
@@ -47,20 +48,24 @@ Namespaces):
   `KeyboardListenerControl`, `SpaceView`
 - passende Tests spiegelbildlich unter `tests/sg/soundobjects/`, `tests/sg/spatial/`
 
-Damit SuperCollider alles kennt, einmal pro Sitzung **als allererstes** (vor `boot/boot.scd`!)
-**`boot/load_classes.scd`** ausführen (bindet `classes/` und `tests/` rekursiv ein) und im
-Post-Fenster auf `compile done` warten — danach stehen alle Klassen überall zur Verfügung.
-Ohne diesen Schritt scheitert `boot/boot.scd` mit `ERROR: Class not defined.` (auf einer frisch
-gestarteten SuperCollider-Sitzung ist die Klassenbibliothek noch im Auslieferungszustand).
+Damit SuperCollider alles kennt, einmalig beim Erst-Setup **als allererstes** (vor
+`boot/boot.scd`!) **`boot/load_classes.scd`** ausführen (bindet `classes/` und `tests/`
+rekursiv ein) und im Post-Fenster auf `compile done` warten — danach stehen alle Klassen
+überall zur Verfügung. `LanguageConfig.addIncludePath` persistiert die beiden Pfade dabei
+standardmäßig in `sclang_conf.yaml`, weshalb dieser Schritt ab dann bei **jedem** weiteren
+Start automatisch passiert und nicht wiederholt werden muss (außer nach einem Reset/Löschen
+von `sclang_conf.yaml` oder auf einer neuen Maschine). Ohne diesen Schritt (bzw. vor dem
+allerersten Mal) scheitert `boot/boot.scd` mit `ERROR: Class not defined.` (auf einer frisch
+installierten SuperCollider-Instanz ist die Klassenbibliothek noch im Auslieferungszustand).
 
 ## Tests
 
 Die reine sclang-Logik (aktuell: Extension-Erkennung für Tracks) wird über
 SuperCollders eingebautes `UnitTest`-Framework getestet — ohne Server, ohne
-echte Audiodateien. Nach `boot/load_classes.scd` einfach **`run_tests.scd`**
-ausführen; Ergebnis (grün/rot pro Testfall) erscheint im Post-Fenster.
+echte Audiodateien. Sobald `boot/load_classes.scd` einmal gelaufen ist (siehe oben), einfach
+**`run_tests.scd`** ausführen; Ergebnis (grün/rot pro Testfall) erscheint im Post-Fenster.
 
-## Zweiter Prototyp: binaurales Insekt (`demos/insects.scd`)
+## Zweiter Prototyp: binaurales Insekt (`demos/grill/`)
 
 Ein virtuelles Klangobjekt ("Insekt"), das nach einer Bewegungsregel durch
 einen definierten Raum kurvt; der Hörer bekommt es über Kopfhörer binaural
@@ -101,9 +106,15 @@ Objektmodell:
   betrachtet. Bewegt selbst nichts, liest bei jedem Neuzeichnen einfach den
   aktuellen Zustand der `Orchestra`.
 
-Ausführen: `boot/load_classes.scd` → `boot/boot.scd` → `demos/insects.scd` (Block für
-Block), mit Kopfhörern. Für die Tastatursteuerung muss das
+Ausführen: `boot/load_classes.scd` → `boot/boot.scd` → eine der Varianten in `demos/grill/`
+(Block für Block), mit Kopfhörern. Für die Tastatursteuerung muss das
 `KeyboardListenerControl`-Fenster fokussiert sein.
+
+- `demos/grill/one_insect.scd` — Minimalbeispiel, ein einzelnes Insekt.
+- `demos/grill/three_insects.scd` — 3 fest benannte, individuell konfigurierte Insekten mit
+  Call-and-Response.
+- `demos/grill/insects.scd` — mehrere zufällig generierte Insekten mit konfigurierbarem
+  Sound/Stille-Verhältnis (`RhythmPatternCreator`).
 
 ### Reverb-Testsetup (`demos/reverb.scd`)
 

@@ -4,10 +4,12 @@
 // ohne von mehreren gleichzeitigen Objekten (wie in sample.scd/sample_moving.scd) abgelenkt
 // zu werden.
 //
-// Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) boot/load_classes.scd — bindet SampleSound/SteadyMoveRule/Binauralizer/Room/
-//                               SoundObject/KeyboardListenerControl/SpaceView ein
-//   2) boot/boot.scd        — Server muss laufen
+// Vorher (in dieser Reihenfolge):
+//   1) boot/load_classes.scd — nur beim Erst-Setup nötig (danach automatisch bei jedem Start,
+//                               siehe Kommentar dort) — bindet SampleSound/SteadyMoveRule/
+//                               Binauralizer/Room/SoundObject/KeyboardListenerControl/
+//                               SpaceView ein
+//   2) boot/boot.scd        — bei jedem Start: Server muss laufen
 //
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning) funktionieren nicht über Lautsprecher
 // richtig.

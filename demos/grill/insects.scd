@@ -1,7 +1,21 @@
-// insects.scd — Prototyp: mehrere binaurale "Insekten" (3 fest benannte + 20 generierte, alle
-// mit demselben Zirp-Zykluslänge, aber unterschiedlicher innerer Rhythmus-Aufteilung) kreisen
-// um den Hörer, dazu ein stationäres ("steady") Soundobjekt, dessen Position live per Code
-// verändert werden kann, und ein per Tastatur beweglicher Listener.
+// insects.scd — Prototyp: mehrere zufällig generierte, binaurale "Insekten" (Anzahl über
+// num_insects einstellbar), alle mit derselben Zirp-Zykluslänge (~totalCycleDur), aber
+// unterschiedlicher innerer Rhythmus-Aufteilung und konfigurierbarem Sound/Stille-Verhältnis
+// (RhythmPatternCreator, Intent 33) — kreisen auf zufälligen Kreisbahnen um den Hörer, der
+// per Tastatur beweglich ist. Für 3 fest benannte, individuell konfigurierte Insekten mit
+// Call-and-Response siehe stattdessen demos/grill/three_insects.scd.
+//
+// Vorher (in dieser Reihenfolge):
+//   1) boot/load_classes.scd — nur beim Erst-Setup nötig (danach automatisch bei jedem Start,
+//                          siehe Kommentar dort) — bindet Movable/Listener/CircularMoveRule/
+//                          InsectSound/AtkBinauralizer/Room/SoundObject/RhythmPatternCreator/
+//                          KeyboardListenerControl/SpaceView in den Klassenpfad ein
+//   2) boot/boot.scd   — bei jedem Start: Server muss laufen
+//   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
+//      AtkBinauralizer.setup fehl
+//
+// Kopfhörer benutzen — binaurale Effekte (ITD/Panning/HRTF) funktionieren nicht über
+// Lautsprecher richtig.
 (
 var num_insects;
 var insectMovableBase, insectSoundBase;
@@ -26,7 +40,7 @@ insectSoundBase = (wingRate: 210, wingDuty: 0.25, ringFreq1: 3200, ringFreq2: 46
 // Stellschrauben für RhythmPatternCreator (Intent 33): soundRatio steuert den Anteil der
 // Zirp-Zeit an ~totalCycleDur (0.5 = hälftig, 0.1 = viel mehr Stille als Sound),
 // startWithSound legt fest, ob der Zyklus mit einem Zirp- oder einem Stille-Segment beginnt.
-~insectSoundRatio = 0.5;
+~insectSoundRatio = 0.1;
 ~insectStartWithSound = true;
 num_insects = 3;
 

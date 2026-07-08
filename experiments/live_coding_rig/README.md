@@ -6,7 +6,8 @@ per Tastatur (`Cmd+Enter` je Block), kein MIDI-Controller nötig.
 
 ## Vorher
 
-1. `boot/load_classes.scd` – einmal pro Sitzung.
+1. `boot/load_classes.scd` – nur beim Erst-Setup nötig (persistiert in `sclang_conf.yaml`,
+   danach automatisch bei jedem Start eingebunden, siehe Haupt-`README.md`).
 2. `boot/boot.scd` – bootet den Server und lädt alle Dateien aus `sounds/` in `~tracks`.
 
 ## Bedienung

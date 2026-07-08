@@ -4,10 +4,11 @@
 // unterschiedliches Tempo pro Objekt. Nutzt nur Samples aus sounds/compmusic/ (nicht
 // sounds/apple/, siehe Intent 21).
 //
-// Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) boot/load_classes.scd — bindet SampleSound/CircularMoveRule/AtkBinauralizer/Room/
-//                          SoundObject/SpaceView in den Klassenpfad ein
-//   2) boot/boot.scd   — Server muss laufen
+// Vorher (in dieser Reihenfolge):
+//   1) boot/load_classes.scd — nur beim Erst-Setup nötig (danach automatisch bei jedem Start,
+//                          siehe Kommentar dort) — bindet SampleSound/CircularMoveRule/
+//                          AtkBinauralizer/Room/SoundObject/SpaceView in den Klassenpfad ein
+//   2) boot/boot.scd   — bei jedem Start: Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
 //

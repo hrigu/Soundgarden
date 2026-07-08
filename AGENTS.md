@@ -83,8 +83,10 @@ sinnvoll test-first entwickeln:
   Hörtest (Kopfhörer bei binauralen Sachen) — "klingt es richtig" lässt sich nicht sinnvoll als
   Vorher-Test formulieren.
 - Produktiv-Klassen kommen nach `classes/`, Test-Klassen (`UnitTest`-Subklassen) nach `tests/`;
-  `boot/load_classes.scd` (einmal pro Sitzung: `LanguageConfig.addIncludePath` für beide Ordner,
-  rekursiv, + `thisProcess.recompile`) muss laufen, bevor sie verfügbar sind.
+  `boot/load_classes.scd` muss vor dem ersten Start gelaufen sein, bevor sie verfügbar sind:
+  `LanguageConfig.addIncludePath` für beide Ordner (rekursiv, persistiert in `sclang_conf.yaml`)
+  + `thisProcess.recompile` für die laufende Sitzung. Einmalig beim Erst-Setup nötig — danach
+  bindet SuperCollider beide Ordner bei jedem Start automatisch mit ein.
 - Spatial-Audio-Klassen kommen nach `classes/sg/{sounds,soundobjects,spatial}/` (reine
   Ordnerkonvention, SuperCollider selbst hat keine echten Namespaces — siehe CLAUDE.md
   Architektur), Tests spiegelbildlich nach `tests/sg/{soundobjects,spatial}/`. Andere Domains

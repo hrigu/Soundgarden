@@ -22,9 +22,14 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 ## Befehle
 
 - SuperCollider-IDE (scide) öffnen (Spotlight oder `open -a SuperCollider`).
-- `boot/load_classes.scd` einmal pro Sitzung ausführen — bindet `classes/` in den Klassenpfad ein und
-  kompiliert neu; danach im Post-Fenster auf `compile done` warten. **Muss vor `boot/boot.scd`
-  laufen** — `boot/boot.scd` ruft `BootTrackDetection` auf, das erst nach diesem Schritt existiert.
+- `boot/load_classes.scd` einmalig beim Erst-Setup ausführen — bindet `classes/`/`tests/` über
+  `LanguageConfig.addIncludePath` in den Klassenpfad ein und kompiliert neu; danach im
+  Post-Fenster auf `compile done` warten. `addIncludePath` persistiert dabei standardmäßig in
+  `sclang_conf.yaml`, weshalb SuperCollider die eigenen Klassen ab diesem Zeitpunkt bei **jedem**
+  Start automatisch mitkompiliert — der Schritt ist danach nicht mehr nötig, außer nach einem
+  Reset/Löschen von `sclang_conf.yaml` oder auf einer neuen Maschine. **Muss vor dem ersten Lauf
+  von `boot/boot.scd`** erfolgt sein — `boot/boot.scd` ruft `BootTrackDetection` auf, das erst
+  nach diesem Schritt existiert.
 - `run_tests.scd` — automatisierte Tests (`UnitTest`) für die reine sclang-Logik.
 - Live-Set-Workflow: `boot/boot.scd` → `experiments/live_coding_rig/fx.scd` →
   `experiments/live_coding_rig/set_template.scd` (Block für Block, `Cmd+Enter`).

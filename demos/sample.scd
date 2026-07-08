@@ -1,12 +1,13 @@
 // sample.scd — Prototyp: mehrere Klangobjekte, gleichmässig auf einem Kreis um den
 // Hörer verteilt, spielen je ein Audiosample in festem Rhythmus. Eigenständiges Experiment
-// (Intent 20) — unabhängig von insects.scd, nutzt aber dieselbe Spatial-Audio-
+// (Intent 20) — unabhängig von demos/grill/insects.scd, nutzt aber dieselbe Spatial-Audio-
 // Infrastruktur (Listener/Orchestra/SoundObject/Movable/Binauralizer).
 //
-// Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) boot/load_classes.scd — bindet SampleSound/SteadyMoveRule/AtkBinauralizer/Room/
-//                          SoundObject/SpaceView in den Klassenpfad ein
-//   2) boot/boot.scd   — Server muss laufen
+// Vorher (in dieser Reihenfolge):
+//   1) boot/load_classes.scd — nur beim Erst-Setup nötig (danach automatisch bei jedem Start,
+//                          siehe Kommentar dort) — bindet SampleSound/SteadyMoveRule/
+//                          AtkBinauralizer/Room/SoundObject/SpaceView in den Klassenpfad ein
+//   2) boot/boot.scd   — bei jedem Start: Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
 //

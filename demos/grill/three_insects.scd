@@ -1,13 +1,15 @@
-// three_insects.scd — Prototyp: mehrere binaurale "Insekten" (3 fest benannte + 20 generierte, alle
-// mit demselben Zirp-Zykluslänge, aber unterschiedlicher innerer Rhythmus-Aufteilung) kreisen
-// um den Hörer, dazu ein stationäres ("steady") Soundobjekt, dessen Position live per Code
-// verändert werden kann, und ein per Tastatur beweglicher Listener.
+// three_insects.scd — Prototyp: 3 fest benannte, binaurale "Insekten" (Insekt 2/3 als
+// individuell konfigurierte Varianten von Insekt 1 per Event-Merge, Intent 29) mit eigenem
+// CallingPattern-Zirp-Rhythmus (Intent 30/31) kreisen um den Hörer, der per Tastatur beweglich
+// ist. Für viele zufällig generierte Insekten mit konfigurierbarem Sound/Stille-Verhältnis
+// siehe stattdessen demos/grill/insects.scd.
 //
-// Vorher (einmal pro Sitzung, in dieser Reihenfolge):
-//   1) boot/load_classes.scd — bindet Movable/Listener/CircularMoveRule/SteadyMoveRule/InsectSound/
-//                          Binauralizer/AtkBinauralizer/Room/SoundObject/
+// Vorher (in dieser Reihenfolge):
+//   1) boot/load_classes.scd — nur beim Erst-Setup nötig (danach automatisch bei jedem Start,
+//                          siehe Kommentar dort) — bindet Movable/Listener/CircularMoveRule/
+//                          InsectSound/AtkBinauralizer/Room/SoundObject/CallingPattern/
 //                          KeyboardListenerControl/SpaceView in den Klassenpfad ein
-//   2) boot/boot.scd   — Server muss laufen
+//   2) boot/boot.scd   — bei jedem Start: Server muss laufen
 //   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
 //      AtkBinauralizer.setup fehl
 //
@@ -24,7 +26,7 @@
 // Ein Block statt zwei — SynthDef-Registrierung (/d_recv, asynchron) muss nicht
 // abgeschlossen sein, bevor die Objekte hier unten angelegt werden (reines
 // Zusammenstecken, keine Server-Kommunikation); sie muss erst abgeschlossen sein,
-// bevor Block 2 (orchestra.play) Synths instanziert. Da Block 2 ein eigener,
+// bevor Block 2 (room.play) Synths instanziert. Da Block 2 ein eigener,
 // manuell ausgeführter Schritt ist, vergeht bis dahin ohnehin reale Zeit.
 (
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen, vor jeder
@@ -33,9 +35,9 @@
 var insectMovableBase, insectSoundBase;
 var rhythmPatternBase, rhythmPatternBase2, rhythmPatternBase3;
 
-// ~insect1/~insect2 als Environment-Variablen statt var: Block 3b (Call-and-Response) braucht
-// eine Referenz auf ~insect1 über den Block hinaus. ~fountainMovable/~fountainSound ebenso —
-// Block 2b/später live nachträglich änderbar (siehe unten).
+// ~insect1 als Environment-Variable statt var: Block 3b (Call-and-Response) braucht eine
+// Referenz darauf über den Block hinaus. ~insect2/~insect3 ebenso, für spätere Referenz/
+// Live-Coding-Zugriff.
 
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
@@ -125,7 +127,7 @@ rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 1
 // --- 3b) Live-Coding: Insekt 1 zurufen lassen ---
 // Löst bei insect1 einen kurzen Klang-Akzent aus (Tonhöhe/Pegel blitzen kurz
 // auf); nach kurzer, leicht zufälliger Verzögerung ruft ein zufälliges anderes
-// registriertes Objekt (insect2 oder fountain) zurück (Call-and-Response).
+// registriertes Objekt (insect2 oder insect3) zurück (Call-and-Response).
 ~room.call(~insect1);
 
 // --- 4) Stoppen ---

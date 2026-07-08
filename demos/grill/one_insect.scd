@@ -1,5 +1,19 @@
-//simple demo
-
+// one_insect.scd — Minimalbeispiel: ein einzelnes binaurales "Insekt" (CircularMoveRule-
+// Defaults, Standard-Klang) kreist um den Hörer, der per Tastatur beweglich ist. Zum
+// Nachvollziehen der Grundstruktur (Movable/InsectSound/Orchestra/SoundObject) ohne die
+// Mehrfach-Insekten-Komplexität aus insects.scd/three_insects.scd.
+//
+// Vorher (in dieser Reihenfolge):
+//   1) boot/load_classes.scd — nur beim Erst-Setup nötig (danach automatisch bei jedem Start,
+//                          siehe Kommentar dort) — bindet Movable/Listener/CircularMoveRule/
+//                          InsectSound/Binauralizer/AtkBinauralizer/Orchestra/SoundObject/
+//                          KeyboardListenerControl/SpaceView in den Klassenpfad ein
+//   2) boot/boot.scd   — bei jedem Start: Server muss laufen
+//   3) ATK installiert (Quark + Kernel/Matrizen/Sounds, siehe README) — sonst schlägt
+//      AtkBinauralizer.setup fehl
+//
+// Kopfhörer benutzen — binaurale Effekte (ITD/Panning/HRTF) funktionieren nicht über
+// Lautsprecher richtig.
 
 (
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen, vor jeder
@@ -29,7 +43,8 @@ AtkBinauralizer.setup(s);
 
 // Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s
 // im Uhrzeigersinn), Standard-Klang. AtkBinauralizer statt Binauralizer — echtes
-// HRTF, zum direkten Vergleich mit Insekt 2/Brunnen (siehe Kopfkommentar).
+// HRTF. simple_binauralizer bleibt hier ungenutzt; für einen Vergleich einfach unten in
+// SoundObject.new gegen atk_binauralizer austauschen.
 moveRule = CircularMoveRule.new;
 movable = Movable.new([0, 2.5, 0], moveRule, roomRadius: 5);
 insectSound = InsectSound.new;
@@ -57,10 +72,10 @@ simple_binauralizer = Binauralizer.new;
 ~listenerControl = KeyboardListenerControl.new(~listener);
 ~listenerControl.play;
 
-// --- 3b) Live-Coding: Insekt 1 zurufen lassen ---
-// Löst bei insect1 einen kurzen Klang-Akzent aus (Tonhöhe/Pegel blitzen kurz
-// auf); nach kurzer, leicht zufälliger Verzögerung ruft ein zufälliges anderes
-// registriertes Objekt (insect2 oder fountain) zurück (Call-and-Response).
+// --- 3b) Live-Coding: Insekt zurufen lassen ---
+// Löst bei ~insect einen kurzen Klang-Akzent aus (Tonhöhe/Pegel blitzen kurz auf). Da hier nur
+// ein Objekt registriert ist, gibt es kein Call-and-Response (siehe Orchestra>>chooseResponder
+// — kein Rückruf möglich, wenn kein anderes Objekt registriert ist).
 ~orchestra.call(~insect);
 
 // --- 3c) Raum-Draufsicht öffnen ---

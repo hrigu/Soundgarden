@@ -1,9 +1,10 @@
 // insectsound.scd — minimaler Testharness für InsectSound alleine: kein Room, kein
 // Binauralizer, keine Spatial-Logik. Zum schnellen Herumspielen mit Klangparametern und
-// CallingPattern-Konfigurationen, ohne die ganze Insekten-Population aus insects.scd neu
-// starten zu müssen.
+// CallingPattern-Konfigurationen, ohne die ganze Insekten-Population aus demos/grill/insects.scd
+// neu starten zu müssen.
 //
-// Vorher (einmal pro Sitzung): boot/load_classes.scd, dann boot/boot.scd (Server muss laufen).
+// Vorher: boot/load_classes.scd (nur beim Erst-Setup nötig, siehe Kommentar dort), dann
+// boot/boot.scd (bei jedem Start, Server muss laufen).
 // Kein Kopfhörer-Zwang hier — InsectSound.play() ist mono, kein binaurales Rendering.
 
 (
