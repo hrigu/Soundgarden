@@ -8,8 +8,12 @@ Bitcrush, Reverb) – ohne Aussetzer, per JITLib (`Ndef`).
 
 1. SuperCollider installieren: https://supercollider.github.io/downloads
    (oder `brew install supercollider`)
-2. Repo öffnen, `boot/boot.scd` in der IDE öffnen.
-3. Eigene Tracks (`.wav`/`.aiff`/`.flac`) in den Ordner `sounds/` legen.
+2. Für `.m4a`-Dateien zusätzlich `ffmpeg` installieren (`brew install ffmpeg`).
+   Hintergrund: `demos/reverb/reverb_song.scd` konvertiert `.m4a` bei Bedarf
+   temporär nach `.wav`, weil SuperCollider diese Dateien nicht zuverlässig
+   direkt lädt.
+3. Repo öffnen, `boot/boot.scd` in der IDE öffnen.
+4. Eigene Tracks (`.wav`/`.aiff`/`.flac`/`.m4a`) in den Ordner `sounds/` legen.
    Der Ordner ist per `.gitignore` von Git ausgeschlossen – deine Musik landet
    nicht im Repo.
 
@@ -17,11 +21,14 @@ Bitcrush, Reverb) – ohne Aussetzer, per JITLib (`Ndef`).
 
 Dateien der Reihe nach öffnen und blockweise ausführen (Cmd+Enter):
 
-1. **`boot/load_classes.scd`** – muss vor dem ersten Lauf von `boot/boot.scd` einmalig gelaufen
-   sein (nur beim Erst-Setup, siehe Abschnitt unten): bindet `classes/`/`tests/` ein und
-   kompiliert neu. `boot/boot.scd` braucht die Klasse `BootTrackDetection` daraus.
+1. **Nur beim Erst-Setup:** **`boot/load_classes.scd`** – muss vor dem ersten Lauf von
+   `boot/boot.scd` einmalig gelaufen sein (siehe Abschnitt unten): bindet `classes/`/`tests/`
+   ein und kompiliert neu. Dabei trägt SuperCollider die Include-Pfade in
+   `sclang_conf.yaml` unter `Application Support/SuperCollider` ein.
 2. **`boot/boot.scd`** – bootet den Server und lädt alle Dateien aus `sounds/`
-   automatisch in `~tracks` (z.B. `~tracks[\mytrack01]`).
+   automatisch in `~tracks` (z.B. `~tracks[\mytrack01]`). Die Soundgarden-Klassen sind dabei
+   nach dem Erst-Setup automatisch verfügbar, weil SuperCollider den Klassenpfad aus der
+   `sclang_conf.yaml` bereits kennt.
 3. **`experiments/live_coding_rig/fx.scd`** – definiert die FX-Bausteine (`~fxChains`), die du live
    kombinierst.
 4. **`experiments/live_coding_rig/set_template.scd`** – das eigentliche Live-Set. Jeder Block darin ist
@@ -134,6 +141,10 @@ per `synth.set(...)`, siehe unten) sowie eine Möglichkeit, die Quelle selbst um
 Ein `Room` hat eine einzige Binauralisierungs-"Ohren"-Strategie (`Binauralizer` oder
 `AtkBinauralizer`, festgelegt über `room.addSynthDef(...)`, siehe `Listener>>makeBinauralizer`)
 — Demo-Skripte konstruieren keinen Binauralizer mehr selbst:
+
+Für `demos/reverb/reverb_song.scd` gilt zusätzlich: wenn das Quellmaterial als `.m4a`
+vorliegt, muss `ffmpeg` installiert sein (`brew install ffmpeg`), damit das Skript die Datei
+vor dem Laden temporär nach `.wav` konvertieren kann.
 
 - **`Binauralizer`** — einfache Näherung mit reinen Core-UGens (Pan +
   winzige Laufzeitdifferenz zwischen den Ohren + entfernungsabhängiger
