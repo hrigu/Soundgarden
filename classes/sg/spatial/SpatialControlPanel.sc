@@ -1,7 +1,7 @@
 // SpatialControlPanel — gemeinsames GUI für Spatial-Audio-Demos: ein Fenster mit
-// editierbarer Raum-Draufsicht links und einem rechten Bedienbereich. Task 2 von
-// Intent 39 deckt hier zunächst Tastatursteuerung des Listeners plus Drag-and-drop
-// der Klangquellen ab; Room-/Reverb-Regler folgen in Task 3.
+// editierbarer Raum-Draufsicht links und einem rechten Bedienbereich. Listener kann per
+// Tastatur und Maus bewegt werden; Soundobjekte lassen sich ziehen, und Room-/Reverb-
+// Regler leben in derselben Oberfläche.
 SpatialControlPanel {
 	var <>room;
 	var <>viewRadius;
@@ -14,6 +14,8 @@ SpatialControlPanel {
 	var routine;
 	var heldKeys;
 	var draggedSoundObject;
+	var isDraggingListener;
+	var isRotatingListener;
 
 	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true|
 		^super.new.init(room, viewRadius, moveSpeed, rotateSpeed, editable);
@@ -26,18 +28,20 @@ SpatialControlPanel {
 		rotateSpeed = aRotateSpeed;
 		editable = anEditable;
 		heldKeys = Set.new;
+		isDraggingListener = false;
+		isRotatingListener = false;
 	}
 
 	play { |updateRate = 20|
 		var dt = 1.0 / updateRate;
-		var leftWidth = 420;
-		var totalWidth = 620;
-		var totalHeight = 420;
+		var leftWidth = 460;
+		var totalWidth = 860;
+		var totalHeight = 460;
 
 		window = Window.new("Spatial-Control-Panel", Rect(100, 100, totalWidth, totalHeight));
 		view = UserView(window, Rect(0, 0, leftWidth, totalHeight));
 		controlsView = CompositeView(window, Rect(leftWidth, 0, totalWidth - leftWidth, totalHeight));
-		controlsView.decorator = FlowLayout(controlsView.bounds.insetBy(10, 10));
+		controlsView.decorator = FlowLayout(controlsView.bounds.insetBy(16, 16));
 		view.drawFunc = { this.draw(view) };
 		this.installMouseActions;
 		this.installKeyActions;
@@ -58,15 +62,39 @@ SpatialControlPanel {
 	installMouseActions {
 		if(editable) {
 			view.mouseDownAction = { |aView, x, y|
-				draggedSoundObject = this.soundObjectAtScreenPoint(aView, x, y);
-			};
-			view.mouseMoveAction = { |aView, x, y|
-				if(draggedSoundObject.notNil) {
-					this.moveSoundObjectToScreenPoint(aView, draggedSoundObject, x, y);
-					aView.refresh;
+				draggedSoundObject = nil;
+				isDraggingListener = false;
+				isRotatingListener = false;
+
+				if(this.listenerHandleAtScreenPoint(aView, x, y)) {
+					isRotatingListener = true;
+				} {
+					if(this.listenerAtScreenPoint(aView, x, y)) {
+						isDraggingListener = true;
+					} {
+						draggedSoundObject = this.soundObjectAtScreenPoint(aView, x, y);
+					};
 				};
 			};
-			view.mouseUpAction = { draggedSoundObject = nil };
+			view.mouseMoveAction = { |aView, x, y|
+				if(isRotatingListener) {
+					this.rotateListenerToScreenPoint(aView, x, y);
+				} {
+					if(isDraggingListener) {
+						this.moveListenerToScreenPoint(aView, x, y);
+					} {
+						if(draggedSoundObject.notNil) {
+							this.moveSoundObjectToScreenPoint(aView, draggedSoundObject, x, y);
+						};
+					};
+				};
+				aView.refresh;
+			};
+			view.mouseUpAction = {
+				draggedSoundObject = nil;
+				isDraggingListener = false;
+				isRotatingListener = false;
+			};
 		};
 	}
 
@@ -80,10 +108,23 @@ SpatialControlPanel {
 	}
 
 	installControls {
+		var controlWidth = 340@26;
+		var headerWidth = 340@22;
+		var addGroupHeader = { |title|
+			var label = StaticText(controlsView, headerWidth);
+			label.string = title;
+			label.font = Font.default.copy.size_(15).boldVariant;
+			label.align = \left;
+			controlsView.decorator.nextLine;
+		};
 		var makeSlider = { |label, initValue, spec, action|
-			EZSlider(controlsView, 170@24, label, spec, { |ez| action.(ez.value) }, initValue);
+			var slider = EZSlider(controlsView, controlWidth, label, spec,
+				{ |ez| action.(ez.value) }, initValue);
+			controlsView.decorator.nextLine;
+			slider
 		};
 
+		addGroupHeader.("Room-Parameter");
 		makeSlider.("Size", room.size, ControlSpec(2, 30, \lin, 0.1), { |value|
 			room.size = value;
 		});
@@ -96,6 +137,8 @@ SpatialControlPanel {
 		makeSlider.("Mix", room.mix, ControlSpec(0, 1, \lin, 0.01), { |value|
 			room.mix = value;
 		});
+
+		addGroupHeader.("Direkte Hall-Parameter");
 		// Wertebereich grosszuegig (kein dokumentiertes Hard-Limit von GVerb) -- Experimentier-
 		// Regler gegen metallisches Klingeln, siehe Room>>spread (Intent 41).
 		makeSlider.("Spread", room.spread, ControlSpec(0, 60, \lin, 0.5), { |value|
@@ -110,6 +153,8 @@ SpatialControlPanel {
 		makeSlider.("TailBalance", room.tailBalance, ControlSpec(0, 1, \lin, 0.01), { |value|
 			room.tailBalance = value;
 		});
+
+		addGroupHeader.("Soundobjekt-Parameter");
 		makeSlider.("ReverbSend", this.currentReverbMix, ControlSpec(0, 1, \lin, 0.01), { |value|
 			this.applyReverbMix(value);
 		});
@@ -133,9 +178,8 @@ SpatialControlPanel {
 		var cy = bounds.height * 0.5;
 		var scale = (min(bounds.width, bounds.height) * 0.5) / viewRadius;
 		var listener = orchestra.listener;
-		var forward = listener.forwardVector;
-		var arrowLen = 18;
 		var listenerScreen = this.worldToScreen(bounds, listener.pos);
+		var noseScreen = this.listenerHandleScreenPoint(bounds);
 		var lx = listenerScreen[0];
 		var ly = listenerScreen[1];
 
@@ -155,11 +199,14 @@ SpatialControlPanel {
 
 		Pen.strokeColor = Color.blue;
 		Pen.width = 2;
-		Pen.line(lx@ly, (lx + (forward[0] * arrowLen))@(ly - (forward[1] * arrowLen)));
+		Pen.line(lx@ly, noseScreen[0]@noseScreen[1]);
 		Pen.stroke;
 
 		Pen.fillColor = Color.blue;
 		Pen.fillOval(Rect(lx - 6, ly - 6, 12, 12));
+
+		Pen.fillColor = Color.cyan;
+		Pen.fillOval(Rect(noseScreen[0] - 4, noseScreen[1] - 4, 8, 8));
 	}
 
 	worldToScreen { |bounds, pos|
@@ -191,6 +238,43 @@ SpatialControlPanel {
 		soundObject.movable.moveTo(newPos);
 	}
 
+	listenerAtScreenPoint { |aView, x, y, radius = 10|
+		var screenPos = this.worldToScreen(aView.bounds, room.listener.pos);
+		var dx = screenPos[0] - x;
+		var dy = screenPos[1] - y;
+		^((dx * dx) + (dy * dy)).sqrt <= radius
+	}
+
+	listenerHandleScreenPoint { |bounds, handleDistance = 18|
+		var listener = room.listener;
+		var listenerScreen = this.worldToScreen(bounds, listener.pos);
+		var forward = listener.forwardVector;
+		^[listenerScreen[0] + (forward[0] * handleDistance),
+			listenerScreen[1] - (forward[1] * handleDistance)]
+	}
+
+	listenerHandleAtScreenPoint { |aView, x, y, radius = 8|
+		var handlePos = this.listenerHandleScreenPoint(aView.bounds);
+		var dx = handlePos[0] - x;
+		var dy = handlePos[1] - y;
+		^((dx * dx) + (dy * dy)).sqrt <= radius
+	}
+
+	moveListenerToScreenPoint { |aView, x, y|
+		var listener = room.listener;
+		listener.pos = this.screenToWorld(aView.bounds, x, y, listener.pos[2]);
+	}
+
+	rotateListenerToScreenPoint { |aView, x, y|
+		var listener = room.listener;
+		var targetPos = this.screenToWorld(aView.bounds, x, y, listener.pos[2]);
+		var rel = targetPos - listener.pos;
+
+		if(rel[0].abs > 0.0001 or: { rel[1].abs > 0.0001 }) {
+			listener.facing = atan2(rel[0], rel[1]).raddeg;
+		};
+	}
+
 	currentReverbMix {
 		var first = room.orchestra.soundObjects.detect({ |soundObject|
 			soundObject.binauralizer.notNil
@@ -210,6 +294,8 @@ SpatialControlPanel {
 	stop {
 		routine !? { routine.stop };
 		draggedSoundObject = nil;
+		isDraggingListener = false;
+		isRotatingListener = false;
 		heldKeys = Set.new;
 		window !? { window.close };
 	}
