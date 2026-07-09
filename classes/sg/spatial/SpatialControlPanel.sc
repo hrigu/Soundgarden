@@ -96,6 +96,11 @@ SpatialControlPanel {
 		makeSlider.("Mix", room.mix, ControlSpec(0, 1, \lin, 0.01), { |value|
 			room.mix = value;
 		});
+		// Wertebereich grosszuegig (kein dokumentiertes Hard-Limit von GVerb) -- Experimentier-
+		// Regler gegen metallisches Klingeln, siehe Room>>spread (Intent 41).
+		makeSlider.("Spread", room.spread, ControlSpec(0, 60, \lin, 0.5), { |value|
+			room.spread = value;
+		});
 		makeSlider.("ReverbSend", this.currentReverbMix, ControlSpec(0, 1, \lin, 0.01), { |value|
 			this.applyReverbMix(value);
 		});
