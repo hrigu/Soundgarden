@@ -227,6 +227,11 @@ SpatialControlPanel {
 		var sound;
 		var sliderCount;
 		var contentHeight;
+		var titleHeight = 28;
+		var soloHeight = 32;
+		var sliderHeight = 32;
+		var presetHeight = if(presetsDir.notNil) { 130 } { 0 };
+		var paddingHeight = 56;
 
 		objectControlsView !? { objectControlsView.remove };
 		objectScrollView !? { objectScrollView.remove };
@@ -238,7 +243,7 @@ SpatialControlPanel {
 		sound = selectedSoundObject !? { selectedSoundObject.sound };
 		sliderCount = if(sound.notNil) { sound.class.editableParams.size } { 0 };
 		contentHeight = height.max(
-			40 + (sliderCount * 32) + if(presetsDir.notNil) { 110 } { 0 }
+			titleHeight + soloHeight + (sliderCount * sliderHeight) + presetHeight + paddingHeight
 		);
 		objectControlsView = CompositeView(objectScrollView, Rect(0, 0, visibleWidth, contentHeight));
 		objectControlsView.decorator = FlowLayout(objectControlsView.bounds.insetBy(16, 16));
