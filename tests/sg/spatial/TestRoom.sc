@@ -30,9 +30,9 @@ FakeReverbForRoomTest {
 		bus = \fakeBus;
 	}
 
-	play { |server, roomSize, revTime, damping, mix| log.add(\reverbPlay) }
+	play { |server, roomSize, revTime, damping, mix, spread| log.add(\reverbPlay) }
 
-	set { |roomSize, revTime, damping, mix| log.add(\reverbSet) }
+	set { |roomSize, revTime, damping, mix, spread| log.add(\reverbSet) }
 
 	stop { log.add(\reverbStop) }
 
@@ -182,6 +182,15 @@ TestRoom : UnitTest {
 		this.assertEquals(log.last, \reverbSet, "mix = ... aktualisiert den Hall sofort");
 	}
 
+	test_spreadChangeUpdatesReverbLive {
+		var log = List.new;
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+
+		room.spread = 30;
+
+		this.assertEquals(log.last, \reverbSet, "spread = ... aktualisiert den Hall sofort");
+	}
+
 	// reverbParams-Mapping — reine sclang-Logik, direkt testbar ohne Server (wie
 	// TestCircularMoveRule/TestMovable).
 	test_reverbParamsUsesSizeDirectlyAsRoomSize {
@@ -209,5 +218,13 @@ TestRoom : UnitTest {
 
 		this.assert(big.reverbParams[1] > small.reverbParams[1],
 			"größeres Raumvolumen führt zu längerer Nachhallzeit");
+	}
+
+	test_reverbParamsIncludesSpread {
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new));
+
+		this.assertEquals(room.reverbParams[4], 15,
+			"spread-Default entspricht dem bisherigen Literal (GVerbs eigener Default)");
 	}
 }
