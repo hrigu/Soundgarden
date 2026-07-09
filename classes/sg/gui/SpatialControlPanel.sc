@@ -291,7 +291,9 @@ SpatialControlPanel {
 		var sound = selectedSoundObject.sound;
 		var nameField = TextField(objectControlsView, 380@24);
 		var presetMenu = PopUpMenu(objectControlsView, 380@24);
-		var refreshPresetMenu = { presetMenu.items = SoundPresetLibrary.listNames(presetsDir) };
+		var refreshPresetMenu = {
+			presetMenu.items = SoundPresetLibrary.listNamesForSoundClass(presetsDir, sound.class)
+		};
 
 		refreshPresetMenu.value;
 		objectControlsView.decorator.nextLine;

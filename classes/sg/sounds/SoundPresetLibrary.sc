@@ -47,4 +47,14 @@ SoundPresetLibrary {
 				.collect { |pn| pn.fileNameWithoutExtension }
 		} { [] };
 	}
+
+	// listet nur Presets, deren gespeicherte soundClass zur gewünschten Sound-Klasse passt.
+	// Defensiv: ungültige/kaputte Preset-Dateien werden still übersprungen, statt das GUI-Menü
+	// zu sprengen.
+	*listNamesForSoundClass { |dir, soundClass|
+		^this.listNames(dir).select { |name|
+			var preset = this.load(dir, name);
+			preset.notNil and: { preset[\soundClass] == soundClass.name }
+		}
+	}
 }

@@ -77,7 +77,23 @@ TestSoundPresetLibrary : UnitTest {
 		this.assert(names.any { |n| n == "presetB" });
 	}
 
-	test_listNamesOnMissingDirReturnsEmptyArray {
+test_listNamesOnMissingDirReturnsEmptyArray {
 		this.assertEquals(SoundPresetLibrary.listNames(this.prTestDir ++ "_does_not_exist"), []);
+	}
+
+	test_listNamesForSoundClassFiltersByStoredSoundClass {
+		var dir = this.prTestDir;
+		var names;
+
+		SoundPresetLibrary.save(dir, "fakeA", FakeSoundForPresetLibraryTest.new);
+		File.mkdir(dir);
+		File.use(dir +/+ "other.scd", "w", { |f|
+			f.write("(soundClass: \\OtherSoundClass, freq: 330, amp: 0.2)".asString)
+		});
+
+		names = SoundPresetLibrary.listNamesForSoundClass(dir, FakeSoundForPresetLibraryTest);
+
+		this.assert(names.any { |n| n == "fakeA" });
+		this.assert(names.any { |n| n == "other" }.not);
 	}
 }
