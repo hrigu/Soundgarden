@@ -30,9 +30,13 @@ FakeReverbForRoomTest {
 		bus = \fakeBus;
 	}
 
-	play { |server, roomSize, revTime, damping, mix, spread| log.add(\reverbPlay) }
+	play { |server, roomSize, revTime, damping, mix, spread, inputBandwidth, tailBalance|
+		log.add(\reverbPlay)
+	}
 
-	set { |roomSize, revTime, damping, mix, spread| log.add(\reverbSet) }
+	set { |roomSize, revTime, damping, mix, spread, inputBandwidth, tailBalance|
+		log.add(\reverbSet)
+	}
 
 	stop { log.add(\reverbStop) }
 
@@ -191,6 +195,25 @@ TestRoom : UnitTest {
 		this.assertEquals(log.last, \reverbSet, "spread = ... aktualisiert den Hall sofort");
 	}
 
+	test_inputBandwidthChangeUpdatesReverbLive {
+		var log = List.new;
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+
+		room.inputBandwidth = 0.8;
+
+		this.assertEquals(log.last, \reverbSet,
+			"inputBandwidth = ... aktualisiert den Hall sofort");
+	}
+
+	test_tailBalanceChangeUpdatesReverbLive {
+		var log = List.new;
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+
+		room.tailBalance = 0.2;
+
+		this.assertEquals(log.last, \reverbSet, "tailBalance = ... aktualisiert den Hall sofort");
+	}
+
 	// reverbParams-Mapping — reine sclang-Logik, direkt testbar ohne Server (wie
 	// TestCircularMoveRule/TestMovable).
 	test_reverbParamsUsesSizeDirectlyAsRoomSize {
@@ -226,5 +249,21 @@ TestRoom : UnitTest {
 
 		this.assertEquals(room.reverbParams[4], 15,
 			"spread-Default entspricht dem bisherigen Literal (GVerbs eigener Default)");
+	}
+
+	test_reverbParamsIncludesInputBandwidth {
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new));
+
+		this.assertEquals(room.reverbParams[5], 0.5,
+			"inputBandwidth-Default entspricht dem bisherigen Literal");
+	}
+
+	test_reverbParamsIncludesTailBalance {
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new));
+
+		this.assertEquals(room.reverbParams[6], 0.5,
+			"tailBalance-Default (0.5) entspricht der bisherigen mix=mix-Kopplung");
 	}
 }
