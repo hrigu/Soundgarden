@@ -16,3 +16,5 @@ TestCallingPattern.run;
 TestRhythmPatternCreator.run;
 TestCricketSound.run;
 TestSound.run;
+TestInsectSound.run;
+TestSampleSound.run;
