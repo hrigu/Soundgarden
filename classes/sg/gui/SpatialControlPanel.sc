@@ -15,6 +15,7 @@ SpatialControlPanel {
 	var view;
 	var controlsView;
 	var roomControlsView;
+	var objectScrollView;
 	var objectControlsView;
 	var routine;
 	var heldKeys;
@@ -43,7 +44,7 @@ SpatialControlPanel {
 		var dt = 1.0 / updateRate;
 		var leftWidth = 460;
 		var totalWidth = 860;
-		var totalHeight = 650;
+		var totalHeight = 760;
 
 		window = Window.new("Spatial-Control-Panel", Rect(100, 100, totalWidth, totalHeight));
 		view = UserView(window, Rect(0, 0, leftWidth, totalHeight));
@@ -217,9 +218,24 @@ SpatialControlPanel {
 		var top = roomHeight + 10;
 		var width = controlsView.bounds.width;
 		var height = controlsView.bounds.height - top;
+		var visibleWidth = width - 16;
+		var sound;
+		var sliderCount;
+		var contentHeight;
 
 		objectControlsView !? { objectControlsView.remove };
-		objectControlsView = CompositeView(controlsView, Rect(0, top, width, height));
+		objectScrollView !? { objectScrollView.remove };
+		objectScrollView = ScrollView(controlsView, Rect(0, top, width, height));
+		objectScrollView.hasBorder_(false);
+		objectScrollView.hasHorizontalScroller_(false);
+		objectScrollView.hasVerticalScroller_(true);
+
+		sound = selectedSoundObject !? { selectedSoundObject.sound };
+		sliderCount = if(sound.notNil) { sound.class.editableParams.size } { 0 };
+		contentHeight = height.max(
+			40 + (sliderCount * 32) + if(presetsDir.notNil) { 110 } { 0 }
+		);
+		objectControlsView = CompositeView(objectScrollView, Rect(0, 0, visibleWidth, contentHeight));
 		objectControlsView.decorator = FlowLayout(objectControlsView.bounds.insetBy(16, 16));
 
 		if(selectedSoundObject.isNil) {
@@ -422,6 +438,8 @@ SpatialControlPanel {
 		isDraggingListener = false;
 		isRotatingListener = false;
 		heldKeys = Set.new;
+		objectScrollView = nil;
+		objectControlsView = nil;
 		window !? { window.close };
 	}
 
