@@ -18,15 +18,17 @@ SynthDef(\monitorMono, { |in = 0, out = 0, amp = 1|
 }).add;
 )
 
-// --- Beispiel 1: Cricket-Pattern (Intent 30/31) ---
+// --- Beispiel 1: Cricket-Pattern (Intent 31 — abgeleiteter Default-Zahlensatz) ---
+// 4 Pulse à 50ms (angenommener 40/60 an/aus-Duty-Cycle) + 200ms Interchirp-Pause,
+// siehe .intents/completed/31.research_spatial-audio_puls-chirp-zeitmodell.md, Task 3.0.
 (
 ~insect = InsectSound.new(
 	pattern: CallingPattern.new([
-		[0.02, true], [0.03, false],
-		[0.02, true], [0.3, false],
-		[0.02, true], [0.3, false],
-		[0.02, true], [0.03, false],
-		[0.2, false]
+		[0.02, true], [0.03, false],  // Puls 1
+		[0.02, true], [0.03, false],  // Puls 2
+		[0.02, true], [0.03, false],  // Puls 3
+		[0.02, true], [0.03, false],  // Puls 4
+		[0.2, false]                  // Interchirp-Pause
 	])
 );
 ~insect.play(s);
