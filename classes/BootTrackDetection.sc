@@ -4,7 +4,7 @@ BootTrackDetection {
 	classvar <validExtensions;
 
 	*initClass {
-		validExtensions = [\wav, \aiff, \aif, \flac, \m4a];
+		validExtensions = [\wav, \aiff, \aif, \flac, \m4a, \mp3];
 	}
 
 	*isValidExtension { |ext|

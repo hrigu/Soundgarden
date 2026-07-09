@@ -2,7 +2,7 @@
 TestBootTrackDetection : UnitTest {
 
 	test_acceptsSymbolExtensions {
-		[\wav, \aiff, \aif, \flac, \m4a].do { |ext|
+		[\wav, \aiff, \aif, \flac, \m4a, \mp3 ].do { |ext|
 			this.assert(
 				BootTrackDetection.isValidExtension(ext),
 				"% (Symbol) sollte erkannt werden".format(ext)
@@ -26,8 +26,8 @@ TestBootTrackDetection : UnitTest {
 
 	test_rejectsUnsupportedExtensions {
 		this.assert(
-			BootTrackDetection.isValidExtension("mp3").not,
-			"mp3 steht nicht auf der Liste und muss abgelehnt werden"
+			BootTrackDetection.isValidExtension("fflacc").not,
+			"fflacc steht nicht auf der Liste und muss abgelehnt werden"
 		);
 	}
 }
