@@ -17,8 +17,8 @@ SongSound.addSynthDef;
 RoomReverb.addSynthDef;
 
 // Zentrale Session-Konfiguration fuer den Hoertest.
-config = (
-	songsDir: "/Users/chrigu/code/my/musicnet/downloads/tracks",
+	config = (
+		songsDir: "/Users/chrigu/code/my/musicnet/downloads/tracks",
 	roomSize: 10,
 	roomHeight: 3,
 	roomSurface: 0.35,
@@ -152,17 +152,20 @@ if(originalPath.endsWith(".m4a")) {
 	~room.teardown;
 	AtkBinauralizer.teardown;
 	"Reverb-Song-Demo: ATK-Kernel freigegeben.\n".post;
-};
+	};
 
-"Reverb-Song-Demo: Grundgeruest vorbereitet.\n".post;
-"Reverb-Song-Demo: Mit ~songName kann vor Block 1 ein bestimmter Titel gewaehlt werden.\n".post;
+	"Reverb-Song-Demo: Grundgeruest vorbereitet.\n".post;
+	"Reverb-Song-Demo: Mit ~songName kann vor Block 1 ein bestimmter Titel gewaehlt werden.\n".post;
+	~songPresetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "presets"
+		+/+ "reverb_song").fullPath;
 )
 
 // --- 2) Abspielen ---
 ~startDemo.();
 
 // --- 3) Optional: gemeinsames GUI ---
-~controlPanel = RoomControlPanel.new(~room, viewRadius: ~songConfig[\viewRadius], editable: true);
+~controlPanel = RoomControlPanel.new(~room, viewRadius: ~songConfig[\viewRadius], editable: true,
+	presetsDir: ~songPresetsDir);
 ~controlPanel.show;
 
 // --- 4) Stoppen ---

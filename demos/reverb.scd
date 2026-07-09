@@ -59,7 +59,10 @@ sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in B
 // --- 3) Gemeinsames Room-Control-Panel ---
 // W/S vor/zurück, A/D seitlich, Q/E drehen; dieselbe Oberfläche zeigt Listener,
 // Klangquelle und Room-/Reverb-Regler.
-~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true);
+~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "presets"
+	+/+ "reverb_sample").fullPath;
+~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true,
+	presetsDir: ~presetsDir);
 ~controlPanel.show;
 
 // --- 4) Live-Coding: Quelle umplatzieren (Alternative zum Herumlaufen) ---

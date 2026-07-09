@@ -73,7 +73,10 @@ maxSpeed = 0.3;  // rad/s — schnellstes Objekt: eine Umdrehung in ca. 21s
 
 // --- 3) Gemeinsames Room-Control-Panel öffnen (optional) ---
 // Zeigt Listener und alle bewegten Sample-Objekte in einem Fenster; W/S/A/D/Q/E steuern den Listener.
-~controlPanel = RoomControlPanel.new(~room, viewRadius: ~viewRadius, editable: true);
+~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "presets"
+	+/+ "sample_moving").fullPath;
+~controlPanel = RoomControlPanel.new(~room, viewRadius: ~viewRadius, editable: true,
+	presetsDir: ~presetsDir);
 ~controlPanel.show;
 
 // --- 4) Stoppen ---

@@ -32,7 +32,7 @@ RoomReverb.addSynthDef;
 // gültige Audiodateien aus sounds/ — rekursiv (filesDo statt entries.select), da die
 // Samples in Unterordnern liegen (z.B. sounds/apple/, sounds/compmusic/); keine feste
 // Dateiliste, damit das Demo mit den lokal vorhandenen Samples läuft.
-soundsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "sounds");
+soundsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "sounds/instruments/Percussion");
 sampleFiles = [];
 soundsDir.filesDo({ |pe|
 	if(BootTrackDetection.isValidExtension(pe.extension)) { sampleFiles = sampleFiles.add(pe) };
@@ -67,7 +67,10 @@ rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (
 
 // --- 3) Gemeinsames Room-Control-Panel öffnen (optional) ---
 // Zeigt Listener und alle Sample-Objekte in einem Fenster; W/S/A/D/Q/E steuern den Listener.
-~controlPanel = RoomControlPanel.new(~room, viewRadius: ~viewRadius, editable: true);
+~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "presets"
+	+/+ "sample").fullPath;
+~controlPanel = RoomControlPanel.new(~room, viewRadius: ~viewRadius, editable: true,
+	presetsDir: ~presetsDir);
 ~controlPanel.show;
 
 // --- 4) Stoppen ---
