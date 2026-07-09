@@ -101,6 +101,15 @@ SpatialControlPanel {
 		makeSlider.("Spread", room.spread, ControlSpec(0, 60, \lin, 0.5), { |value|
 			room.spread = value;
 		});
+		// inputBandwidth: Tiefpass vor dem Diffusions-Netzwerk, hell/dunkel des Hall-Eingangs.
+		makeSlider.("InputBandwidth", room.inputBandwidth, ControlSpec(0, 1, \lin, 0.01), { |value|
+			room.inputBandwidth = value;
+		});
+		// tailBalance: 0 = nur fruehe Reflexionen .. 1 = nur diffuser Nachhall-Schwanz,
+		// 0.5 = ausbalanciert (siehe Room>>tailBalance, Intent 41).
+		makeSlider.("TailBalance", room.tailBalance, ControlSpec(0, 1, \lin, 0.01), { |value|
+			room.tailBalance = value;
+		});
 		makeSlider.("ReverbSend", this.currentReverbMix, ControlSpec(0, 1, \lin, 0.01), { |value|
 			this.applyReverbMix(value);
 		});
