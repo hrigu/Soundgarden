@@ -7,19 +7,75 @@
 Listener {
 	var <>pos;     // [x, y, z]
 	var <>facing;  // Grad, 0 = entlang +y
-	var <>binauralizerClass;  // welche "Ohren" dieser Listener hat — siehe makeBinauralizer
+	var <binauralizerClass;            // welche "Ohren" dieser Listener hat, siehe
+	                                    // makeBinauralizer/binauralizerClass_
+	var <>subjectID;                    // ATK-Kunstkopf-ID, nur für AtkBinauralizer relevant
+	var <>directOutBinauralizerClass;  // Fallback-Klasse für binauralizerClass = nil
+	var server, reverbBus;              // gemerkt seit setup() — siehe dort
 
-	*new { |pos = #[0, 0, 0], facing = 0, binauralizerClass|
-		^super.new.setup(pos, facing, binauralizerClass);
+	*new { |pos = #[0, 0, 0], facing = 0, binauralizerClass, subjectID = 21|
+		^super.new.init(pos, facing, binauralizerClass, subjectID);
 	}
 
 	// binauralizerClass-Default (Binauralizer) hier statt in der Parameterliste aufgelöst —
 	// Klassenreferenzen sind dort keine gültigen literalen Default-Werte (SuperCollider-
-	// Syntaxregel, gleiches Muster wie bei Sound/SoundObject).
-	setup { |aPos, aFacing, aBinauralizerClass|
+	// Syntaxregel, gleiches Muster wie bei Sound/SoundObject). Reine Buchhaltung, löst noch
+	// KEIN addSynthDef/setup aus (siehe binauralizerClass_/setup) — das passiert erst, wenn
+	// dieser Listener einem Room mit echtem Server/Reverb-Bus zugewiesen wird.
+	init { |aPos, aFacing, aBinauralizerClass, aSubjectID|
 		pos = aPos;
 		facing = aFacing;
 		binauralizerClass = aBinauralizerClass ?? { Binauralizer };
+		subjectID = aSubjectID;
+		directOutBinauralizerClass = DirectOutBinauralizer;
+	}
+
+	// verkabelt diesen Listener mit einem konkreten Server/Reverb-Bus (Intent 52) — von Room
+	// aufgerufen, wenn ihm dieser Listener zugewiesen wird (Room besitzt den Reverb-Bus, siehe
+	// RoomReverb). Lädt dabei sofort die aktuell konfigurierte binauralizerClass. Muss erneut
+	// aufgerufen werden, sobald derselbe Listener einem anderen Room zugewiesen wird (anderer
+	// Reverb-Bus) — relevant für ein künftiges Multi-Room-Setup, nicht Teil dieses Intents.
+	setup { |aServer, aReverbBus|
+		server = aServer;
+		reverbBus = aReverbBus;
+		this.loadBinauralizerClass(binauralizerClass);
+	}
+
+	// zentrale Stelle für den Binauralizer-Typ dieses Listeners (Intent 52, vormals in Room —
+	// siehe Intent 27/51): lädt bei bereits verkabeltem Listener (server.notNil, siehe setup)
+	// sofort die passende SynthDef bzw. initialisiert ATK; vor dem ersten setup nur
+	// Buchhaltung. nil wird NICHT als Fehlen behandelt, sondern auf directOutBinauralizerClass
+	// abgebildet — makeBinauralizer bleibt dadurch immer mit einer echten Klasse unterwegs.
+	binauralizerClass_ { |aBinauralizerClass|
+		if(aBinauralizerClass.isNil) {
+			binauralizerClass = directOutBinauralizerClass;
+		} {
+			binauralizerClass = aBinauralizerClass;
+		};
+		if(server.notNil) {
+			this.loadBinauralizerClass(binauralizerClass);
+		};
+	}
+
+	// registriert die SynthDef eines Binauralizer-Typs bzw. initialisiert ATK — AtkBinauralizer
+	// erkennt sich per respondsTo(\setup) statt Klassenvergleich, damit Test-Doubles ohne echte
+	// Vererbung dieselbe Weiche durchlaufen (siehe TestListener).
+	loadBinauralizerClass { |aClass|
+		if(aClass.respondsTo(\setup)) {
+			aClass.setup(server, subjectID, reverbBus);
+		} {
+			aClass.addSynthDef(reverbBus);
+		};
+	}
+
+	// finaler Ressourcenabbau, wenn dieser Listener einen Room verlässt (siehe Room>>teardown)
+	// — delegiert an binauralizerClass.teardown, falls die Klasse geteilte Ressourcen freigibt
+	// (z.B. AtkBinauralizer/dessen HRTF-Kernel); respondsTo(\teardown) statt Klassenvergleich,
+	// siehe binauralizerClass_.
+	teardown {
+		if(binauralizerClass.notNil and: { binauralizerClass.respondsTo(\teardown) }) {
+			binauralizerClass.teardown;
+		};
 	}
 
 	// erzeugt einen neuen Binauralizer passend zu den "Ohren" dieses Listeners — SoundObjects
