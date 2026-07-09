@@ -8,7 +8,6 @@ var config, insectMovableBase, insectSoundBase, insectSoundVariants, positions,
 	makeSequencePattern, chirpWindow;
 
 InsectSound.addSynthDef;
-RoomReverb.addSynthDef;
 
 // Zentrale Session-Konfiguration: diese Werte werden beim Hoertest am haeufigsten
 // variiert, deshalb liegen sie gebuendelt an einer Stelle statt verteilt im Skript.
@@ -125,8 +124,8 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 		~controlPanel.free;
 		~controlPanel = nil;
 	};
-	// room.teardown delegiert bereits an AtkBinauralizer.teardown (siehe Room>>teardown,
-	// Intent 51) — kein separater Aufruf mehr nötig.
+	// room.teardown delegiert bereits an listener.teardown, das bei AtkBinauralizer den
+	// HRTF-Kernel freigibt (siehe Room>>teardown/Listener>>teardown, Intent 52).
 	~room.teardown;
 	"Raumhall-Analyse: ATK-Kernel freigegeben.\n".post;
 };

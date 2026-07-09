@@ -40,7 +40,6 @@ var rhythmPatternBase, rhythmPatternBase2, rhythmPatternBase3;
 // Live-Coding-Zugriff.
 
 InsectSound.addSynthDef;
-RoomReverb.addSynthDef;
 // Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52)
 // — Binauralisierung ist eine Eigenschaft seiner "Ohren", nicht des Room. Hier lädt das den
 // HRTF-Kernel asynchron und registriert danach selbst die SynthDef (siehe
@@ -127,8 +126,9 @@ rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 1
 // --- 4) Stoppen ---
 // room.stop stoppt das Ticken, ruft stop auf allen registrierten Soundobjekten auf
 // (Synths/Busse werden freigegeben) und stoppt danach den Hall.
-// room.teardown gibt zusätzlich den Reverb-Bus frei und delegiert an AtkBinauralizer.teardown
-// (Server-Buffer des geteilten HRTF-Decoder-Kernels, siehe Room>>teardown, Intent 51).
+// room.teardown gibt zusätzlich den Reverb-Bus frei und delegiert an listener.teardown, das
+// bei AtkBinauralizer den HRTF-Kernel freigibt (siehe Room>>teardown/Listener>>teardown,
+// Intent 52).
 ~room.teardown;
 
 ~controlPanel.free;

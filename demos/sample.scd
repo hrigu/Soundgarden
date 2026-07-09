@@ -23,7 +23,6 @@
 var soundsDir, sampleFiles, n, radius, rate, maxSamples;
 
 SampleSound.addSynthDef;
-RoomReverb.addSynthDef;
 // Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52)
 // — Binauralisierung ist eine Eigenschaft seiner "Ohren", nicht des Room. Room verkabelt ihn
 // bei der Konstruktion einmalig mit seinem Reverb-Bus (registriert dabei die passende

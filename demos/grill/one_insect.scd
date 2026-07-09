@@ -23,7 +23,6 @@ var moveRule, movable, insectSound;
 
 
 InsectSound.addSynthDef;
-RoomReverb.addSynthDef;
 
 // Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52)
 // — Binauralisierung ist eine Eigenschaft seiner "Ohren", nicht des Room. AtkBinauralizer.setup
@@ -64,8 +63,9 @@ insectSound = InsectSound.new;
 // --- 4) Stoppen ---
 // room.stop stoppt das Ticken, ruft stop auf allen registrierten
 // Soundobjekten auf (Synths/Busse werden freigegeben) und stoppt danach den Hall.
-// room.teardown gibt zusätzlich den Reverb-Bus frei und delegiert an AtkBinauralizer.teardown
-// (Server-Buffer des geteilten HRTF-Decoder-Kernels, siehe Room>>teardown, Intent 51).
+// room.teardown gibt zusätzlich den Reverb-Bus frei und delegiert an listener.teardown, das
+// bei AtkBinauralizer den HRTF-Kernel freigibt (siehe Room>>teardown/Listener>>teardown,
+// Intent 52).
 ~room.teardown;
 
 // Room-Control-Panel separat freigeben (schließt das Kontrollfenster) — nur nötig,

@@ -19,7 +19,6 @@
 var soundsDir, sampleFiles, sampleFile, pos, movable, sound;
 
 SampleSound.addSynthDef;
-RoomReverb.addSynthDef;
 
 // Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52).
 //~listener = Listener.new(binauralizerClass: Binauralizer);

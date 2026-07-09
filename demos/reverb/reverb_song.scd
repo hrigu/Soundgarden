@@ -14,7 +14,6 @@ var config, songsDir, songFiles, normalizedSongName, exactMatch, partialMatch;
 var originalPath, tempWavPath;
 
 SongSound.addSynthDef;
-RoomReverb.addSynthDef;
 
 // Zentrale Session-Konfiguration fuer den Hoertest.
 	config = (
@@ -150,8 +149,8 @@ if(originalPath.endsWith(".m4a")) {
 		~controlPanel.free;
 		~controlPanel = nil;
 	};
-	// room.teardown delegiert bereits an AtkBinauralizer.teardown (siehe Room>>teardown,
-	// Intent 51) — kein separater Aufruf mehr nötig.
+	// room.teardown delegiert bereits an listener.teardown, das bei AtkBinauralizer den
+	// HRTF-Kernel freigibt (siehe Room>>teardown/Listener>>teardown, Intent 52).
 	~room.teardown;
 	"Reverb-Song-Demo: ATK-Kernel freigegeben.\n".post;
 	};

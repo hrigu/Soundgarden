@@ -41,6 +41,9 @@ Room {
 	*new { |server, listener, size = 8, height = 3, surface = 0.5, mix = 1, spread = 15,
 			inputBandwidth = 0.5, tailBalance = 0.5|
 		var aListener = listener ?? { Listener.new };
+		// RoomReverb ist ein Interna des Room (siehe Klassenkommentar) — Room registriert
+		// dessen SynthDef deshalb selbst, statt das jedem Demo-Skript zu überlassen.
+		RoomReverb.addSynthDef;
 		^super.new.init(server, aListener, Orchestra.new(aListener), RoomReverb.new(server),
 			size, height, surface, mix, spread, inputBandwidth, tailBalance);
 	}
