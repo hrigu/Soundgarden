@@ -1,32 +1,39 @@
 // SpatialControlPanel — gemeinsames GUI für Spatial-Audio-Demos: ein Fenster mit
-// editierbarer Raum-Draufsicht links und einem rechten Bedienbereich. Listener kann per
-// Tastatur und Maus bewegt werden; Soundobjekte lassen sich ziehen, und Room-/Reverb-
-// Regler leben in derselben Oberfläche.
+// editierbarer Raum-Draufsicht links und einem rechten Bedienbereich, aufgeteilt in einen
+// statischen Bereich für Room-/Hall-Regler und einen dynamischen Bereich für das aktuell
+// ausgewählte Soundobjekt. Listener kann per Tastatur und Maus bewegt werden; Soundobjekte
+// lassen sich auswählen und — falls editable — ziehen. Optional (presetsDir) steht eine
+// Preset-Bibliothek für Sound-Parameter zur Verfügung.
 SpatialControlPanel {
 	var <>room;
 	var <>viewRadius;
 	var <>moveSpeed;
 	var <>rotateSpeed;
 	var <>editable;
+	var <>presetsDir;
 	var <window;
 	var view;
 	var controlsView;
+	var roomControlsView;
+	var objectControlsView;
 	var routine;
 	var heldKeys;
 	var draggedSoundObject;
 	var isDraggingListener;
 	var isRotatingListener;
+	var <selectedSoundObject;
 
-	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true|
-		^super.new.init(room, viewRadius, moveSpeed, rotateSpeed, editable);
+	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true, presetsDir|
+		^super.new.init(room, viewRadius, moveSpeed, rotateSpeed, editable, presetsDir);
 	}
 
-	init { |aRoom, aViewRadius, aMoveSpeed, aRotateSpeed, anEditable|
+	init { |aRoom, aViewRadius, aMoveSpeed, aRotateSpeed, anEditable, aPresetsDir|
 		room = aRoom;
 		viewRadius = aViewRadius;
 		moveSpeed = aMoveSpeed;
 		rotateSpeed = aRotateSpeed;
 		editable = anEditable;
+		presetsDir = aPresetsDir;
 		heldKeys = Set.new;
 		isDraggingListener = false;
 		isRotatingListener = false;
@@ -36,12 +43,11 @@ SpatialControlPanel {
 		var dt = 1.0 / updateRate;
 		var leftWidth = 460;
 		var totalWidth = 860;
-		var totalHeight = 460;
+		var totalHeight = 650;
 
 		window = Window.new("Spatial-Control-Panel", Rect(100, 100, totalWidth, totalHeight));
 		view = UserView(window, Rect(0, 0, leftWidth, totalHeight));
 		controlsView = CompositeView(window, Rect(leftWidth, 0, totalWidth - leftWidth, totalHeight));
-		controlsView.decorator = FlowLayout(controlsView.bounds.insetBy(16, 16));
 		view.drawFunc = { this.draw(view) };
 		this.installMouseActions;
 		this.installKeyActions;
@@ -59,23 +65,36 @@ SpatialControlPanel {
 		^this
 	}
 
+	// Klick auf ein Soundobjekt wählt es aus (immer, auch bei editable == false — Klangparameter
+	// ansehen/bearbeiten ist unabhängig vom Verschieben-Dürfen). Listener-Körper und -Nase
+	// bekommen im editierbaren Modus Vorrang für Position/Rotation.
 	installMouseActions {
-		if(editable) {
-			view.mouseDownAction = { |aView, x, y|
-				draggedSoundObject = nil;
-				isDraggingListener = false;
-				isRotatingListener = false;
+		view.mouseDownAction = { |aView, x, y|
+			var hit;
 
-				if(this.listenerHandleAtScreenPoint(aView, x, y)) {
-					isRotatingListener = true;
+			draggedSoundObject = nil;
+			isDraggingListener = false;
+			isRotatingListener = false;
+
+			if(editable and: { this.listenerHandleAtScreenPoint(aView, x, y) }) {
+				isRotatingListener = true;
+			} {
+				if(editable and: { this.listenerAtScreenPoint(aView, x, y) }) {
+					isDraggingListener = true;
 				} {
-					if(this.listenerAtScreenPoint(aView, x, y)) {
-						isDraggingListener = true;
-					} {
-						draggedSoundObject = this.soundObjectAtScreenPoint(aView, x, y);
+					hit = this.soundObjectAtScreenPoint(aView, x, y);
+					if(hit !== selectedSoundObject) {
+						selectedSoundObject = hit;
+						this.rebuildObjectControls;
 					};
+					if(editable) { draggedSoundObject = hit };
 				};
 			};
+
+			aView.refresh;
+		};
+
+		if(editable) {
 			view.mouseMoveAction = { |aView, x, y|
 				if(isRotatingListener) {
 					this.rotateListenerToScreenPoint(aView, x, y);
@@ -90,11 +109,12 @@ SpatialControlPanel {
 				};
 				aView.refresh;
 			};
-			view.mouseUpAction = {
-				draggedSoundObject = nil;
-				isDraggingListener = false;
-				isRotatingListener = false;
-			};
+		};
+
+		view.mouseUpAction = {
+			draggedSoundObject = nil;
+			isDraggingListener = false;
+			isRotatingListener = false;
 		};
 	}
 
@@ -107,20 +127,32 @@ SpatialControlPanel {
 		};
 	}
 
+	// rechter Bedienbereich: oben statische Room-/Hall-Regler, unten dynamische Regler fürs
+	// ausgewählte Soundobjekt.
 	installControls {
+		var roomHeight = 360;
+
+		roomControlsView = CompositeView(controlsView, Rect(0, 0, controlsView.bounds.width, roomHeight));
+		roomControlsView.decorator = FlowLayout(roomControlsView.bounds.insetBy(16, 16));
+		this.installRoomControls;
+
+		this.rebuildObjectControls;
+	}
+
+	installRoomControls {
 		var controlWidth = 340@26;
 		var headerWidth = 340@22;
 		var addGroupHeader = { |title|
-			var label = StaticText(controlsView, headerWidth);
+			var label = StaticText(roomControlsView, headerWidth);
 			label.string = title;
 			label.font = Font.default.copy.size_(15).boldVariant;
 			label.align = \left;
-			controlsView.decorator.nextLine;
+			roomControlsView.decorator.nextLine;
 		};
 		var makeSlider = { |label, initValue, spec, action|
-			var slider = EZSlider(controlsView, controlWidth, label, spec,
+			var slider = EZSlider(roomControlsView, controlWidth, label, spec,
 				{ |ez| action.(ez.value) }, initValue);
-			controlsView.decorator.nextLine;
+			roomControlsView.decorator.nextLine;
 			slider
 		};
 
@@ -140,7 +172,7 @@ SpatialControlPanel {
 
 		addGroupHeader.("Direkte Hall-Parameter");
 		// Wertebereich grosszuegig (kein dokumentiertes Hard-Limit von GVerb) -- Experimentier-
-		// Regler gegen metallisches Klingeln, siehe Room>>spread (Intent 41).
+		// Regler gegen metallisches Klingeln, siehe Room>>spread.
 		makeSlider.("Spread", room.spread, ControlSpec(0, 60, \lin, 0.5), { |value|
 			room.spread = value;
 		});
@@ -148,8 +180,7 @@ SpatialControlPanel {
 		makeSlider.("InputBandwidth", room.inputBandwidth, ControlSpec(0, 1, \lin, 0.01), { |value|
 			room.inputBandwidth = value;
 		});
-		// tailBalance: 0 = nur fruehe Reflexionen .. 1 = nur diffuser Nachhall-Schwanz,
-		// 0.5 = ausbalanciert (siehe Room>>tailBalance, Intent 41).
+		// tailBalance: 0 = nur fruehe Reflexionen .. 1 = nur diffuser Nachhall-Schwanz.
 		makeSlider.("TailBalance", room.tailBalance, ControlSpec(0, 1, \lin, 0.01), { |value|
 			room.tailBalance = value;
 		});
@@ -158,6 +189,81 @@ SpatialControlPanel {
 		makeSlider.("ReverbSend", this.currentReverbMix, ControlSpec(0, 1, \lin, 0.01), { |value|
 			this.applyReverbMix(value);
 		});
+	}
+
+	// baut den Objekt-Regler-Bereich komplett neu auf (bei jeder Selektionsänderung und nach
+	// dem Laden eines Presets, damit die Regler den geladenen Werten folgen).
+	rebuildObjectControls {
+		var roomHeight = 360;
+		var top = roomHeight + 10;
+		var width = controlsView.bounds.width;
+		var height = controlsView.bounds.height - top;
+
+		objectControlsView !? { objectControlsView.remove };
+		objectControlsView = CompositeView(controlsView, Rect(0, top, width, height));
+		objectControlsView.decorator = FlowLayout(objectControlsView.bounds.insetBy(16, 16));
+
+		if(selectedSoundObject.isNil) {
+			StaticText(objectControlsView, 340@40).string_("Kein Soundobjekt ausgewählt");
+		} {
+			this.buildSoundParamControls;
+			if(presetsDir.notNil) { this.buildPresetControls };
+		};
+	}
+
+	// ein EZSlider pro editableParams-Eintrag des ausgewählten Sounds.
+	buildSoundParamControls {
+		var sound = selectedSoundObject.sound;
+		var controlWidth = 340@26;
+		var title = StaticText(objectControlsView, 340@22);
+
+		title.string = sound.class.name.asString;
+		title.font = Font.default.copy.size_(15).boldVariant;
+		title.align = \left;
+		objectControlsView.decorator.nextLine;
+
+		sound.class.editableParams.do { |pair|
+			var key = pair[0];
+			var spec = pair[1];
+			EZSlider(objectControlsView, controlWidth, key.asString, spec,
+				{ |ez| sound.setParam(key, ez.value) }, sound.perform(key));
+			objectControlsView.decorator.nextLine;
+		};
+	}
+
+	// Preset-Bibliothek fürs ausgewählte Soundobjekt.
+	buildPresetControls {
+		var sound = selectedSoundObject.sound;
+		var nameField = TextField(objectControlsView, 340@24);
+		var presetMenu = PopUpMenu(objectControlsView, 340@24);
+		var refreshPresetMenu = { presetMenu.items = SoundPresetLibrary.listNames(presetsDir) };
+
+		refreshPresetMenu.value;
+		objectControlsView.decorator.nextLine;
+
+		Button(objectControlsView, 340@24).states_([["Preset speichern"]]).action_({
+			if(nameField.string.size > 0) {
+				SoundPresetLibrary.save(presetsDir, nameField.string, sound);
+				refreshPresetMenu.value;
+			};
+		});
+		objectControlsView.decorator.nextLine;
+
+		Button(objectControlsView, 340@24).states_([["Preset laden"]]).action_({
+			var name = presetMenu.item;
+			var preset = if(name.notNil) { SoundPresetLibrary.load(presetsDir, name) } { nil };
+
+			if(preset.notNil) {
+				if(preset[\soundClass] == sound.class.name) {
+					SoundPresetLibrary.applyTo(sound, preset);
+					this.rebuildObjectControls;
+				} {
+					("Preset '" ++ name ++ "' passt nicht zu " ++ sound.class.name.asString
+						++ " -- übersprungen").postln;
+				};
+			};
+		});
+		objectControlsView.decorator.nextLine;
 	}
 
 	applyHeldKeys { |dt|
@@ -191,9 +297,9 @@ SpatialControlPanel {
 		Pen.addArc(cx@cy, viewRadius * scale, 0, 2pi);
 		Pen.stroke;
 
-		Pen.fillColor = Color.red;
 		orchestra.soundObjects.do { |soundObject|
 			var screenPos = this.worldToScreen(bounds, soundObject.pos);
+			Pen.fillColor = if(soundObject === selectedSoundObject) { Color.yellow } { Color.red };
 			Pen.fillOval(Rect(screenPos[0] - 5, screenPos[1] - 5, 10, 10));
 		};
 

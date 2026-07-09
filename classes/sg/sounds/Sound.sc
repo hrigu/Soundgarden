@@ -38,4 +38,22 @@ Sound {
 	call {
 		synth.set(\t_call, 1);
 	}
+
+	// setParam — aktualisiert einen Klangparameter sowohl auf der Instanz (per <>-Setter,
+	// z.B. für spätere Preset-Speicherung oder einen künftigen Neustart des Synths) als auch
+	// live auf dem laufenden Synth, falls einer läuft. Funktioniert für jede Sound-Subklasse
+	// einheitlich, weil deren Parameter 1:1 auf SynthDef-Controls gleichen Namens abbilden
+	// (anders als bei Room, wo abgeleitete Werte eigene xyz_-Overrides brauchten, siehe
+	// Room.sc) — kein Bedarf für individuelle Overrides pro Sound-Subklasse (Intent 43).
+	setParam { |key, value|
+		this.perform((key ++ "_").asSymbol, value);
+		synth !? { synth.set(key, value) };
+	}
+
+	// editableParams — von Subklassen zu überschreiben: Liste von [key, ControlSpec] für alle
+	// im GUI live bearbeitbaren Parameter (siehe SpatialControlPanel). Leer = keine
+	// bearbeitbaren Parameter, generischer Default für Sound-Subklassen ohne GUI-Anbindung.
+	*editableParams {
+		^[]
+	}
 }

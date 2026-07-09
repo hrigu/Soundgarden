@@ -28,10 +28,25 @@ SampleSound : Sound {
 	// Abstand aufrufen, wie InsectSound/Binauralizer.
 	*addSynthDef {
 		SynthDef(\sampleSound, { |out = 0, buf = 0, rate = 2, phase = 0, amp = 0.5|
-			var trig = Impulse.kr(rate, phase);
+			// rate/amp geglättet (Lag.kr) fürs klickfreie Live-Tunen im GUI (Intent 43,
+			// gleiches Muster wie InsectSound/RoomReverb) -- phase bleibt ungeglättet, reiner
+			// Zeitversatz des Triggers ohne die Klick-Problematik von Frequenz-/Pegelsprüngen.
+			var rateCtrl = Lag.kr(rate, 0.1);
+			var ampCtrl = Lag.kr(amp, 0.1);
+			var trig = Impulse.kr(rateCtrl, phase);
 			var sig = PlayBuf.ar(1, buf, BufRateScale.kr(buf), trig, 0, doneAction: 0);
-			Out.ar(out, sig * amp);
+			Out.ar(out, sig * ampCtrl);
 		}).add;
+	}
+
+	// editableParams — live im GUI bearbeitbare Klangparameter (SpatialControlPanel,
+	// Intent 43).
+	*editableParams {
+		^[
+			[\rate, ControlSpec(0.2, 8, \exp)],
+			[\phase, ControlSpec(0, 1, \lin)],
+			[\amp, ControlSpec(0, 1, \lin)]
+		]
 	}
 
 	// lädt den Buffer vorab (asynchron) — optional, aber empfohlen: ohne preload lädt

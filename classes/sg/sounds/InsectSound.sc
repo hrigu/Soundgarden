@@ -83,9 +83,19 @@ InsectSound : Sound {
 			var callEnv = EnvGen.kr(Env.perc(0.005, 0.35), t_call);
 			var freqShift = 1 + (callEnv * 0.3);
 			var ampBoost = 1 + (callEnv * 1.5);
-			var wings = LFPulse.ar(wingRate, 0, wingDuty) * WhiteNoise.ar(1);
-			var buzz = Ringz.ar(wings, ringFreq1 * freqShift, ringDecay1)
-				+ Ringz.ar(wings, ringFreq2 * freqShift, ringDecay2);
+			// Lag.kr auf allen live im GUI bearbeitbaren Klangparametern (siehe
+			// editableParams/SpatialControlPanel, Intent 43) -- vermeidet Klicks beim Ziehen
+			// der Regler, gleiches Muster wie RoomReverbs Controls (Intent 41).
+			var wingRateCtrl = Lag.kr(wingRate, 0.1);
+			var wingDutyCtrl = Lag.kr(wingDuty, 0.1);
+			var ringFreq1Ctrl = Lag.kr(ringFreq1, 0.1);
+			var ringFreq2Ctrl = Lag.kr(ringFreq2, 0.1);
+			var ringDecay1Ctrl = Lag.kr(ringDecay1, 0.1);
+			var ringDecay2Ctrl = Lag.kr(ringDecay2, 0.1);
+			var ampCtrl = Lag.kr(amp, 0.1);
+			var wings = LFPulse.ar(wingRateCtrl, 0, wingDutyCtrl) * WhiteNoise.ar(1);
+			var buzz = Ringz.ar(wings, ringFreq1Ctrl * freqShift, ringDecay1Ctrl)
+				+ Ringz.ar(wings, ringFreq2Ctrl * freqShift, ringDecay2Ctrl);
 			// gate schaltet das CallingPattern (Intent 30) An/Aus; Lag.kr glättet den
 			// Sprung zu einer kurzen Rampe, damit das Umschalten nicht klickt. Default 1
 			// (immer an) — ohne pattern bleibt gate unverändert, bisheriges durchgehendes
@@ -94,8 +104,24 @@ InsectSound : Sound {
 			// — eine Lag-Zeit in derselben Größenordnung würde das Gate nie nahe an 0/1
 			// heranlassen, bevor das nächste Segment schon wieder umschaltet, und dadurch
 			// jede hörbare An/Aus-Struktur wegglätten (siehe Intent 30, Challenges).
-			Out.ar(out, buzz * amp * ampBoost * Lag.kr(gate, 0.005));
+			Out.ar(out, buzz * ampCtrl * ampBoost * Lag.kr(gate, 0.005));
 		}).add;
+	}
+
+	// editableParams — live im GUI bearbeitbare Klangparameter (SpatialControlPanel, Intent
+	// 43). Wertebereiche grosszügig um die bestehenden Defaults, zum Explorieren gedacht, kein
+	// Hard-Limit der SynthDef. CricketSound erbt diese Liste unverändert (gleiche
+	// Parameter-Namen/SynthDef, siehe CricketSound.sc).
+	*editableParams {
+		^[
+			[\wingRate, ControlSpec(20, 400, \lin)],
+			[\wingDuty, ControlSpec(0.05, 0.95, \lin)],
+			[\ringFreq1, ControlSpec(200, 8000, \exp)],
+			[\ringFreq2, ControlSpec(200, 8000, \exp)],
+			[\ringDecay1, ControlSpec(0.001, 0.5, \exp)],
+			[\ringDecay2, ControlSpec(0.001, 0.5, \exp)],
+			[\amp, ControlSpec(0, 1, \lin)]
+		]
 	}
 
 	// erzeugt den Synth auf dem von Sound angelegten Bus. Setzt voraus, dass
