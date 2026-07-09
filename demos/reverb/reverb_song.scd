@@ -11,13 +11,14 @@
 // --- 1) Setup + Start: Grundgeruest vorbereiten ---
 (
 var config, songsDir, songFiles, normalizedSongName, exactMatch, partialMatch;
+var originalPath, tempWavPath;
 
 SongSound.addSynthDef;
 RoomReverb.addSynthDef;
 
 // Zentrale Session-Konfiguration fuer den Hoertest.
 config = (
-	songsDir: "/Users/chrigu/code/my/musicnet/downloads",
+	songsDir: "/Users/chrigu/code/my/musicnet/downloads/tracks",
 	roomSize: 10,
 	roomHeight: 3,
 	roomSurface: 0.35,
@@ -31,7 +32,7 @@ config = (
 );
 
 // Kann vor dem Setup gesetzt werden, z.B.:
-// ~songName = "Billie Bossa Nova";
+ ~songName = "Anonyme, Anne Delafosse, Clara Coutouly, Paulin Bundgen - Stella maris nuncuparis";
 
 ~songConfig = config;
 ~room = Room.new(s, size: config[\roomSize], height: config[\roomHeight],
@@ -53,7 +54,9 @@ songsDir.filesDo({ |pe|
 		songFiles = songFiles.add(pe);
 	};
 });
-songFiles = songFiles.sortBy({ |pe| pe.fullPath });
+
+// FEHLERBEHEBUNG: .sort statt .sortBy nutzen, um den Absturz bei PathName zu verhindern
+songFiles = songFiles.sort({ |a, b| a.fullPath < b.fullPath });
 
 if(songFiles.isEmpty) {
 	Error("Reverb-Song-Demo: Keine gueltigen Audiodateien unter % gefunden."
@@ -71,6 +74,40 @@ partialMatch = if(~songName.notNil) {
 };
 
 ~songFile = exactMatch ?? partialMatch ?? songFiles.first;
+
+
+// ERWEITERUNG (Methode 2): Automatische M4A zu WAV Konvertierung via absolutem ffmpeg-Pfad
+originalPath = ~songFile.fullPath;
+if(originalPath.endsWith(".m4a")) {
+	tempWavPath = originalPath.copyRange(0, originalPath.size - 5) ++ ".wav";
+
+	if(File.exists(tempWavPath).not) {
+		var ffmpegPath, cmd;
+		"Reverb-Song-Demo: M4A erkannt. Konvertiere temporär in WAV via ffmpeg...".postln;
+
+		// Prüfen, ob ffmpeg im Homebrew-Pfad für Apple Silicon liegt, sonst Standard-Fallback
+		ffmpegPath = if(File.exists("/opt/homebrew/bin/ffmpeg")) {
+			"/opt/homebrew/bin/ffmpeg"
+		} {
+			"ffmpeg" // Fallback für Intel-Macs (/usr/local/bin) oder globale PATHs
+		};
+
+		// Befehl mit absolutem Programmpfad und sicheren Anführungszeichen zusammenbauen
+		cmd = ffmpegPath + "-i " + originalPath.asString.quote + " " + tempWavPath.asString.quote;
+		("Führe Befehl aus: " + cmd).postln;
+
+		cmd.systemCmd;
+	};
+
+	if(File.exists(tempWavPath)) {
+		~songFile = PathName(tempWavPath);
+		"Reverb-Song-Demo: Konvertierung erfolgreich. Nutze WAV-Datei.".postln;
+	} {
+		"Reverb-Song-Demo: Warnung! ffmpeg-Konvertierung trotz absolutem Pfad fehlgeschlagen.".postln;
+	};
+};
+
+
 ~songSound = SongSound.new(~songFile.fullPath, amp: config[\songAmp], loop: config[\songLoop],
 	rate: config[\songRate]);
 ~songSound.preload(s);

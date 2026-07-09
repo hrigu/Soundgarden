@@ -3,6 +3,17 @@
 Kurzes Projekt-Tagebuch: ein Eintrag pro Arbeitstag, was gemacht wurde und welche Probleme
 dabei aufgetaucht sind. Bezieht sich auf Intents in `.intents/` (siehe dort für Details).
 
+## 08.07.2026
+
+- `reverb_song.scd` als neue Reverb-Demo mit echten Songs aus `musicnet/downloads` angelegt.
+- Song-Suche ergänzt: rekursiver Scan, exakter Name vor Teilstring, sonst Fallback auf erste Datei.
+- Song-Wiedergabe auf kontinuierliches `SongSound`-Playback als stationäre Raumquelle umgestellt.
+- Für `demos/reverb/reverb_song.scd` geklärt, dass `.m4a`-Quelldateien vor dem Laden per
+  `ffmpeg` nach `.wav` konvertiert werden müssen; dafür lokal `ffmpeg` installiert.
+- GUI für den Reverb-Song-Workflow ergänzt.
+- Setup in `Application Support/SuperCollider` ergänzt (`startup.scd`/Klassenpfade), damit
+  Soundgarden-Klassen automatisch geladen werden.
+
 ## 07.07.2026
 
 - Freesound-Samples (CompMusic-Pack, Mridangam-Schläge) besorgt und `sounds/` in
