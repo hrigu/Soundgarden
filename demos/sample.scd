@@ -20,7 +20,7 @@
 // --- 1) Setup: SynthDefs registrieren + alle Soundobjekte anlegen ---
 (
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen (SuperCollider-Syntaxregel).
-var soundsDir, sampleFiles, n, radius, rate;
+var soundsDir, sampleFiles, n, radius, rate, maxSamples;
 
 SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
@@ -37,6 +37,8 @@ sampleFiles = [];
 soundsDir.filesDo({ |pe|
 	if(BootTrackDetection.isValidExtension(pe.extension)) { sampleFiles = sampleFiles.add(pe) };
 });
+maxSamples = 40; // höchstens so viele Soundobjekte anlegen, auch wenn der Ordner mehr Dateien hat
+sampleFiles = sampleFiles.keep(maxSamples);
 n = sampleFiles.size;
 radius = 3;
 ~viewRadius = radius + 1;
@@ -58,7 +60,8 @@ rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (
 	~room.register(movable, sound);
 });
 
-"% Sample(s) im Kreis: %\n".postf(n, sampleFiles.collect({ |pe| pe.fileNameWithoutExtension }));
+"% Sample(s) im Kreis (max %): %\n".postf(n, maxSamples,
+	sampleFiles.collect({ |pe| pe.fileNameWithoutExtension }));
 )
 
 // --- 2) Abspielen ---
