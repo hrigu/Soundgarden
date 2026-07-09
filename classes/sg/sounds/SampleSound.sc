@@ -8,18 +8,24 @@ SampleSound : Sound {
 	var <>rate;     // Trigger-Rate in Hz — wie oft das Sample pro Sekunde neu startet
 	var <>phase;    // Phasenversatz des Triggers, 0..1 (Anteil einer Periode)
 	var <>amp;      // Grundlautstärke des Klangs selbst, unabhängig von Position
+	var <>startFrac;  // 0..1 — Anteil der Sample-Länge, ab dem die Wiedergabe beginnt
+	                  // (Intent 53), analog zum Stil von phase
+	var <>duration;   // Sekunden, feste Hördauer des Ausschnitts (Intent 53) — 0 bedeutet
+	                  // "kein Cutoff": komplette Restlänge ab startFrac wie bisher
 	var <buffer;    // geladener Mono-Buffer, ab play() gesetzt
 
 	// erzeugt eine Instanz mit gegebener Audiodatei und (oder Default-)Klangparametern
-	*new { |path, rate = 2, phase = 0, amp = 0.5|
-		^super.new.init(path, rate, phase, amp);
+	*new { |path, rate = 2, phase = 0, amp = 0.5, startFrac = 0, duration = 0|
+		^super.new.init(path, rate, phase, amp, startFrac, duration);
 	}
 
-	init { |aPath, aRate, aPhase, aAmp|
+	init { |aPath, aRate, aPhase, aAmp, aStartFrac, aDuration|
 		path = aPath;
 		rate = aRate;
 		phase = aPhase;
 		amp = aAmp;
+		startFrac = aStartFrac;
+		duration = aDuration;
 	}
 
 	// registriert die \sampleSound-SynthDef beim Server. buf wird als Instanz-Argument
@@ -27,25 +33,40 @@ SampleSound : Sound {
 	// ihrem eigenen Buffer. Asynchron (/d_recv) — vor play() mit etwas zeitlichem
 	// Abstand aufrufen, wie InsectSound/Binauralizer.
 	*addSynthDef {
-		SynthDef(\sampleSound, { |out = 0, buf = 0, rate = 2, phase = 0, amp = 0.5|
+		SynthDef(\sampleSound, { |out = 0, buf = 0, rate = 2, phase = 0, amp = 0.5,
+				startFrac = 0, duration = 0|
 			// rate/amp geglättet (Lag.kr) fürs klickfreie Live-Tunen im GUI (Intent 43,
 			// gleiches Muster wie InsectSound/RoomReverb) -- phase bleibt ungeglättet, reiner
 			// Zeitversatz des Triggers ohne die Klick-Problematik von Frequenz-/Pegelsprüngen.
 			var rateCtrl = Lag.kr(rate, 0.1);
 			var ampCtrl = Lag.kr(amp, 0.1);
 			var trig = Impulse.kr(rateCtrl, phase);
-			var sig = PlayBuf.ar(1, buf, BufRateScale.kr(buf), trig, 0, doneAction: 0);
-			Out.ar(out, sig * ampCtrl);
+			// startFrac wählt den Startpunkt im Buffer (Intent 53) — 0 = wie bisher am Anfang.
+			var startPos = startFrac * BufFrames.kr(buf);
+			var sig = PlayBuf.ar(1, buf, BufRateScale.kr(buf), trig, startPos, doneAction: 0);
+			// duration > 0: fester Ausschnitt statt kompletter Restlänge -- kurzer Fade-in/-out
+			// (Env.linen) verhindert einen hörbaren Klick am Cutoff-Punkt, unabhängig davon,
+			// wie lang das Original-Sample ist (Intent 53). duration <= 0 (Default) bedeutet
+			// "kein Cutoff" -- Select.kr wählt dann Gain 1, das Sample klingt wie bisher
+			// vollständig aus (kein zusätzlicher Envelope-Multiply).
+			var attack = 0.01;
+			var release = 0.05;
+			var sustain = (duration - attack - release).max(0);
+			var cutoffEnv = EnvGen.kr(Env.linen(attack, sustain, release), trig, doneAction: 0);
+			var gain = Select.kr(duration > 0, [1, cutoffEnv]);
+			Out.ar(out, sig * ampCtrl * gain);
 		}).add;
 	}
 
 	// editableParams — live im GUI bearbeitbare Klangparameter (SpatialControlPanel,
-	// Intent 43).
+	// Intent 43). startFrac/duration seit Intent 53.
 	*editableParams {
 		^[
 			[\rate, ControlSpec(0.2, 8, \exp)],
 			[\phase, ControlSpec(0, 1, \lin)],
-			[\amp, ControlSpec(0, 1, \lin)]
+			[\amp, ControlSpec(0, 1, \lin)],
+			[\startFrac, ControlSpec(0, 1, \lin)],
+			[\duration, ControlSpec(0, 5, \lin)]
 		]
 	}
 
@@ -70,7 +91,9 @@ SampleSound : Sound {
 			\buf, buffer.bufnum,
 			\rate, rate,
 			\phase, phase,
-			\amp, amp
+			\amp, amp,
+			\startFrac, startFrac,
+			\duration, duration
 		], server);
 	}
 
