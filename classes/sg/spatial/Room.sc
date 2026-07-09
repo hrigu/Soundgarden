@@ -28,16 +28,22 @@ Room {
 	var <tailBalance;     // 0 = nur frühe Reflexionen .. 1 = nur diffuser Nachhall-Schwanz,
 	                      // 0.5 = ausbalanciert (bisheriges Verhalten) — verschiebt nur das
 	                      // Verhältnis, mix bleibt der Gesamtpegel (Intent 41)
+	var <binauralizerClass;            // aktuell konfigurierter Binauralizer-Typ, siehe
+	                                    // binauralizerClass_ — nil bedeutet "kein binaurales
+	                                    // Processing" (Intent 51), intern auf
+	                                    // directOutBinauralizerClass abgebildet
+	var <>directOutBinauralizerClass;  // Fallback-Klasse für binauralizerClass = nil
+	var <>subjectID;                   // ATK-Kunstkopf-ID, nur für AtkBinauralizer relevant
 
 	// listener optional: normalerweise legt Room seinen eigenen Listener an, aber ein
 	// künftiges Multi-Room-Setup (ein Listener wandert zwischen mehreren Rooms, siehe
 	// Intent 27) kann hier einen bestehenden übergeben — keine eigene Mechanik dafür heute,
 	// nur der Konstruktor-Spielraum.
 	*new { |server, listener, size = 8, height = 3, surface = 0.5, mix = 1, spread = 15,
-			inputBandwidth = 0.5, tailBalance = 0.5|
+			inputBandwidth = 0.5, tailBalance = 0.5, subjectID = 21|
 		var aListener = listener ?? { Listener.new };
 		^super.new.init(server, aListener, Orchestra.new(aListener), RoomReverb.new(server),
-			size, height, surface, mix, spread, inputBandwidth, tailBalance);
+			size, height, surface, mix, spread, inputBandwidth, tailBalance, subjectID);
 	}
 
 	// Test-Konstruktor: orchestra/reverb kommen fertig (Fakes) rein, statt dass Room selbst
@@ -45,13 +51,13 @@ Room {
 	// echter Listener (reine sclang-Logik, kein Server nötig), damit register() über
 	// listener.makeBinauralizer testbar bleibt.
 	*forTest { |orchestra, reverb, size = 8, height = 3, surface = 0.5, mix = 1, spread = 15,
-			inputBandwidth = 0.5, tailBalance = 0.5|
+			inputBandwidth = 0.5, tailBalance = 0.5, subjectID = 21|
 		^super.new.init(nil, Listener.new, orchestra, reverb, size, height, surface, mix,
-			spread, inputBandwidth, tailBalance);
+			spread, inputBandwidth, tailBalance, subjectID);
 	}
 
 	init { |aServer, aListener, anOrchestra, aReverb, aSize, aHeight, aSurface, aMix, aSpread,
-			aInputBandwidth, aTailBalance|
+			aInputBandwidth, aTailBalance, aSubjectID|
 		server = aServer;
 		listener = aListener;
 		orchestra = anOrchestra;
@@ -63,22 +69,46 @@ Room {
 		spread = aSpread;
 		inputBandwidth = aInputBandwidth;
 		tailBalance = aTailBalance;
+		subjectID = aSubjectID;
+		// Default bleibt Binauralizer (Kompatibilität mit bisherigem Verhalten) — reine
+		// Buchhaltung, löst noch KEIN addSynthDef/setup aus (siehe binauralizerClass_); der
+		// Listener selbst defaultet ohnehin auf Binauralizer (siehe Listener>>setup).
+		binauralizerClass = Binauralizer;
+		directOutBinauralizerClass = DirectOutBinauralizer;
 	}
 
-	// registriert die SynthDef eines Binauralizer-Typs, verkabelt mit dem geteilten Reverb-
-	// Bus, UND legt fest, dass der Listener dieses Room ab jetzt mit dieser Klasse "hört"
-	// (siehe Listener>>makeBinauralizer, register unten) — ein Room hat eine Ohren-Strategie,
-	// kein Nebeneinander mehrerer Typen (Intent 27). Skripte kennen reverbBus/bus gar nicht
-	// mehr. Nur 2 bekannte Subtypen mit unterschiedlicher Signatur (AtkBinauralizer lädt
-	// zusätzlich asynchron den HRTF-Kernel, braucht den Server) — einfacher Klassenvergleich
-	// reicht.
-	addSynthDef { |binauralizerClass, subjectID = 21|
-		if(binauralizerClass === AtkBinauralizer) {
-			AtkBinauralizer.setup(server, subjectID, reverb.bus);
+	// zentrale Stelle für den Binauralizer-Typ dieses Room (Intent 51): lädt die passende
+	// SynthDef bzw. initialisiert ATK, verkabelt mit dem geteilten Reverb-Bus, UND legt fest,
+	// dass der Listener dieses Room ab jetzt mit dieser Klasse "hört" (siehe
+	// Listener>>makeBinauralizer, register unten) — ein Room hat eine Ohren-Strategie, kein
+	// Nebeneinander mehrerer Typen (Intent 27). Skripte kennen reverbBus/bus gar nicht mehr.
+	// AtkBinauralizer erkennt sich per respondsTo(\setup) statt Klassenvergleich, damit
+	// Test-Doubles ohne echte Vererbung dieselbe Weiche durchlaufen (siehe TestRoom).
+	// nil wird NICHT als Fehlen behandelt, sondern auf directOutBinauralizerClass
+	// abgebildet — SoundObject/Listener bleiben dadurch immer mit einer echten Klasse
+	// unterwegs (siehe Klassenkommentar).
+	binauralizerClass_ { |aBinauralizerClass|
+		binauralizerClass = aBinauralizerClass;
+		if(aBinauralizerClass.isNil) {
+			if(directOutBinauralizerClass.respondsTo(\addSynthDef)) {
+				directOutBinauralizerClass.addSynthDef(reverb.bus);
+			};
+			listener.binauralizerClass = directOutBinauralizerClass;
 		} {
-			binauralizerClass.addSynthDef(reverb.bus);
+			if(aBinauralizerClass.respondsTo(\setup)) {
+				aBinauralizerClass.setup(server, subjectID, reverb.bus);
+			} {
+				aBinauralizerClass.addSynthDef(reverb.bus);
+			};
+			listener.binauralizerClass = aBinauralizerClass;
 		};
-		listener.binauralizerClass = binauralizerClass;
+	}
+
+	// Migrations-Shim für den bisherigen Einstieg — delegiert vollständig auf
+	// binauralizerClass_ (siehe Challenges & Solutions).
+	addSynthDef { |aBinauralizerClass, aSubjectID = 21|
+		subjectID = aSubjectID;
+		this.binauralizerClass = aBinauralizerClass;
 	}
 
 	// baut ein SoundObject aus movable+sound, mit einem Binauralizer passend zu den "Ohren"
@@ -124,10 +154,16 @@ Room {
 	}
 
 	// finaler Ressourcenabbau für das Ende einer Session: stop/play nutzt weiter stop(),
-	// teardown gibt zusätzlich den Reverb-Bus frei.
+	// teardown gibt zusätzlich den Reverb-Bus frei UND delegiert an binauralizerClass.teardown,
+	// falls der konfigurierte Typ selbst geteilte Ressourcen freigibt (z.B. AtkBinauralizer/
+	// dessen HRTF-Kernel) — respondsTo(\teardown) statt Klassenvergleich, siehe
+	// binauralizerClass_.
 	teardown {
 		this.stop;
 		reverb.free;
+		if(binauralizerClass.notNil and: { binauralizerClass.respondsTo(\teardown) }) {
+			binauralizerClass.teardown;
+		};
 	}
 
 	// size/height/surface/mix/spread/inputBandwidth/tailBalance per Zuweisung änderbar
