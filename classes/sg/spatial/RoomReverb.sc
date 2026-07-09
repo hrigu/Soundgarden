@@ -26,15 +26,20 @@ RoomReverb {
 	// Direktschall kommt schon über die Binauralizer, hier nur der Nachklang-Anteil.
 	*addSynthDef {
 		SynthDef(\roomReverb, { |in = 0, out = 0, roomSize = 8, revTime = 3, damping = 0.5,
-				mix = 1|
+				mix = 1, spread = 15|
 			var sig = In.ar(in, 1);
 			var roomSizeCtrl = Lag.kr(roomSize, 0.25);
 			var revTimeCtrl = Lag.kr(revTime, 0.25);
 			var dampingCtrl = Lag.kr(damping, 0.2);
 			var mixCtrl = Lag.kr(mix, 0.12);
+			// spread: Streuung/Diffusion der internen Verzoegerungsleitungen (siehe
+			// GVerb.schelp) -- vorher Literal (GVerbs eigener Default), jetzt experimentierbar
+			// (Intent 41), da zu wenig Diffusion die klassische Ursache fuer hoerbares
+			// Kammfilter-/"metallisches" Klingeln ist.
+			var spreadCtrl = Lag.kr(spread, 0.25);
 			// GVerb reagiert auf harte Parameterspruenge oft mit kurzen Artefakten.
 			// Darum die Room-Controls vor dem UGen leicht glaetten.
-			var wet = GVerb.ar(sig, roomSizeCtrl, revTimeCtrl, dampingCtrl, 0.5, 15, 0,
+			var wet = GVerb.ar(sig, roomSizeCtrl, revTimeCtrl, dampingCtrl, 0.5, spreadCtrl, 0,
 				mixCtrl, mixCtrl, roomSizeCtrl + 1);
 			Out.ar(out, wet);
 		}).add;
@@ -44,23 +49,25 @@ RoomReverb {
 	// laufen (addToTail) — der Synth liest dann erst den bereits vollständig summierten
 	// Bus-Inhalt jedes Blocks. Bei später live dazu registrierten Objekten kann es dadurch
 	// einen Block Verzögerung geben (akzeptierte Einschränkung dieser ersten Version).
-	play { |server, roomSize = 8, revTime = 3, damping = 0.5, mix = 1|
+	play { |server, roomSize = 8, revTime = 3, damping = 0.5, mix = 1, spread = 15|
 		synth = Synth(\roomReverb, [
 			\in, bus.index,
 			\out, 0,
 			\roomSize, roomSize,
 			\revTime, revTime,
 			\damping, damping,
-			\mix, mix
+			\mix, mix,
+			\spread, spread
 		], server, \addToTail);
 		^this
 	}
 
 	// aktualisiert die Parameter auf dem laufenden Synth live (no-op vor dem ersten play,
 	// gleiches Muster wie Binauralizer>>set).
-	set { |roomSize, revTime, damping, mix|
+	set { |roomSize, revTime, damping, mix, spread|
 		synth !? {
-			synth.set(\roomSize, roomSize, \revTime, revTime, \damping, damping, \mix, mix);
+			synth.set(\roomSize, roomSize, \revTime, revTime, \damping, damping, \mix, mix,
+				\spread, spread);
 		};
 	}
 
