@@ -54,55 +54,37 @@ FakeBinauralizerForRoomTest {
 	init { |aReverbMix| reverbMix = aReverbMix }
 }
 
-FakeDirectOutBinauralizerForRoomTest {
-	var <reverbMix;
+// Test-Double für Listener selbst (Intent 52): Room kennt Binauralizer-Setup/-Teardown-Details
+// seit Intent 52 nicht mehr, delegiert das vollständig an den Listener (siehe TestListener.sc
+// für die echte Binauralizer-Mechanik). Dieses Fake macht nur sichtbar, DASS/WIE Room
+// delegiert (setup(server, reverbBus) bei der Konstruktion, teardown bei Room>>teardown,
+// makeBinauralizer bei register/registerFromBuilder) — ohne echten Server/SynthDef zu
+// brauchen. Wichtig: Room.forTest verlangt IMMER einen expliziten listener-Parameter (wie
+// orchestra/reverb) — ein echter Listener.new() würde bei setup() mit der echten
+// Binauralizer-Klasse und dem Fake-Bus-Symbol (\fakeBus) einen Server-seitigen Fehler werfen
+// (siehe Intent 52, Challenges & Solutions zu Task 1.0).
+FakeListenerForRoomTest {
+	var <>binauralizerClass;
+	var <log;
 
-	*new { |reverbMix = 0.3| ^super.new.init(reverbMix) }
+	*new { |aLog, aBinauralizerClass| ^super.new.init(aLog, aBinauralizerClass) }
 
-	init { |aReverbMix| reverbMix = aReverbMix }
-}
-
-FakeClassBinauralizerForRoomTest {
-	classvar <lastAddSynthDefBus;
-	var <reverbMix;
-
-	*new { |reverbMix = 0.3| ^super.new.init(reverbMix) }
-
-	*addSynthDef { |reverbBus|
-		lastAddSynthDefBus = reverbBus;
+	init { |aLog, aBinauralizerClass|
+		log = aLog ?? { List.new };
+		binauralizerClass = aBinauralizerClass ?? { FakeBinauralizerForRoomTest };
 	}
 
-	*reset {
-		lastAddSynthDefBus = nil;
+	makeBinauralizer { |reverbMix = 0.3|
+		^binauralizerClass.new(reverbMix: reverbMix)
 	}
 
-	init { |aReverbMix| reverbMix = aReverbMix }
-}
-
-FakeAtkBinauralizerForRoomTest {
-	classvar <lastSetupServer, <lastSetupSubjectID, <lastSetupBus, <teardownCalled;
-	var <reverbMix;
-
-	*new { |reverbMix = 0.3| ^super.new.init(reverbMix) }
-
-	*setup { |server, subjectID = 21, reverbBus|
-		lastSetupServer = server;
-		lastSetupSubjectID = subjectID;
-		lastSetupBus = reverbBus;
+	setup { |server, reverbBus|
+		log.add([\listenerSetup, server, reverbBus]);
 	}
 
-	*teardown {
-		teardownCalled = true;
+	teardown {
+		log.add(\listenerTeardown);
 	}
-
-	*reset {
-		lastSetupServer = nil;
-		lastSetupSubjectID = nil;
-		lastSetupBus = nil;
-		teardownCalled = false;
-	}
-
-	init { |aReverbMix| reverbMix = aReverbMix }
 }
 
 // Test-Doubles für registerFromBuilder: reine Marker-Klassen mit denselben <>-Setter-Namen wie
@@ -119,9 +101,21 @@ FakeMovableForRoomRegisterFromBuilderTest {
 // Test für Room. Ausführen über run_tests.scd.
 TestRoom : UnitTest {
 
+	test_constructionWiresListenerWithServerAndReverbBus {
+		var log = List.new;
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new), listener: FakeListenerForRoomTest.new(log));
+
+		this.assertEquals(log.asArray, [[\listenerSetup, nil, \fakeBus]],
+			"Room verkabelt den Listener bei der Konstruktion mit server (hier nil, siehe " ++
+			"forTest) und reverb.bus (Intent 52) — unabhängig davon, ob je eine " ++
+			"binauralizerClass gesetzt wird");
+	}
+
 	test_playStartsOrchestraBeforeReverb {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new());
 
 		room.play;
 
@@ -131,45 +125,38 @@ TestRoom : UnitTest {
 
 	test_stopStopsBoth {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new());
 
 		room.stop;
 
 		this.assertEquals(log.asArray, [\orchestraStop, \reverbStop]);
 	}
 
-	test_teardownStopsAndFreesReverb {
+	test_teardownStopsFreesReverbAndDelegatesToListener {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new(log));
 
 		room.teardown;
 
-		this.assertEquals(log.asArray, [\orchestraStop, \reverbStop, \reverbFree],
-			"teardown stoppt zuerst und gibt danach die Reverb-Ressourcen frei");
-	}
-
-	test_teardownAlsoDelegatesToAtkBinauralizerWhenConfigured {
-		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
-
-		FakeAtkBinauralizerForRoomTest.reset;
-		room.binauralizerClass = FakeAtkBinauralizerForRoomTest;
-		room.teardown;
-
-		this.assertEquals(log.asArray, [\orchestraStop, \reverbStop, \reverbFree],
-			"teardown stoppt und gibt weiterhin die Reverb-Ressourcen des Room frei");
-		this.assert(FakeAtkBinauralizerForRoomTest.teardownCalled,
-			"bei konfiguriertem AtkBinauralizer delegiert Room.teardown zusätzlich an dessen teardown");
+		this.assertEquals(log.asArray,
+			[[\listenerSetup, nil, \fakeBus], \orchestraStop, \reverbStop, \reverbFree,
+				\listenerTeardown],
+			"listenerSetup passiert bereits bei der Konstruktion (siehe " ++
+			"test_constructionWiresListenerWithServerAndReverbBus); teardown stoppt danach, " ++
+			"gibt die Reverb-Ressourcen frei und delegiert zusätzlich an listener.teardown " ++
+			"(Intent 52) — Room kennt Binauralizer-Details dafür nicht mehr");
 	}
 
 	test_registerBuildsSoundObjectUsingListenersBinauralizer {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new(List.new, FakeBinauralizerForRoomTest));
 		var movable = \someMovable;
 		var sound = \someSound;
 		var registered;
 
-		room.listener.binauralizerClass = FakeBinauralizerForRoomTest;
 		registered = room.register(movable, sound, reverbMix: 0.7);
 
 		this.assertEquals(registered.movable, movable,
@@ -184,58 +171,12 @@ TestRoom : UnitTest {
 			"orchestra.register bekommt genau dieses SoundObject");
 	}
 
-	test_setBinauralizerClassRegistersPlainBinauralizerOnReverbBus {
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
-			FakeReverbForRoomTest.new(List.new));
-
-		FakeClassBinauralizerForRoomTest.reset;
-		room.binauralizerClass = FakeClassBinauralizerForRoomTest;
-
-		this.assertEquals(FakeClassBinauralizerForRoomTest.lastAddSynthDefBus, \fakeBus,
-			"ein normaler Binauralizer-Typ wird mit dem Reverb-Bus des Room registriert");
-		this.assertEquals(room.listener.binauralizerClass, FakeClassBinauralizerForRoomTest,
-			"der Listener übernimmt die vom Room konfigurierte Binauralizer-Klasse");
-	}
-
-	test_setBinauralizerClassUsesSubjectIDForAtkSetup {
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
-			FakeReverbForRoomTest.new(List.new));
-
-		FakeAtkBinauralizerForRoomTest.reset;
-		room.subjectID = 42;
-		room.binauralizerClass = FakeAtkBinauralizerForRoomTest;
-
-		this.assertEquals(FakeAtkBinauralizerForRoomTest.lastSetupServer, nil,
-			"im reinen sclang-Test bleibt server nil, Setup wird aber trotzdem über Room delegiert");
-		this.assertEquals(FakeAtkBinauralizerForRoomTest.lastSetupSubjectID, 42,
-			"Room reicht seine subjectID an AtkBinauralizer.setup weiter");
-		this.assertEquals(FakeAtkBinauralizerForRoomTest.lastSetupBus, \fakeBus,
-			"Atk-Setup bekommt den Reverb-Bus des Room");
-		this.assertEquals(room.listener.binauralizerClass, FakeAtkBinauralizerForRoomTest,
-			"der Listener übernimmt die vom Room konfigurierte Atk-Klasse");
-	}
-
-	test_setBinauralizerClassNilFallsBackToDirectOutForRegister {
-		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
-		var registered;
-
-		room.directOutBinauralizerClass = FakeDirectOutBinauralizerForRoomTest;
-		room.binauralizerClass = nil;
-		registered = room.register(\someMovable, \someSound, reverbMix: 0.7);
-
-		this.assert(registered.binauralizer.isKindOf(FakeDirectOutBinauralizerForRoomTest),
-			"binauralizerClass = nil baut intern einen Direct-Out-/No-op-Binauralizer statt nil");
-		this.assertEquals(registered.binauralizer.reverbMix, 0.7,
-			"auch der Direct-Out-Fall übernimmt reverbMix konsistent");
-	}
-
 	test_registerFromBuilderBuildsSoundObjectViaBuilder {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new(List.new, FakeBinauralizerForRoomTest));
 		var registered;
 
-		room.listener.binauralizerClass = FakeBinauralizerForRoomTest;
 		registered = room.registerFromBuilder((wingRate: 280), (roomRadius: 4), reverbMix: 0.7,
 			soundClass: FakeSoundForRoomRegisterFromBuilderTest,
 			movableClass: FakeMovableForRoomRegisterFromBuilderTest);
@@ -254,7 +195,8 @@ TestRoom : UnitTest {
 
 	test_callDelegatesToOrchestra {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new());
 
 		room.call(\someCaller);
 
@@ -263,7 +205,8 @@ TestRoom : UnitTest {
 
 	test_sizeChangeUpdatesReverbLive {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new());
 
 		room.size = 12;
 
@@ -272,7 +215,8 @@ TestRoom : UnitTest {
 
 	test_heightChangeUpdatesReverbLive {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new());
 
 		room.height = 6;
 
@@ -281,7 +225,8 @@ TestRoom : UnitTest {
 
 	test_surfaceChangeUpdatesReverbLive {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new());
 
 		room.surface = 0.9;
 
@@ -290,7 +235,8 @@ TestRoom : UnitTest {
 
 	test_mixChangeUpdatesReverbLive {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new());
 
 		room.mix = 0.7;
 
@@ -299,7 +245,8 @@ TestRoom : UnitTest {
 
 	test_spreadChangeUpdatesReverbLive {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new());
 
 		room.spread = 30;
 
@@ -308,7 +255,8 @@ TestRoom : UnitTest {
 
 	test_inputBandwidthChangeUpdatesReverbLive {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new());
 
 		room.inputBandwidth = 0.8;
 
@@ -318,7 +266,8 @@ TestRoom : UnitTest {
 
 	test_tailBalanceChangeUpdatesReverbLive {
 		var log = List.new;
-		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log),
+			listener: FakeListenerForRoomTest.new());
 
 		room.tailBalance = 0.2;
 
@@ -329,16 +278,19 @@ TestRoom : UnitTest {
 	// TestCircularMoveRule/TestMovable).
 	test_reverbParamsUsesSizeDirectlyAsRoomSize {
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
-			FakeReverbForRoomTest.new(List.new), size: 12);
+			FakeReverbForRoomTest.new(List.new), size: 12,
+			listener: FakeListenerForRoomTest.new());
 
 		this.assertEquals(room.reverbParams[0], 12);
 	}
 
 	test_reverbParamsSmootherSurfaceMeansLessDamping {
 		var rough = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
-			FakeReverbForRoomTest.new(List.new), surface: 0);
+			FakeReverbForRoomTest.new(List.new), surface: 0,
+			listener: FakeListenerForRoomTest.new());
 		var smooth = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
-			FakeReverbForRoomTest.new(List.new), surface: 1);
+			FakeReverbForRoomTest.new(List.new), surface: 1,
+			listener: FakeListenerForRoomTest.new());
 
 		this.assert(smooth.reverbParams[2] < rough.reverbParams[2],
 			"glattere Oberfläche dämpft weniger (kleinerer damping-Wert)");
@@ -346,9 +298,11 @@ TestRoom : UnitTest {
 
 	test_reverbParamsLargerVolumeMeansLongerRevTime {
 		var small = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
-			FakeReverbForRoomTest.new(List.new), size: 4, height: 2);
+			FakeReverbForRoomTest.new(List.new), size: 4, height: 2,
+			listener: FakeListenerForRoomTest.new());
 		var big = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
-			FakeReverbForRoomTest.new(List.new), size: 20, height: 10);
+			FakeReverbForRoomTest.new(List.new), size: 20, height: 10,
+			listener: FakeListenerForRoomTest.new());
 
 		this.assert(big.reverbParams[1] > small.reverbParams[1],
 			"größeres Raumvolumen führt zu längerer Nachhallzeit");
@@ -356,7 +310,7 @@ TestRoom : UnitTest {
 
 	test_reverbParamsIncludesSpread {
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
-			FakeReverbForRoomTest.new(List.new));
+			FakeReverbForRoomTest.new(List.new), listener: FakeListenerForRoomTest.new());
 
 		this.assertEquals(room.reverbParams[4], 15,
 			"spread-Default entspricht dem bisherigen Literal (GVerbs eigener Default)");
@@ -364,7 +318,7 @@ TestRoom : UnitTest {
 
 	test_reverbParamsIncludesInputBandwidth {
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
-			FakeReverbForRoomTest.new(List.new));
+			FakeReverbForRoomTest.new(List.new), listener: FakeListenerForRoomTest.new());
 
 		this.assertEquals(room.reverbParams[5], 0.5,
 			"inputBandwidth-Default entspricht dem bisherigen Literal");
@@ -372,7 +326,7 @@ TestRoom : UnitTest {
 
 	test_reverbParamsIncludesTailBalance {
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
-			FakeReverbForRoomTest.new(List.new));
+			FakeReverbForRoomTest.new(List.new), listener: FakeListenerForRoomTest.new());
 
 		this.assertEquals(room.reverbParams[6], 0.5,
 			"tailBalance-Default (0.5) entspricht der bisherigen mix=mix-Kopplung");
