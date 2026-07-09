@@ -37,7 +37,7 @@ RoomReverb.addSynthDef;
 ~songConfig = config;
 ~room = Room.new(s, size: config[\roomSize], height: config[\roomHeight],
 	surface: config[\roomSurface], mix: config[\roomMix]);
-~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+~room.binauralizerClass = AtkBinauralizer;
 
 // Song-Auswahl:
 // - exakter Match auf fileNameWithoutExtension gewinnt
@@ -149,8 +149,9 @@ if(originalPath.endsWith(".m4a")) {
 		~controlPanel.free;
 		~controlPanel = nil;
 	};
+	// room.teardown delegiert bereits an AtkBinauralizer.teardown (siehe Room>>teardown,
+	// Intent 51) — kein separater Aufruf mehr nötig.
 	~room.teardown;
-	AtkBinauralizer.teardown;
 	"Reverb-Song-Demo: ATK-Kernel freigegeben.\n".post;
 	};
 

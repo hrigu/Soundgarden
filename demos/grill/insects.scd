@@ -14,7 +14,7 @@ var insectMovableBase, insectSoundBase;
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
 ~room = Room.new(s, size: 8, height: 3, surface: 1, mix: 1);
-~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+~room.binauralizerClass = AtkBinauralizer;
 
 
 insectMovableBase = (pos: [0, 2.5, 0], moveRule: CircularMoveRule.new, roomRadius: 5);
@@ -74,11 +74,9 @@ num_insects = 30;
 // --- 4) Stoppen ---
 // room.stop stoppt das Ticken, ruft stop auf allen registrierten Soundobjekten auf
 // (Synths/Busse werden freigegeben) und stoppt danach den Hall.
-~room.stop;
-
-// AtkBinauralizer.teardown gibt den geteilten HRTF-Decoder-Kernel frei (Server-Buffer) —
-// separat, weil der Kernel der Klasse gehört, nicht einer einzelnen Instanz/room.stop.
-AtkBinauralizer.teardown;
+// room.teardown gibt zusätzlich den Reverb-Bus frei und delegiert an AtkBinauralizer.teardown
+// (Server-Buffer des geteilten HRTF-Decoder-Kernels, siehe Room>>teardown, Intent 51).
+~room.teardown;
 
 // Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
 // falls Block 3 überhaupt ausgeführt wurde.

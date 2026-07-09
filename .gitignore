@@ -6,3 +6,4 @@ sounds/*
 .DS_Store
 *.scsyndef
 .idea/*
+presets/*

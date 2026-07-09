@@ -28,9 +28,11 @@ var soundsDir, sampleFiles, n, radius, rate, minSpeed, maxSpeed;
 SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
 ~room = Room.new(s);
-// AtkBinauralizer lädt den HRTF-Kernel (asynchron) und registriert danach selbst die
-// SynthDef (siehe AtkBinauralizer>>*setup) — etwas zeitlichen Abstand zu Block 2 lassen.
-~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+// Room übernimmt Setup/Instanziierung/Teardown für den konfigurierten Binauralizer-Typ
+// selbst (Intent 51) — lädt hier den HRTF-Kernel asynchron und registriert danach selbst
+// die SynthDef (siehe AtkBinauralizer>>*setup), etwas zeitlichen Abstand zu Block 2 lassen.
+// Für die einfache Pan/ITD-Variante (kein echtes HRTF) stattdessen: ~room.binauralizerClass = Binauralizer;
+~room.binauralizerClass = AtkBinauralizer;
 
 // nur sounds/compmusic/ (nicht der ganze sounds/-Baum — auf Wunsch, apple/ bleibt aussen vor).
 soundsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "sounds" +/+ "compmusic");
@@ -80,6 +82,7 @@ maxSpeed = 0.3;  // rad/s — schnellstes Objekt: eine Umdrehung in ca. 21s
 ~controlPanel.show;
 
 // --- 4) Stoppen ---
-~room.stop;
-AtkBinauralizer.teardown;
+// room.teardown stoppt, gibt den Reverb-Bus frei UND delegiert an AtkBinauralizer.teardown
+// (siehe Room>>teardown, Intent 51) — kein separater AtkBinauralizer-Aufruf mehr nötig.
+~room.teardown;
 ~controlPanel.free;

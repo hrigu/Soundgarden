@@ -16,11 +16,11 @@
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning/HRTF) funktionieren nicht über
 // Lautsprecher richtig.
 //
-// Ein Room hat eine Ohren-Strategie (siehe Room>>addSynthDef, Listener>>makeBinauralizer) —
-// alle drei Objekte hier hören mit AtkBinauralizer (echtes HRTF-Rendering über das Ambisonic
+// Ein Room hat eine Ohren-Strategie (siehe Room>>binauralizerClass, Listener>>makeBinauralizer)
+// — alle drei Objekte hier hören mit AtkBinauralizer (echtes HRTF-Rendering über das Ambisonic
 // Toolkit). Für einen Vergleich mit der einfachen Binauralizer-Variante (Core-UGens, kein
-// echtes HRTF): unten `~room.addSynthDef(Binauralizer)` statt `AtkBinauralizer` verwenden und
-// neu ausführen.
+// echtes HRTF): unten `~room.binauralizerClass = Binauralizer` statt `AtkBinauralizer`
+// verwenden und neu ausführen.
 
 // --- 1) Setup: SynthDefs registrieren + alle Soundobjekte anlegen ---
 // Ein Block statt zwei — SynthDef-Registrierung (/d_recv, asynchron) muss nicht
@@ -42,12 +42,13 @@ var rhythmPatternBase, rhythmPatternBase2, rhythmPatternBase3;
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
 ~room = Room.new(s);
-// AtkBinauralizer lädt den HRTF-Kernel (asynchron) und registriert danach selbst die SynthDef
+// Room übernimmt Setup/Instanziierung/Teardown für den konfigurierten Binauralizer-Typ selbst
+// (Intent 51): lädt den HRTF-Kernel asynchron und registriert danach selbst die SynthDef
 // (siehe AtkBinauralizer>>*setup); legt zugleich fest, dass dieser Room ab jetzt mit
-// AtkBinauralizer "hört" (siehe Room>>addSynthDef, Listener>>makeBinauralizer) — braucht
+// AtkBinauralizer "hört" (siehe Room>>binauralizerClass_, Listener>>makeBinauralizer) — braucht
 // deshalb den bereits gebooteten Server (s). Etwas mehr zeitlichen Abstand zu Block 2 lassen
 // als bei einer normalen SynthDef-Registrierung: der Kernel lädt spürbar länger.
-~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+~room.binauralizerClass = AtkBinauralizer;
 
 // Ein gemeinsamer Listener (Position/Blickrichtung per Tastatur beweglich, siehe Block 3)
 // hört alle Soundobjekte — Teil von ~room, siehe Room>>listener. Jedes Soundobjekt braucht
@@ -125,11 +126,9 @@ rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 1
 // --- 4) Stoppen ---
 // room.stop stoppt das Ticken, ruft stop auf allen registrierten Soundobjekten auf
 // (Synths/Busse werden freigegeben) und stoppt danach den Hall.
-~room.stop;
-
-// AtkBinauralizer.teardown gibt den geteilten HRTF-Decoder-Kernel frei (Server-Buffer) —
-// separat, weil der Kernel der Klasse gehört, nicht einer einzelnen Instanz/room.stop.
-AtkBinauralizer.teardown;
+// room.teardown gibt zusätzlich den Reverb-Bus frei und delegiert an AtkBinauralizer.teardown
+// (Server-Buffer des geteilten HRTF-Decoder-Kernels, siehe Room>>teardown, Intent 51).
+~room.teardown;
 
 ~controlPanel.free;
 

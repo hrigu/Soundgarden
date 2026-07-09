@@ -25,9 +25,11 @@ var soundsDir, sampleFiles, n, radius, rate, maxSamples;
 SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
 ~room = Room.new(s);
-// AtkBinauralizer lädt den HRTF-Kernel (asynchron) und registriert danach selbst die
-// SynthDef (siehe AtkBinauralizer>>*setup) — etwas zeitlichen Abstand zu Block 2 lassen.
-~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+// Room übernimmt Setup/Instanziierung/Teardown für den konfigurierten Binauralizer-Typ
+// selbst (Intent 51) — registriert die passende SynthDef (bzw. bei AtkBinauralizer den
+// HRTF-Kernel, asynchron) und stellt den Listener entsprechend um.
+// Für echtes HRTF-Rendering stattdessen: ~room.binauralizerClass = AtkBinauralizer;
+~room.binauralizerClass = Binauralizer;
 
 // gültige Audiodateien aus sounds/ — rekursiv (filesDo statt entries.select), da die
 // Samples in Unterordnern liegen (z.B. sounds/apple/, sounds/compmusic/); keine feste
@@ -37,7 +39,7 @@ sampleFiles = [];
 soundsDir.filesDo({ |pe|
 	if(BootTrackDetection.isValidExtension(pe.extension)) { sampleFiles = sampleFiles.add(pe) };
 });
-maxSamples = 40; // höchstens so viele Soundobjekte anlegen, auch wenn der Ordner mehr Dateien hat
+maxSamples = 50; // höchstens so viele Soundobjekte anlegen, auch wenn der Ordner mehr Dateien hat
 sampleFiles = sampleFiles.keep(maxSamples);
 n = sampleFiles.size;
 radius = 3;
@@ -77,6 +79,7 @@ rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (
 ~controlPanel.show;
 
 // --- 4) Stoppen ---
-~room.stop;
-AtkBinauralizer.teardown;
+// room.teardown stoppt, gibt den Reverb-Bus frei UND delegiert an AtkBinauralizer.teardown
+// (siehe Room>>teardown, Intent 51) — kein separater AtkBinauralizer-Aufruf mehr nötig.
+~room.teardown;
 ~controlPanel.free;

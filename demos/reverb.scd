@@ -22,8 +22,8 @@ SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
 
 ~room = Room.new(s);
-//~room.addSynthDef(Binauralizer);
-~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+//~room.binauralizerClass = Binauralizer;
+~room.binauralizerClass = AtkBinauralizer;
 
 
 // gültige Audiodateien aus sounds/ — rekursiv (filesDo statt entries.select), wie in

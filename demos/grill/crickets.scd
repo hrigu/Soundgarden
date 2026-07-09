@@ -23,19 +23,19 @@ var cricketMovableBase, cricketSoundBase;
 //   https://samplefocus.com/samples/cricket-chirp
 // Datei herunterladen, Pfad hier eintragen -- ohne gesetzten Pfad werden die Sample-Grillen
 // einfach übersprungen (Post-Hinweis), das Demo bleibt ohne Download lauffähig.
-~cricketSamplePath = nil;
+~cricketSamplePath = "/Users/chrigu/code/my/Soundgarden/sounds/crickets/cricket-sound_81bpm_G_minor.wav";
 
 CricketSound.addSynthDef;
 SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
 ~room = Room.new(s, size: 8, height: 3, surface: 1, mix: 1);
-~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+~room.binauralizerClass = AtkBinauralizer;
 
 
 cricketMovableBase = (pos: [0, 2.5, 0], moveRule: CircularMoveRule.new, roomRadius: 5);
 cricketSoundBase = (); // CricketSound.new-Defaults reichen als Basis (Bioakustik-Werte)
 
-num_crickets = 8;
+num_crickets = 10;
 
 ~crickets = num_crickets.collect { |i|
 	var angle = (i / num_crickets) * 2pi;
@@ -60,7 +60,7 @@ num_crickets = 8;
 // dafür, siehe SampleSound.sc), deshalb direkt instanziert statt über registerFromBuilder (das
 // baut Instanzen immer ohne Argumente und füllt sie erst danach über Setter -- passt für path
 // nicht).
-num_sample_crickets = 3;
+num_sample_crickets = 0;
 
 ~sampleCrickets = if(~cricketSamplePath.notNil) {
 	num_sample_crickets.collect { |i|
@@ -99,11 +99,9 @@ num_sample_crickets = 3;
 // --- 4) Stoppen ---
 // room.stop stoppt das Ticken, ruft stop auf allen registrierten Soundobjekten auf
 // (Synths/Busse werden freigegeben) und stoppt danach den Hall.
-~room.stop;
-
-// AtkBinauralizer.teardown gibt den geteilten HRTF-Decoder-Kernel frei (Server-Buffer) —
-// separat, weil der Kernel der Klasse gehört, nicht einer einzelnen Instanz/room.stop.
-AtkBinauralizer.teardown;
+// room.teardown gibt zusätzlich den Reverb-Bus frei und delegiert an AtkBinauralizer.teardown
+// (Server-Buffer des geteilten HRTF-Decoder-Kernels, siehe Room>>teardown, Intent 51).
+~room.teardown;
 
 // Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
 // falls Block 3 überhaupt ausgeführt wurde.

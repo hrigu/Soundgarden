@@ -55,9 +55,10 @@ config = (
 ~room = Room.new(s, size: config[\roomSize], height: config[\roomHeight],
 	surface: config[\roomSurface], mix: config[\roomMix]);
 
-// AtkBinauralizer laedt den HRTF-Kernel asynchron und registriert danach die SynthDef.
+// Room übernimmt Setup/Instanziierung/Teardown für den konfigurierten Binauralizer-Typ selbst
+// (Intent 51) — laedt hier den HRTF-Kernel asynchron und registriert danach die SynthDef.
 // Vor Block 2 etwas Zeit lassen, damit Kernel/SynthDef sicher bereit sind.
-~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+~room.binauralizerClass = AtkBinauralizer;
 
 // Gemeinsame Basis fuer die Insekten; pattern wird pro Objekt unten gesetzt,
 // damit immer nur ein Insekt in seinem eigenen Zeitfenster zirpt.
@@ -125,8 +126,9 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 		~controlPanel.free;
 		~controlPanel = nil;
 	};
+	// room.teardown delegiert bereits an AtkBinauralizer.teardown (siehe Room>>teardown,
+	// Intent 51) — kein separater Aufruf mehr nötig.
 	~room.teardown;
-	AtkBinauralizer.teardown;
 	"Raumhall-Analyse: ATK-Kernel freigegeben.\n".post;
 };
 

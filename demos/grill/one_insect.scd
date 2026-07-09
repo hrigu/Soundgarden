@@ -25,12 +25,12 @@ var moveRule, movable, insectSound;
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
 
-// AtkBinauralizer.setup MUSS vor addSynthDef abgeschlossen sein (legt die geteilte
-// Encoder-Matrix/den HRTF-Decoder-Kernel an, die die SynthDef referenziert) — braucht
-// deshalb den bereits gebooteten Server (s), anders als die übrigen addSynthDef-Aufrufe hier.
+// Room übernimmt Setup/Instanziierung/Teardown für den konfigurierten Binauralizer-Typ selbst
+// (Intent 51) — AtkBinauralizer.setup lädt dabei die geteilte Encoder-Matrix/den HRTF-Decoder-
+// Kernel, braucht deshalb den bereits gebooteten Server (s).
 
 ~room = Room.new(s);
-~room.addSynthDef(AtkBinauralizer, subjectID: 21);
+~room.binauralizerClass = AtkBinauralizer;
 
 // Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s
 // im Uhrzeigersinn), Standard-Klang.
@@ -63,11 +63,9 @@ insectSound = InsectSound.new;
 // --- 4) Stoppen ---
 // room.stop stoppt das Ticken, ruft stop auf allen registrierten
 // Soundobjekten auf (Synths/Busse werden freigegeben) und stoppt danach den Hall.
-~room.stop;
-
-// AtkBinauralizer.teardown gibt den geteilten HRTF-Decoder-Kernel frei (Server-Buffer) —
-// separat, weil der Kernel der Klasse gehört, nicht einer einzelnen Instanz/room.stop.
-AtkBinauralizer.teardown;
+// room.teardown gibt zusätzlich den Reverb-Bus frei und delegiert an AtkBinauralizer.teardown
+// (Server-Buffer des geteilten HRTF-Decoder-Kernels, siehe Room>>teardown, Intent 51).
+~room.teardown;
 
 // Room-Control-Panel separat freigeben (schließt das Kontrollfenster) — nur nötig,
 // falls Block 3 überhaupt ausgeführt wurde.
