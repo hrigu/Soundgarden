@@ -23,26 +23,35 @@ Room {
 	var <spread;      // GVerb-Diffusion (Streuung der internen Verzögerungsleitungen) — kein
 	                  // abgeleitetes Raum-Merkmal wie roomSize/revTime/damping, sondern ein
 	                  // direkter Experimentier-Knopf gegen metallisches Klingeln (Intent 41)
+	var <inputBandwidth;  // Tiefpass vor dem Diffusions-Netzwerk, 0..1 — hell/dunkel des in
+	                      // den Hall eingespeisten Signals, kein Raum-Merkmal (Intent 41)
+	var <tailBalance;     // 0 = nur frühe Reflexionen .. 1 = nur diffuser Nachhall-Schwanz,
+	                      // 0.5 = ausbalanciert (bisheriges Verhalten) — verschiebt nur das
+	                      // Verhältnis, mix bleibt der Gesamtpegel (Intent 41)
 
 	// listener optional: normalerweise legt Room seinen eigenen Listener an, aber ein
 	// künftiges Multi-Room-Setup (ein Listener wandert zwischen mehreren Rooms, siehe
 	// Intent 27) kann hier einen bestehenden übergeben — keine eigene Mechanik dafür heute,
 	// nur der Konstruktor-Spielraum.
-	*new { |server, listener, size = 8, height = 3, surface = 0.5, mix = 1, spread = 15|
+	*new { |server, listener, size = 8, height = 3, surface = 0.5, mix = 1, spread = 15,
+			inputBandwidth = 0.5, tailBalance = 0.5|
 		var aListener = listener ?? { Listener.new };
 		^super.new.init(server, aListener, Orchestra.new(aListener), RoomReverb.new(server),
-			size, height, surface, mix, spread);
+			size, height, surface, mix, spread, inputBandwidth, tailBalance);
 	}
 
 	// Test-Konstruktor: orchestra/reverb kommen fertig (Fakes) rein, statt dass Room selbst
 	// einen echten Server für RoomReverb.new anfasst — siehe TestRoom. listener ist ein
 	// echter Listener (reine sclang-Logik, kein Server nötig), damit register() über
 	// listener.makeBinauralizer testbar bleibt.
-	*forTest { |orchestra, reverb, size = 8, height = 3, surface = 0.5, mix = 1, spread = 15|
-		^super.new.init(nil, Listener.new, orchestra, reverb, size, height, surface, mix, spread);
+	*forTest { |orchestra, reverb, size = 8, height = 3, surface = 0.5, mix = 1, spread = 15,
+			inputBandwidth = 0.5, tailBalance = 0.5|
+		^super.new.init(nil, Listener.new, orchestra, reverb, size, height, surface, mix,
+			spread, inputBandwidth, tailBalance);
 	}
 
-	init { |aServer, aListener, anOrchestra, aReverb, aSize, aHeight, aSurface, aMix, aSpread|
+	init { |aServer, aListener, anOrchestra, aReverb, aSize, aHeight, aSurface, aMix, aSpread,
+			aInputBandwidth, aTailBalance|
 		server = aServer;
 		listener = aListener;
 		orchestra = anOrchestra;
@@ -52,6 +61,8 @@ Room {
 		surface = aSurface;
 		mix = aMix;
 		spread = aSpread;
+		inputBandwidth = aInputBandwidth;
+		tailBalance = aTailBalance;
 	}
 
 	// registriert die SynthDef eines Binauralizer-Typs, verkabelt mit dem geteilten Reverb-
@@ -119,26 +130,30 @@ Room {
 		reverb.free;
 	}
 
-	// size/height/surface/mix/spread per Zuweisung änderbar (~room.size = 12;) — jede
-	// Änderung schreibt die neu abgeleiteten Parameter sofort auf den laufenden Hall.
+	// size/height/surface/mix/spread/inputBandwidth/tailBalance per Zuweisung änderbar
+	// (~room.size = 12;) — jede Änderung schreibt die neu abgeleiteten Parameter sofort auf
+	// den laufenden Hall.
 	size_ { |aSize| size = aSize; this.updateAcoustics; }
 	height_ { |aHeight| height = aHeight; this.updateAcoustics; }
 	surface_ { |aSurface| surface = aSurface; this.updateAcoustics; }
 	mix_ { |aMix| mix = aMix; this.updateAcoustics; }
 	spread_ { |aSpread| spread = aSpread; this.updateAcoustics; }
+	inputBandwidth_ { |aInputBandwidth| inputBandwidth = aInputBandwidth; this.updateAcoustics; }
+	tailBalance_ { |aTailBalance| tailBalance = aTailBalance; this.updateAcoustics; }
 
 	// leitet aus size/height/surface die RoomReverb-Parameter ab — einziger Ort für dieses
 	// Mapping, damit play() und die Live-Setter (size_ etc.) immer konsistent bleiben.
 	// Faustregel, keine akustische Simulation: volume = size² × height (Raum als Würfel mit
 	// Kantenlänge size gedacht); revTime wächst mit der Kubikwurzel des Volumens und mit
 	// glatterer Oberfläche (surface näher 1 → länger, heller); damping fällt mit surface
-	// (glatt/hart dämpft hohe Frequenzen weniger als rau/absorbierend). spread/mix fliessen
-	// unverändert durch — keine abgeleiteten Raum-Merkmale, siehe Instanzvariablen oben.
+	// (glatt/hart dämpft hohe Frequenzen weniger als rau/absorbierend). spread/mix/
+	// inputBandwidth/tailBalance fliessen unverändert durch — keine abgeleiteten
+	// Raum-Merkmale, siehe Instanzvariablen oben.
 	reverbParams {
 		var volume = size.squared * height;
 		var revTime = (volume.pow(1/3) * 0.3 * (0.5 + surface)).clip(0.3, 15);
 		var damping = (1 - surface).clip(0.05, 0.95);
-		^[size, revTime, damping, mix, spread]
+		^[size, revTime, damping, mix, spread, inputBandwidth, tailBalance]
 	}
 
 	// schreibt die aktuell abgeleiteten Parameter live auf den laufenden Hall (no-op vor dem
