@@ -21,9 +21,10 @@ var soundsDir, sampleFiles, sampleFile, pos, movable, sound;
 SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
 
-~room = Room.new(s);
-//~room.binauralizerClass = Binauralizer;
-~room.binauralizerClass = AtkBinauralizer;
+// Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52).
+//~listener = Listener.new(binauralizerClass: Binauralizer);
+~listener = Listener.new(binauralizerClass: AtkBinauralizer);
+~room = Room.new(s, listener: ~listener);
 
 
 // gültige Audiodateien aus sounds/ — rekursiv (filesDo statt entries.select), wie in

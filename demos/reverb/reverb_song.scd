@@ -35,9 +35,10 @@ RoomReverb.addSynthDef;
  ~songName = "Anonyme, Anne Delafosse, Clara Coutouly, Paulin Bundgen - Stella maris nuncuparis";
 
 ~songConfig = config;
-~room = Room.new(s, size: config[\roomSize], height: config[\roomHeight],
+// Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52).
+~listener = Listener.new(binauralizerClass: AtkBinauralizer);
+~room = Room.new(s, listener: ~listener, size: config[\roomSize], height: config[\roomHeight],
 	surface: config[\roomSurface], mix: config[\roomMix]);
-~room.binauralizerClass = AtkBinauralizer;
 
 // Song-Auswahl:
 // - exakter Match auf fileNameWithoutExtension gewinnt

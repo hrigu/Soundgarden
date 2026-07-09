@@ -28,8 +28,9 @@ var cricketMovableBase, cricketSoundBase;
 CricketSound.addSynthDef;
 SampleSound.addSynthDef;
 RoomReverb.addSynthDef;
-~room = Room.new(s, size: 8, height: 3, surface: 1, mix: 1);
-~room.binauralizerClass = AtkBinauralizer;
+// Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52).
+~listener = Listener.new(binauralizerClass: AtkBinauralizer);
+~room = Room.new(s, listener: ~listener, size: 8, height: 3, surface: 1, mix: 1);
 
 
 cricketMovableBase = (pos: [0, 2.5, 0], moveRule: CircularMoveRule.new, roomRadius: 5);

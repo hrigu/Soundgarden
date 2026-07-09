@@ -52,13 +52,12 @@ config = (
 );
 
 ~analysisConfig = config;
-~room = Room.new(s, size: config[\roomSize], height: config[\roomHeight],
+// Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52)
+// — laedt hier den HRTF-Kernel asynchron und registriert danach die SynthDef. Vor Block 2
+// etwas Zeit lassen, damit Kernel/SynthDef sicher bereit sind.
+~listener = Listener.new(binauralizerClass: AtkBinauralizer);
+~room = Room.new(s, listener: ~listener, size: config[\roomSize], height: config[\roomHeight],
 	surface: config[\roomSurface], mix: config[\roomMix]);
-
-// Room übernimmt Setup/Instanziierung/Teardown für den konfigurierten Binauralizer-Typ selbst
-// (Intent 51) — laedt hier den HRTF-Kernel asynchron und registriert danach die SynthDef.
-// Vor Block 2 etwas Zeit lassen, damit Kernel/SynthDef sicher bereit sind.
-~room.binauralizerClass = AtkBinauralizer;
 
 // Gemeinsame Basis fuer die Insekten; pattern wird pro Objekt unten gesetzt,
 // damit immer nur ein Insekt in seinem eigenen Zeitfenster zirpt.

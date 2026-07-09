@@ -25,12 +25,13 @@ var moveRule, movable, insectSound;
 InsectSound.addSynthDef;
 RoomReverb.addSynthDef;
 
-// Room übernimmt Setup/Instanziierung/Teardown für den konfigurierten Binauralizer-Typ selbst
-// (Intent 51) — AtkBinauralizer.setup lädt dabei die geteilte Encoder-Matrix/den HRTF-Decoder-
-// Kernel, braucht deshalb den bereits gebooteten Server (s).
+// Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52)
+// — Binauralisierung ist eine Eigenschaft seiner "Ohren", nicht des Room. AtkBinauralizer.setup
+// lädt dabei die geteilte Encoder-Matrix/den HRTF-Decoder-Kernel, braucht deshalb den bereits
+// gebooteten Server (s).
 
-~room = Room.new(s);
-~room.binauralizerClass = AtkBinauralizer;
+~listener = Listener.new(binauralizerClass: AtkBinauralizer);
+~room = Room.new(s, listener: ~listener);
 
 // Insekt 1: CircularMoveRule-Defaults (2.5m Radius, ±1.2m Atmung, 0.6 rad/s
 // im Uhrzeigersinn), Standard-Klang.
