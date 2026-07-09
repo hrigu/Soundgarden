@@ -14,3 +14,4 @@ TestRoom.run;
 TestSoundObjectBuilder.run;
 TestCallingPattern.run;
 TestRhythmPatternCreator.run;
+TestCricketSound.run;
