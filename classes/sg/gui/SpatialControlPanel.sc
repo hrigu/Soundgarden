@@ -227,11 +227,11 @@ SpatialControlPanel {
 		var sound;
 		var sliderCount;
 		var contentHeight;
-		var titleHeight = 28;
-		var soloHeight = 32;
-		var sliderHeight = 32;
-		var presetHeight = if(presetsDir.notNil) { 130 } { 0 };
-		var paddingHeight = 56;
+		var titleHeight = 32;
+		var soloHeight = 36;
+		var sliderHeight = 36;
+		var presetHeight = if(presetsDir.notNil) { 180 } { 0 };
+		var paddingHeight = 80;
 
 		objectControlsView !? { objectControlsView.remove };
 		objectScrollView !? { objectScrollView.remove };
