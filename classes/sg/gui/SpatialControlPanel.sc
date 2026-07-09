@@ -160,8 +160,8 @@ SpatialControlPanel {
 	}
 
 	installRoomControls {
-		var controlWidth = 340@26;
-		var headerWidth = 340@22;
+		var controlWidth = 380@26;
+		var headerWidth = 380@22;
 		var addGroupHeader = { |title|
 			var label = StaticText(roomControlsView, headerWidth);
 			label.string = title;
@@ -171,7 +171,7 @@ SpatialControlPanel {
 		};
 		var makeSlider = { |label, initValue, spec, action|
 			var slider = EZSlider(roomControlsView, controlWidth, label, spec,
-				{ |ez| action.(ez.value) }, initValue);
+				{ |ez| action.(ez.value) }, initValue, false, 120, 56);
 			roomControlsView.decorator.nextLine;
 			slider
 		};
@@ -249,8 +249,8 @@ SpatialControlPanel {
 	// ein EZSlider pro editableParams-Eintrag des ausgewählten Sounds.
 	buildSoundParamControls {
 		var sound = selectedSoundObject.sound;
-		var controlWidth = 340@26;
-		var title = StaticText(objectControlsView, 340@22);
+		var controlWidth = 380@26;
+		var title = StaticText(objectControlsView, 380@22);
 
 		title.string = sound.class.name.asString;
 		title.font = Font.default.copy.size_(15).boldVariant;
@@ -261,7 +261,7 @@ SpatialControlPanel {
 			var key = pair[0];
 			var spec = pair[1];
 			EZSlider(objectControlsView, controlWidth, key.asString, spec,
-				{ |ez| sound.setParam(key, ez.value) }, sound.perform(key));
+				{ |ez| sound.setParam(key, ez.value) }, sound.perform(key), false, 120, 56);
 			objectControlsView.decorator.nextLine;
 		};
 	}
@@ -269,14 +269,14 @@ SpatialControlPanel {
 	// Preset-Bibliothek fürs ausgewählte Soundobjekt.
 	buildPresetControls {
 		var sound = selectedSoundObject.sound;
-		var nameField = TextField(objectControlsView, 340@24);
-		var presetMenu = PopUpMenu(objectControlsView, 340@24);
+		var nameField = TextField(objectControlsView, 380@24);
+		var presetMenu = PopUpMenu(objectControlsView, 380@24);
 		var refreshPresetMenu = { presetMenu.items = SoundPresetLibrary.listNames(presetsDir) };
 
 		refreshPresetMenu.value;
 		objectControlsView.decorator.nextLine;
 
-		Button(objectControlsView, 340@24).states_([["Preset speichern"]]).action_({
+		Button(objectControlsView, 380@24).states_([["Preset speichern"]]).action_({
 			if(nameField.string.size > 0) {
 				SoundPresetLibrary.save(presetsDir, nameField.string, sound);
 				refreshPresetMenu.value;
@@ -284,7 +284,7 @@ SpatialControlPanel {
 		});
 		objectControlsView.decorator.nextLine;
 
-		Button(objectControlsView, 340@24).states_([["Preset laden"]]).action_({
+		Button(objectControlsView, 380@24).states_([["Preset laden"]]).action_({
 			var name = presetMenu.item;
 			var preset = if(name.notNil) { SoundPresetLibrary.load(presetsDir, name) } { nil };
 
