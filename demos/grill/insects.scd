@@ -66,8 +66,8 @@ num_insects = 30;
 ~room.play;
 
 (
-~controlPanel = SpatialControlPanel.new(~room, viewRadius: 6, editable: true);
-~controlPanel.play;
+~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true);
+~controlPanel.show;
 )
 
 
@@ -82,7 +82,7 @@ AtkBinauralizer.teardown;
 
 // Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
 // falls Block 3 überhaupt ausgeführt wurde.
-~controlPanel.stop;
+~controlPanel.free;
 
 
 

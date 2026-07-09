@@ -102,12 +102,12 @@ rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 1
 
 )
 (
-// --- 3) Gemeinsames Spatial-GUI ---
+// --- 3) Gemeinsames Room-Control-Panel ---
 // Bewusst separat und erst NACH Block 2 ausführen (Room muss schon spielen).
 // W/S vor/zurück, A/D seitlich, Q/E drehen; dazu dieselbe Oberfläche für
 // Draufsicht und Room-/Reverb-Regler.
-~controlPanel = SpatialControlPanel.new(~room, viewRadius: 6, editable: true);
-~controlPanel.play;
+~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true);
+~controlPanel.show;
 )
 
 // --- 2) Abspielen ---
@@ -131,7 +131,7 @@ rhythmPatternBase3 = CallingPattern.fromDurations([0.02, 0.3, 0.02, 0.9, 0.02, 1
 // separat, weil der Kernel der Klasse gehört, nicht einer einzelnen Instanz/room.stop.
 AtkBinauralizer.teardown;
 
-~controlPanel.stop;
+~controlPanel.free;
 
 
 

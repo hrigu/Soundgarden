@@ -56,11 +56,11 @@ sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in B
 // startet Orchestra vor RoomReverb in der richtigen Reihenfolge (siehe Room>>play).
 ~room.play;
 
-// --- 3) Gemeinsames Spatial-GUI ---
+// --- 3) Gemeinsames Room-Control-Panel ---
 // W/S vor/zurück, A/D seitlich, Q/E drehen; dieselbe Oberfläche zeigt Listener,
 // Klangquelle und Room-/Reverb-Regler.
-~controlPanel = SpatialControlPanel.new(~room, viewRadius: 6, editable: true);
-~controlPanel.play;
+~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true);
+~controlPanel.show;
 
 // --- 4) Live-Coding: Quelle umplatzieren (Alternative zum Herumlaufen) ---
 ~testObject.movable.moveTo([-2, 4, 0]);
@@ -78,4 +78,4 @@ sound.preload(s); // lädt den Buffer schon jetzt, statt erst bei room.play in B
 // ~room.stop / ~room.play sind beliebig abwechselbar (Intent 25, jetzt über Room>>stop/play) —
 // zum Zwischendurch-Anhalten reicht die erste Zeile, das Setup (Block 1) bleibt gültig.
 ~room.stop;
-~controlPanel.stop;
+~controlPanel.free;

@@ -51,6 +51,7 @@ config = (
 	]
 );
 
+~analysisConfig = config;
 ~room = Room.new(s, size: config[\roomSize], height: config[\roomHeight],
 	surface: config[\roomSurface], mix: config[\roomMix]);
 
@@ -112,24 +113,18 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 	"Raumhall-Analyse: Demo laeuft.\n".post;
 };
 
-~showControls = {
-	~controlPanel !? { ~controlPanel.stop };
-	~controlPanel = SpatialControlPanel.new(~room, viewRadius: config[\roomRadius], editable: true);
-	~controlPanel.play;
-	"Raumhall-Analyse: gemeinsames Steuerungsfenster aktiv.\n".post;
-};
-
-// Rueckwaertskompatibler Alias: das Reverb lebt jetzt im gemeinsamen Panel.
-~showReverbControls = { ~showControls.() };
-
 ~stopDemo = {
 	~room.stop;
-	~controlPanel !? { ~controlPanel.stop };
+	~controlPanel !? { ~controlPanel.hide };
 	"Raumhall-Analyse: Demo gestoppt.\n".post;
 };
 
 ~freeDemo = {
 	~stopDemo.();
+	~controlPanel !? {
+		~controlPanel.free;
+		~controlPanel = nil;
+	};
 	~room.teardown;
 	AtkBinauralizer.teardown;
 	"Raumhall-Analyse: ATK-Kernel freigegeben.\n".post;
@@ -143,18 +138,16 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 
 // --- 3) Optional: gemeinsames GUI ---
 // W/S vor/zurueck, A/D seitlich, Q/E drehen. Fenster muss fokussiert sein.
-~showControls.();
+~controlPanel = RoomControlPanel.new(~room, viewRadius: ~analysisConfig[\roomRadius], editable: true);
+~controlPanel.show;
 
 // --- 4) Live-Tuning ---
 // Raum- und Send-Werte fuer diese Session gesammelt anpassen.
 ~applyTuning.();
 
-// --- 5) Alias auf dasselbe GUI ---
-~showReverbControls.();
-
-// --- 6) Stoppen ---
+// --- 5) Stoppen ---
 ~stopDemo.();
 
-// --- 7) Vollstaendig freigeben ---
+// --- 6) Vollstaendig freigeben ---
 // Nur noetig, wenn die Session wirklich beendet wird.
 ~freeDemo.();

@@ -65,6 +65,25 @@ SpatialControlPanel {
 		^this
 	}
 
+	show {
+		if(window.isNil or: { window.isClosed }) {
+			this.play;
+		} {
+			window.visible_(true);
+			window.front;
+		};
+		^this
+	}
+
+	hide {
+		window !? {
+			if(window.isClosed.not) {
+				window.visible_(false);
+			};
+		};
+		^this
+	}
+
 	// Klick auf ein Soundobjekt wählt es aus (immer, auch bei editable == false — Klangparameter
 	// ansehen/bearbeiten ist unabhängig vom Verschieben-Dürfen). Listener-Körper und -Nase
 	// bekommen im editierbaren Modus Vorrang für Position/Rotation.
@@ -404,5 +423,10 @@ SpatialControlPanel {
 		isRotatingListener = false;
 		heldKeys = Set.new;
 		window !? { window.close };
+	}
+
+	free {
+		this.stop;
+		^this
 	}
 }

@@ -90,9 +90,9 @@ num_sample_crickets = 3;
 // das bestehende soundsDir in anderen Demos (thisProcess.nowExecutingPath, projektrelativ).
 ~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "presets"
 	+/+ "crickets").fullPath;
-~controlPanel = SpatialControlPanel.new(~room, viewRadius: 6, editable: true,
+~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true,
 	presetsDir: ~presetsDir);
-~controlPanel.play;
+~controlPanel.show;
 )
 
 
@@ -107,7 +107,7 @@ AtkBinauralizer.teardown;
 
 // Tastatursteuerung separat stoppen (schließt das Kontrollfenster) — nur nötig,
 // falls Block 3 überhaupt ausgeführt wurde.
-~controlPanel.stop;
+~controlPanel.free;
 
 
 

@@ -137,22 +137,18 @@ if(originalPath.endsWith(".m4a")) {
 	"Reverb-Song-Demo: Demo laeuft.\n".post;
 };
 
-~showControls = {
-	~controlPanel !? { ~controlPanel.stop };
-	~controlPanel = SpatialControlPanel.new(~room, viewRadius: ~songConfig[\viewRadius],
-		editable: true);
-	~controlPanel.play;
-	"Reverb-Song-Demo: gemeinsames Steuerungsfenster aktiv.\n".post;
-};
-
 ~stopDemo = {
 	~room.stop;
-	~controlPanel !? { ~controlPanel.stop };
+	~controlPanel !? { ~controlPanel.hide };
 	"Reverb-Song-Demo: Demo gestoppt.\n".post;
 };
 
 ~freeDemo = {
 	~stopDemo.();
+	~controlPanel !? {
+		~controlPanel.free;
+		~controlPanel = nil;
+	};
 	~room.teardown;
 	AtkBinauralizer.teardown;
 	"Reverb-Song-Demo: ATK-Kernel freigegeben.\n".post;
@@ -166,7 +162,8 @@ if(originalPath.endsWith(".m4a")) {
 ~startDemo.();
 
 // --- 3) Optional: gemeinsames GUI ---
-~showControls.();
+~controlPanel = RoomControlPanel.new(~room, viewRadius: ~songConfig[\viewRadius], editable: true);
+~controlPanel.show;
 
 // --- 4) Stoppen ---
 ~stopDemo.();
