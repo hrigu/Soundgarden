@@ -16,11 +16,15 @@
 // Jedes Objekt bekommt dieselbe Trigger-Rate, aber einen über den Kreis verteilten
 // Phasenversatz (0, 1/N, 2/N, ... einer Periode) — die Samples triggern dadurch nicht alle
 // gleichzeitig, sondern wandern hörbar der Reihe nach um den Hörer herum.
+//
+// Alle Objekte bekommen dieselbe duration (Intent 53): die Sample-Dateien selbst sind
+// unterschiedlich lang (kurze Percussion-Hits neben langen Instrumentalphrasen), ohne
+// duration klänge das Kreis-Ensemble entsprechend uneinheitlich lang.
 
 // --- 1) Setup: SynthDefs registrieren + alle Soundobjekte anlegen ---
 (
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen (SuperCollider-Syntaxregel).
-var soundsDir, sampleFiles, n, radius, rate, maxSamples;
+var soundsDir, sampleFiles, n, radius, rate, maxSamples, duration;
 
 SampleSound.addSynthDef;
 // Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52)
@@ -39,13 +43,15 @@ sampleFiles = [];
 soundsDir.filesDo({ |pe|
 	if(BootTrackDetection.isValidExtension(pe.extension)) { sampleFiles = sampleFiles.add(pe) };
 });
-maxSamples = 50; // höchstens so viele Soundobjekte anlegen, auch wenn der Ordner mehr Dateien hat
+maxSamples = 500; // höchstens so viele Soundobjekte anlegen, auch wenn der Ordner mehr Dateien hat
 sampleFiles = sampleFiles.keep(maxSamples);
 n = sampleFiles.size;
 radius = 3;
 ~viewRadius = radius + 1;
 rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (~1s), da
           // SampleSound (Intent 20) noch kein Overlap-Handling hat
+duration = 0.8; // Sekunden — feste Hördauer für alle Objekte (Intent 53), unabhängig von der
+                // tatsächlichen Länge der jeweiligen Sample-Datei
 
 ~sampleObjects = sampleFiles.collect({ |pe, i|
 	var angle = (i / n) * 2pi;
@@ -54,7 +60,7 @@ rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (
 	var movable = Movable.new(pos, SteadyMoveRule.new, roomRadius: radius + 2); // Marge, da die
 		// Objekte exakt auf der Kreislinie sitzen (roomRadius nur fuer die organische
 		// Rueckfuehrung bei bewegten Objekten relevant, siehe Movable>>step)
-	var sound = SampleSound.new(pe.fullPath, rate, phase);
+	var sound = SampleSound.new(pe.fullPath, rate, phase, duration: duration);
 	sound.preload(s); // laedt den Buffer schon jetzt, statt erst bei room.play in
 		// Block 2 — gibt der asynchronen Dateileseoperation Zeit (siehe SampleSound>>preload)
 	// Binauralizer wird vom Room über dessen Listener gebaut (Room>>register,
