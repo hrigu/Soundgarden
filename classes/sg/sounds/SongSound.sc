@@ -21,9 +21,22 @@ SongSound : Sound {
 
 	*addSynthDef {
 		SynthDef(\songSound, { |out = 0, buf = 0, amp = 0.7, loop = 1, rate = 1|
-			var sig = PlayBuf.ar(1, buf, BufRateScale.kr(buf) * rate, 1, 0, loop, doneAction: 0);
-			Out.ar(out, sig * amp);
+			var rateCtrl = Lag.kr(rate, 0.1);
+			var ampCtrl = Lag.kr(amp, 0.1);
+			var sig = PlayBuf.ar(1, buf, BufRateScale.kr(buf) * rateCtrl, 1, 0, loop,
+				doneAction: 0);
+			Out.ar(out, sig * ampCtrl);
 		}).add;
+	}
+
+	// editableParams — im GUI sinnvoll live bearbeitbare Song-Parameter. path ist kein
+	// Live-Parameter, loop vorerst ebenfalls nicht: Bool-Umschaltung braucht einen anderen
+	// Widget-Typ als die bisherigen Slider.
+	*editableParams {
+		^[
+			[\rate, ControlSpec(0.25, 2, \exp)],
+			[\amp, ControlSpec(0, 1, \lin)]
+		]
 	}
 
 	preload { |server|

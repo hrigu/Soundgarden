@@ -18,4 +18,5 @@ TestCricketSound.run;
 TestSound.run;
 TestInsectSound.run;
 TestSampleSound.run;
+TestSongSound.run;
 TestSoundPresetLibrary.run;
