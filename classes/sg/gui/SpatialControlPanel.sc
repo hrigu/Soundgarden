@@ -22,6 +22,8 @@ SpatialControlPanel {
 	var draggedSoundObject;
 	var isDraggingListener;
 	var isRotatingListener;
+	var soloSelectedOnly;
+	var soloAmpCache;
 	var <selectedSoundObject;
 
 	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true, presetsDir|
@@ -38,6 +40,8 @@ SpatialControlPanel {
 		heldKeys = Set.new;
 		isDraggingListener = false;
 		isRotatingListener = false;
+		soloSelectedOnly = false;
+		soloAmpCache = IdentityDictionary.new;
 	}
 
 	play { |updateRate = 20|
@@ -105,6 +109,7 @@ SpatialControlPanel {
 					hit = this.soundObjectAtScreenPoint(aView, x, y);
 					if(hit !== selectedSoundObject) {
 						selectedSoundObject = hit;
+						this.applySoloState;
 						this.rebuildObjectControls;
 					};
 					if(editable) { draggedSoundObject = hit };
@@ -251,10 +256,20 @@ SpatialControlPanel {
 		var sound = selectedSoundObject.sound;
 		var controlWidth = 380@26;
 		var title = StaticText(objectControlsView, 380@22);
+		var soloButton;
 
 		title.string = sound.class.name.asString;
 		title.font = Font.default.copy.size_(15).boldVariant;
 		title.align = \left;
+		objectControlsView.decorator.nextLine;
+
+		soloButton = Button(objectControlsView, 380@24).states_([
+			["Nur dieses Objekt hören"],
+			["Solo aktiv — andere stumm"]
+		]).value_(soloSelectedOnly.asInteger).action_({ |button|
+			soloSelectedOnly = (button.value == 1);
+			this.applySoloState;
+		});
 		objectControlsView.decorator.nextLine;
 
 		sound.class.editableParams.do { |pair|
@@ -432,12 +447,56 @@ SpatialControlPanel {
 		};
 	}
 
+	refreshSoloAmpCache {
+		room.orchestra.soundObjects.do { |soundObject|
+			if(soundObject.sound.respondsTo(\amp)) {
+				soloAmpCache[soundObject] = soundObject.sound.amp;
+			};
+		};
+	}
+
+	restoreSoloAmps {
+		room.orchestra.soundObjects.do { |soundObject|
+			var amp = soloAmpCache[soundObject];
+			if(amp.notNil) {
+				soundObject.sound.synth !? { soundObject.sound.synth.set(\amp, amp) };
+			};
+		};
+	}
+
+	applySoloState {
+		if(soloSelectedOnly.not) {
+			this.restoreSoloAmps;
+			^this
+		};
+
+		if(selectedSoundObject.isNil) {
+			soloSelectedOnly = false;
+			this.restoreSoloAmps;
+			^this
+		};
+
+		this.refreshSoloAmpCache;
+		room.orchestra.soundObjects.do { |soundObject|
+			var amp = if(soundObject === selectedSoundObject) {
+				soloAmpCache[soundObject] ? soundObject.sound.amp
+			} {
+				0
+			};
+			soundObject.sound.synth !? { soundObject.sound.synth.set(\amp, amp) };
+		};
+		^this
+	}
+
 	stop {
+		this.restoreSoloAmps;
 		routine !? { routine.stop };
 		draggedSoundObject = nil;
 		isDraggingListener = false;
 		isRotatingListener = false;
 		heldKeys = Set.new;
+		soloSelectedOnly = false;
+		soloAmpCache = IdentityDictionary.new;
 		objectScrollView = nil;
 		objectControlsView = nil;
 		window !? { window.close };
