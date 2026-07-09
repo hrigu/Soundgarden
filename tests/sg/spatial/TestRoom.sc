@@ -54,6 +54,57 @@ FakeBinauralizerForRoomTest {
 	init { |aReverbMix| reverbMix = aReverbMix }
 }
 
+FakeDirectOutBinauralizerForRoomTest {
+	var <reverbMix;
+
+	*new { |reverbMix = 0.3| ^super.new.init(reverbMix) }
+
+	init { |aReverbMix| reverbMix = aReverbMix }
+}
+
+FakeClassBinauralizerForRoomTest {
+	classvar <lastAddSynthDefBus;
+	var <reverbMix;
+
+	*new { |reverbMix = 0.3| ^super.new.init(reverbMix) }
+
+	*addSynthDef { |reverbBus|
+		lastAddSynthDefBus = reverbBus;
+	}
+
+	*reset {
+		lastAddSynthDefBus = nil;
+	}
+
+	init { |aReverbMix| reverbMix = aReverbMix }
+}
+
+FakeAtkBinauralizerForRoomTest {
+	classvar <lastSetupServer, <lastSetupSubjectID, <lastSetupBus, <teardownCalled;
+	var <reverbMix;
+
+	*new { |reverbMix = 0.3| ^super.new.init(reverbMix) }
+
+	*setup { |server, subjectID = 21, reverbBus|
+		lastSetupServer = server;
+		lastSetupSubjectID = subjectID;
+		lastSetupBus = reverbBus;
+	}
+
+	*teardown {
+		teardownCalled = true;
+	}
+
+	*reset {
+		lastSetupServer = nil;
+		lastSetupSubjectID = nil;
+		lastSetupBus = nil;
+		teardownCalled = false;
+	}
+
+	init { |aReverbMix| reverbMix = aReverbMix }
+}
+
 // Test-Doubles für registerFromBuilder: reine Marker-Klassen mit denselben <>-Setter-Namen wie
 // InsectSound/Movable, damit sichtbar wird, dass SoundObjectBuilder (und nicht Room selbst) die
 // Params-Events anwendet — analog Fake*ForSoundObjectBuilderTest (TestSoundObjectBuilder.sc).
@@ -97,6 +148,20 @@ TestRoom : UnitTest {
 			"teardown stoppt zuerst und gibt danach die Reverb-Ressourcen frei");
 	}
 
+	test_teardownAlsoDelegatesToAtkBinauralizerWhenConfigured {
+		var log = List.new;
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+
+		FakeAtkBinauralizerForRoomTest.reset;
+		room.binauralizerClass = FakeAtkBinauralizerForRoomTest;
+		room.teardown;
+
+		this.assertEquals(log.asArray, [\orchestraStop, \reverbStop, \reverbFree],
+			"teardown stoppt und gibt weiterhin die Reverb-Ressourcen des Room frei");
+		this.assert(FakeAtkBinauralizerForRoomTest.teardownCalled,
+			"bei konfiguriertem AtkBinauralizer delegiert Room.teardown zusätzlich an dessen teardown");
+	}
+
 	test_registerBuildsSoundObjectUsingListenersBinauralizer {
 		var log = List.new;
 		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
@@ -117,6 +182,52 @@ TestRoom : UnitTest {
 			"reverbMix wird bis zum Binauralizer durchgereicht");
 		this.assertEquals(log.asArray, [registered],
 			"orchestra.register bekommt genau dieses SoundObject");
+	}
+
+	test_setBinauralizerClassRegistersPlainBinauralizerOnReverbBus {
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new));
+
+		FakeClassBinauralizerForRoomTest.reset;
+		room.binauralizerClass = FakeClassBinauralizerForRoomTest;
+
+		this.assertEquals(FakeClassBinauralizerForRoomTest.lastAddSynthDefBus, \fakeBus,
+			"ein normaler Binauralizer-Typ wird mit dem Reverb-Bus des Room registriert");
+		this.assertEquals(room.listener.binauralizerClass, FakeClassBinauralizerForRoomTest,
+			"der Listener übernimmt die vom Room konfigurierte Binauralizer-Klasse");
+	}
+
+	test_setBinauralizerClassUsesSubjectIDForAtkSetup {
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(List.new),
+			FakeReverbForRoomTest.new(List.new));
+
+		FakeAtkBinauralizerForRoomTest.reset;
+		room.subjectID = 42;
+		room.binauralizerClass = FakeAtkBinauralizerForRoomTest;
+
+		this.assertEquals(FakeAtkBinauralizerForRoomTest.lastSetupServer, nil,
+			"im reinen sclang-Test bleibt server nil, Setup wird aber trotzdem über Room delegiert");
+		this.assertEquals(FakeAtkBinauralizerForRoomTest.lastSetupSubjectID, 42,
+			"Room reicht seine subjectID an AtkBinauralizer.setup weiter");
+		this.assertEquals(FakeAtkBinauralizerForRoomTest.lastSetupBus, \fakeBus,
+			"Atk-Setup bekommt den Reverb-Bus des Room");
+		this.assertEquals(room.listener.binauralizerClass, FakeAtkBinauralizerForRoomTest,
+			"der Listener übernimmt die vom Room konfigurierte Atk-Klasse");
+	}
+
+	test_setBinauralizerClassNilFallsBackToDirectOutForRegister {
+		var log = List.new;
+		var room = Room.forTest(FakeOrchestraForRoomTest.new(log), FakeReverbForRoomTest.new(log));
+		var registered;
+
+		room.directOutBinauralizerClass = FakeDirectOutBinauralizerForRoomTest;
+		room.binauralizerClass = nil;
+		registered = room.register(\someMovable, \someSound, reverbMix: 0.7);
+
+		this.assert(registered.binauralizer.isKindOf(FakeDirectOutBinauralizerForRoomTest),
+			"binauralizerClass = nil baut intern einen Direct-Out-/No-op-Binauralizer statt nil");
+		this.assertEquals(registered.binauralizer.reverbMix, 0.7,
+			"auch der Direct-Out-Fall übernimmt reverbMix konsistent");
 	}
 
 	test_registerFromBuilderBuildsSoundObjectViaBuilder {
