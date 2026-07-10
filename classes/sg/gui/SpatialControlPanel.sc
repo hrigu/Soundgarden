@@ -17,6 +17,7 @@ SpatialControlPanel {
 	var roomControlsView;
 	var objectScrollView;
 	var objectControlsView;
+	var samplePreviewView;
 	var routine;
 	var heldKeys;
 	var draggedSoundObject;
@@ -107,11 +108,7 @@ SpatialControlPanel {
 					isDraggingListener = true;
 				} {
 					hit = this.soundObjectAtScreenPoint(aView, x, y);
-					if(hit !== selectedSoundObject) {
-						selectedSoundObject = hit;
-						this.applySoloState;
-						this.rebuildObjectControls;
-					};
+					this.selectSoundObject(hit);
 					if(editable) { draggedSoundObject = hit };
 				};
 			};
@@ -229,12 +226,14 @@ SpatialControlPanel {
 		var contentHeight;
 		var titleHeight = 32;
 		var soloHeight = 36;
+		var samplePreviewHeight = 0;
 		var sliderHeight = 36;
 		var presetHeight = if(presetsDir.notNil) { 180 } { 0 };
 		var paddingHeight = 80;
 
 		objectControlsView !? { objectControlsView.remove };
 		objectScrollView !? { objectScrollView.remove };
+		samplePreviewView = nil;
 		objectScrollView = ScrollView(controlsView, Rect(0, top, width, height));
 		objectScrollView.hasBorder_(false);
 		objectScrollView.hasHorizontalScroller_(false);
@@ -242,8 +241,10 @@ SpatialControlPanel {
 
 		sound = selectedSoundObject !? { selectedSoundObject.sound };
 		sliderCount = if(sound.notNil) { sound.class.editableParams.size } { 0 };
+		samplePreviewHeight = this.objectPreviewHeightFor(sound);
 		contentHeight = height.max(
-			titleHeight + soloHeight + (sliderCount * sliderHeight) + presetHeight + paddingHeight
+			titleHeight + soloHeight + samplePreviewHeight + (sliderCount * sliderHeight)
+			+ presetHeight + paddingHeight
 		);
 		objectControlsView = CompositeView(objectScrollView, Rect(0, 0, visibleWidth, contentHeight));
 		objectControlsView.decorator = FlowLayout(objectControlsView.bounds.insetBy(16, 16));
@@ -272,18 +273,116 @@ SpatialControlPanel {
 			["Nur dieses Objekt hören"],
 			["Solo aktiv — andere stumm"]
 		]).value_(soloSelectedOnly.asInteger).action_({ |button|
-			soloSelectedOnly = (button.value == 1);
-			this.applySoloState;
+			this.setSoloSelectedOnly(button.value == 1);
 		});
 		objectControlsView.decorator.nextLine;
+
+		if(sound.isKindOf(SampleSound)) {
+			this.buildSamplePreviewControls(sound);
+		};
 
 		sound.class.editableParams.do { |pair|
 			var key = pair[0];
 			var spec = pair[1];
 			EZSlider(objectControlsView, controlWidth, key.asString, spec,
-				{ |ez| sound.setParam(key, ez.value) }, sound.perform(key), false, 120, 56);
+				{ |ez|
+					sound.setParam(key, ez.value);
+					this.refreshSamplePreview;
+				}, sound.perform(key), false, 120, 56);
 			objectControlsView.decorator.nextLine;
 		};
+	}
+
+	objectPreviewHeightFor { |sound|
+		if(sound.isKindOf(SampleSound)) {
+			^138
+		};
+		^0
+	}
+
+	buildSamplePreviewControls { |sound|
+		var fileLabel = StaticText(objectControlsView, 380@20);
+		var preview = sound.samplePreview;
+
+		fileLabel.string = sound.sampleFileName;
+		fileLabel.align = \left;
+		objectControlsView.decorator.nextLine;
+
+		if(preview[\error].notNil) {
+			var errorLabel = StaticText(objectControlsView, 380@36);
+			errorLabel.string = preview[\error];
+			errorLabel.stringColor = Color.gray(0.35);
+			errorLabel.align = \left;
+			objectControlsView.decorator.nextLine;
+		} {
+			samplePreviewView = UserView(objectControlsView, 380@92);
+			samplePreviewView.background = Color.gray(0.97);
+			samplePreviewView.drawFunc = { this.drawSamplePreview(samplePreviewView, sound, preview) };
+			objectControlsView.decorator.nextLine;
+		};
+	}
+
+	refreshSamplePreview {
+		samplePreviewView !? { samplePreviewView.refresh };
+		^this
+	}
+
+	drawSamplePreview { |aView, sound, preview|
+		var bounds = aView.bounds;
+		var peaks = preview[\peaks] ? [];
+		var range = this.sampleSelectionRangeFor(sound, preview);
+		var startX = bounds.width * range[0];
+		var endX = bounds.width * range[1];
+		var selectionWidth = (endX - startX).max(3);
+		var selectionRect = Rect(startX, 0, selectionWidth, bounds.height);
+		var overlayHeight = 12;
+		var midY = bounds.height * 0.5;
+
+		Pen.fillColor = Color.gray(0.97);
+		Pen.fillRect(bounds);
+
+		Pen.fillColor = Color.red(0.95, 0.18);
+		Pen.fillRect(Rect(startX, 0, selectionWidth, overlayHeight));
+
+		Pen.fillColor = Color.red(1.0, 0.12);
+		Pen.fillRect(selectionRect);
+
+		Pen.strokeColor = Color.gray(0.75);
+		Pen.width = 1;
+		Pen.line(0 @ midY, bounds.width @ midY);
+		Pen.stroke;
+
+		Pen.strokeColor = Color.black.alpha_(0.75);
+		Pen.width = 1;
+		peaks.size.do { |index|
+			var x = if(peaks.size <= 1) { bounds.width * 0.5 } { index / (peaks.size - 1) * bounds.width };
+			var halfHeight = ((peaks[index] ? 0) * (bounds.height * 0.36)).max(1);
+			Pen.line(x @ (midY - halfHeight), x @ (midY + halfHeight));
+			Pen.stroke;
+		};
+
+		Pen.strokeColor = Color.red(0.85);
+		Pen.width = 2;
+		Pen.line(startX @ 0, startX @ bounds.height);
+		Pen.line((startX + selectionWidth) @ 0, (startX + selectionWidth) @ bounds.height);
+		Pen.stroke;
+
+		Pen.strokeColor = Color.gray(0.6);
+		Pen.width = 1;
+		Pen.addRect(bounds.insetBy(0.5, 0.5));
+		Pen.stroke;
+	}
+
+	sampleSelectionRangeFor { |sound, preview|
+		var start = sound.startFrac.clip(0, 1);
+		var previewDuration = preview[\duration] ? 0;
+		var end = 1.0;
+
+		if(sound.duration > 0 and: { previewDuration > 0 }) {
+			end = (start + (sound.duration / previewDuration)).clip(start, 1.0);
+		};
+
+		^[start, end]
 	}
 
 	// Preset-Bibliothek fürs ausgewählte Soundobjekt.
@@ -454,19 +553,32 @@ SpatialControlPanel {
 		};
 	}
 
-	refreshSoloAmpCache {
-		room.orchestra.soundObjects.do { |soundObject|
-			if(soundObject.sound.respondsTo(\amp)) {
-				soloAmpCache[soundObject] = soundObject.sound.amp;
+	selectSoundObject { |soundObject|
+		if(soundObject !== selectedSoundObject) {
+			if(soloSelectedOnly) {
+				this.restoreSoloAmps;
+			};
+			selectedSoundObject = soundObject;
+			this.applySoloState;
+			if(controlsView.notNil) {
+				this.rebuildObjectControls;
 			};
 		};
+		^this
+	}
+
+	setSoloSelectedOnly { |aBool|
+		soloSelectedOnly = aBool.asBoolean;
+		this.applySoloState;
+		^this
 	}
 
 	restoreSoloAmps {
 		room.orchestra.soundObjects.do { |soundObject|
-			var amp = soloAmpCache[soundObject];
-			if(amp.notNil) {
-				soundObject.sound.synth !? { soundObject.sound.synth.set(\amp, amp) };
+			if(soundObject.sound.respondsTo(\amp)) {
+				soundObject.sound.synth !? {
+					soundObject.sound.synth.set(\amp, soundObject.sound.amp)
+				};
 			};
 		};
 	}
@@ -483,14 +595,15 @@ SpatialControlPanel {
 			^this
 		};
 
-		this.refreshSoloAmpCache;
 		room.orchestra.soundObjects.do { |soundObject|
-			var amp = if(soundObject === selectedSoundObject) {
-				soloAmpCache[soundObject] ? soundObject.sound.amp
-			} {
-				0
+			if(soundObject.sound.respondsTo(\amp)) {
+				var amp = if(soundObject === selectedSoundObject) {
+					soundObject.sound.amp
+				} {
+					0
+				};
+				soundObject.sound.synth !? { soundObject.sound.synth.set(\amp, amp) };
 			};
-			soundObject.sound.synth !? { soundObject.sound.synth.set(\amp, amp) };
 		};
 		^this
 	}

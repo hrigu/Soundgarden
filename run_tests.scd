@@ -11,6 +11,7 @@ TestSteadyMoveRule.run;
 TestMovable.run;
 TestListener.run;
 TestRoom.run;
+TestSpatialControlPanel.run;
 TestSoundObjectBuilder.run;
 TestCallingPattern.run;
 TestRhythmPatternCreator.run;

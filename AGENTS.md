@@ -91,17 +91,29 @@ sinnvoll test-first entwickeln:
   Ordnerkonvention, SuperCollider selbst hat keine echten Namespaces — siehe CLAUDE.md
   Architektur), Tests spiegelbildlich nach `tests/sg/{soundobjects,spatial}/`. Andere Domains
   (z.B. `BootTrackDetection`, Live-Set) liegen direkt in `classes/`/`tests/`, nicht unter `sg`.
+- GUI-nahe, rein logische Tests ohne echten Server-/Audio-Bedarf können unter `tests/sg/gui/`
+  liegen, wenn sie keine SynthDefs oder Hörtests voraussetzen.
 
 ### Headless-Testlauf vor dem Push (falls sclang in der Agent-Umgebung verfügbar ist)
 
 Reine sclang-Logik-Tests (kein Server nötig, siehe oben) lassen sich ohne Audio-Hardware
-ausführen: `sclang -l <conf.yaml> <script.scd>`, wobei die Konfiguration `classes/` und
-`tests/` als `includePaths` einträgt und das Skript alle `Test*`-Klassen `.run` aufruft,
-gefolgt von `0.exit`. In Umgebungen mit `QT_QPA_PLATFORM=offscreen` und
-`QTWEBENGINE_DISABLE_SANDBOX=1` als Env-Variablen (nötig für headless/als root). Ein
-Coding-Agent mit sclang-Zugriff **soll** dies vor jedem Push ausführen, wenn testbare
-Logik geändert wurde — echtes Feedback statt reinem Code-Lesen. Ersetzt nicht den
-Hörtest für SynthDefs/Klangverhalten, den nur der Nutzer selbst machen kann.
+ausführen. In diesem Repo auf macOS funktioniert zuverlässig:
+`zsh -lic 'cd <repo> && sclang run_tests.scd'`
+
+Voraussetzungen/Details:
+- `boot/load_classes.scd` muss mindestens einmal gelaufen sein, damit `classes/` und `tests/`
+  persistent in `sclang_conf.yaml` stehen.
+- Der Agent-Shell-`PATH` muss `sclang` enthalten; auf dieser Maschine liegt es unter
+  `/Applications/SuperCollider.app/Contents/MacOS/sclang`.
+- `QT_QPA_PLATFORM=offscreen` ist **hier nicht** verwendbar: das installierte macOS-Build
+  bringt nur das Qt-Platform-Plugin `cocoa` mit, nicht `offscreen`.
+- `QTWEBENGINE_DISABLE_SANDBOX=1` ist für diesen lokalen Lauf nicht nötig.
+
+In anderen Umgebungen kann weiterhin ein explizites `sclang -l <conf.yaml> <script.scd>`
+sinnvoll sein, wenn der Klassenpfad nicht schon persistent konfiguriert ist. Ein
+Coding-Agent mit sclang-Zugriff **soll** den Testlauf vor jedem Push ausführen, wenn
+testbare Logik geändert wurde — echtes Feedback statt reinem Code-Lesen. Ersetzt nicht
+den Hörtest für SynthDefs/Klangverhalten, den nur der Nutzer selbst machen kann.
 
 ## Commit-Konventionen
 

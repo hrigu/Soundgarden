@@ -13,6 +13,7 @@ SampleSound : Sound {
 	var <>duration;   // Sekunden, feste Hördauer des Ausschnitts (Intent 53) — 0 bedeutet
 	                  // "kein Cutoff": komplette Restlänge ab startFrac wie bisher
 	var <buffer;    // geladener Mono-Buffer, ab play() gesetzt
+	var <previewCache; // gecachte Sprachseiten-Metadaten/Vorschauen für GUI-Zwecke
 
 	// erzeugt eine Instanz mit gegebener Audiodatei und (oder Default-)Klangparametern
 	*new { |path, rate = 2, phase = 0, amp = 0.5, startFrac = 0, duration = 0|
@@ -26,6 +27,7 @@ SampleSound : Sound {
 		amp = aAmp;
 		startFrac = aStartFrac;
 		duration = aDuration;
+		previewCache = Dictionary.new;
 	}
 
 	// registriert die \sampleSound-SynthDef beim Server. buf wird als Instanz-Argument
@@ -78,6 +80,72 @@ SampleSound : Sound {
 	// lief.
 	preload { |server|
 		^buffer = Buffer.readChannel(server, path, channels: [0]);
+	}
+
+	sampleFileName {
+		^PathName(path).fileName
+	}
+
+	// liefert Dateiname, Dauer und eine kleine normalisierte Peak-Huelle fuer die GUI.
+	// Liest direkt aus der Audiodatei (nicht aus dem Server-Buffer), damit die Daten auch
+	// ohne laufenden Synth verfuegbar bleiben. Ergebnisse pro bucketCount cachen.
+	samplePreview { |bucketCount = 96|
+		var normalizedBucketCount = bucketCount.asInteger.max(1);
+
+		if(previewCache[normalizedBucketCount].isNil) {
+			previewCache[normalizedBucketCount] = this.prBuildSamplePreview(normalizedBucketCount);
+		};
+
+		^previewCache[normalizedBucketCount]
+	}
+
+	prBuildSamplePreview { |bucketCount|
+		var soundFile = SoundFile.openRead(path.standardizePath);
+		var fileName = this.sampleFileName;
+		var result;
+
+		if(soundFile.isNil) {
+			^(fileName: fileName, path: path, duration: 0.0, numFrames: 0, bucketCount: bucketCount,
+				peaks: Array.fill(bucketCount, 0.0), error: "Sample-Datei nicht lesbar")
+		};
+
+		protect {
+			var totalFrames = soundFile.numFrames.asInteger;
+			var numChannels = soundFile.numChannels.asInteger.max(1);
+			var peaks = Array.fill(bucketCount, 0.0);
+			var framesPerBucket = (totalFrames / bucketCount).ceil.asInteger.max(1);
+			var maxPeak = 0.0;
+
+			bucketCount.do { |bucketIndex|
+				var startFrame = bucketIndex * framesPerBucket;
+
+				if(startFrame < totalFrames) {
+					var framesToRead = min(framesPerBucket, totalFrames - startFrame).asInteger;
+					var rawData = FloatArray.newClear(framesToRead * numChannels);
+					var bucketPeak = 0.0;
+
+					soundFile.seek(startFrame, 0);
+					soundFile.readData(rawData);
+					rawData.do { |sample|
+						var abs = sample.abs;
+						if(abs > bucketPeak) { bucketPeak = abs };
+					};
+					peaks[bucketIndex] = bucketPeak;
+					if(bucketPeak > maxPeak) { maxPeak = bucketPeak };
+				};
+			};
+
+			if(maxPeak > 0) {
+				peaks = peaks.collect { |peak| peak / maxPeak };
+			};
+
+			result = (fileName: fileName, path: path, duration: soundFile.duration,
+				numFrames: totalFrames, bucketCount: bucketCount, peaks: peaks, error: nil);
+		} {
+			soundFile.close;
+		};
+
+		^result
 	}
 
 	// erzeugt den Synth; lädt den Buffer selbst nach, falls preload nicht vorher
