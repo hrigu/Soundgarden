@@ -94,4 +94,92 @@ TestSampleSound : UnitTest {
 		this.assert(preview[\error].notNil,
 			"fehlende Datei soll eine lesbare Fallback-Info statt eines Fehlers liefern");
 	}
+
+	test_suggestExcerptUsesWholeFileForShortSamples {
+		var sound;
+		var suggestion;
+
+		this.prWriteTestSample;
+		sound = SampleSound.new(this.prTestSamplePath);
+		suggestion = sound.suggestExcerpt(shortThreshold: 1.1, targetDuration: 0.3,
+			peakThreshold: 0.25, bucketCount: 4);
+
+		this.assertEquals(suggestion[\startFrac], 0.0);
+		this.assertEquals(suggestion[\duration], 0.0);
+		this.assertEquals(suggestion[\strategy], \fullFile);
+	}
+
+	test_suggestExcerptStartsAtFirstRelevantPeakForLongSamples {
+		var sound;
+		var suggestion;
+
+		this.prWriteTestSample;
+		sound = SampleSound.new(this.prTestSamplePath);
+		suggestion = sound.suggestExcerpt(shortThreshold: 0.5, targetDuration: 0.3,
+			peakThreshold: 0.75, bucketCount: 4);
+
+		this.assertEquals(suggestion[\startFrac], 0.5,
+			"bei Buckets [0.0, 0.5, 1.0, 0.25] ist der erste Treffer >= 0.75 im dritten Bucket");
+		this.assertEquals(suggestion[\duration], 0.3);
+		this.assertEquals(suggestion[\strategy], \firstPeakWindow);
+	}
+
+	test_suggestExcerptFallsBackToBeginningWhenNoPeakMatches {
+		var sound;
+		var suggestion;
+
+		this.prWriteTestSample;
+		sound = SampleSound.new(this.prTestSamplePath);
+		suggestion = sound.suggestExcerpt(shortThreshold: 0.5, targetDuration: 0.3,
+			peakThreshold: 1.1, bucketCount: 4);
+
+		this.assertEquals(suggestion[\startFrac], 0.0);
+		this.assertEquals(suggestion[\duration], 0.3);
+		this.assertEquals(suggestion[\strategy], \fallbackWindow);
+	}
+
+	test_excerptLevelEstimateUsesWholeRemainingFileForDurationZero {
+		var sound;
+		var estimate;
+
+		this.prWriteTestSample;
+		sound = SampleSound.new(this.prTestSamplePath);
+		estimate = sound.excerptLevelEstimate;
+
+		this.assertEquals(estimate[\startFrame], 0);
+		this.assertEquals(estimate[\frameCount], 4);
+		this.assertEquals(estimate[\duration], 1.0);
+		this.assertEquals(estimate[\peak], 1.0);
+		this.assertEquals(estimate[\rms], 0.57282196186948,
+			"RMS von [0.0, 0.5, -1.0, 0.25] = sqrt(1.3125 / 4)");
+		this.assertEquals(estimate[\error], nil);
+	}
+
+	test_excerptLevelEstimateRespectsStartFracAndDuration {
+		var sound;
+		var estimate;
+
+		this.prWriteTestSample;
+		sound = SampleSound.new(this.prTestSamplePath, startFrac: 0.25, duration: 0.5);
+		estimate = sound.excerptLevelEstimate;
+
+		this.assertEquals(estimate[\startFrame], 1);
+		this.assertEquals(estimate[\frameCount], 2);
+		this.assertEquals(estimate[\duration], 0.5);
+		this.assertEquals(estimate[\peak], 1.0);
+		this.assertFloatEquals(estimate[\rms], 0.79056941504209,
+			"RMS von [0.5, -1.0] = sqrt(1.25 / 2)");
+	}
+
+	test_excerptLevelEstimateReturnsFallbackForMissingFile {
+		var estimate = SampleSound.new("/definitely/missing/sample.wav").excerptLevelEstimate;
+
+		this.assertEquals(estimate[\fileName], "sample.wav");
+		this.assertEquals(estimate[\frameCount], 0);
+		this.assertEquals(estimate[\duration], 0.0);
+		this.assertEquals(estimate[\peak], 0.0);
+		this.assertEquals(estimate[\rms], 0.0);
+		this.assert(estimate[\error].notNil,
+			"fehlende Datei soll auch bei Pegelschaetzung eine lesbare Fallback-Info liefern");
+	}
 }

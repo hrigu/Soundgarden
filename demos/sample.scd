@@ -17,14 +17,15 @@
 // Phasenversatz (0, 1/N, 2/N, ... einer Periode) — die Samples triggern dadurch nicht alle
 // gleichzeitig, sondern wandern hörbar der Reihe nach um den Hörer herum.
 //
-// Alle Objekte bekommen dieselbe duration (Intent 53): die Sample-Dateien selbst sind
-// unterschiedlich lang (kurze Percussion-Hits neben langen Instrumentalphrasen), ohne
-// duration klänge das Kreis-Ensemble entsprechend uneinheitlich lang.
+// Kurze Samples sollen vollstaendig bleiben, laengere automatisch auf einen relevanten
+// Ausschnitt springen (Intent 53 Folgeausbau): gleiche Demo-Idee wie bisher, aber weniger
+// "leere" Stellen in langen Phrasen/Rolls.
 
 // --- 1) Setup: SynthDefs registrieren + alle Soundobjekte anlegen ---
 (
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen (SuperCollider-Syntaxregel).
-var soundsDir, sampleFiles, n, radius, rate, maxSamples, duration;
+var soundsDir, sampleFiles, n, radius, rate, maxSamples, shortThreshold, targetDuration,
+	peakThreshold, previewBucketCount;
 
 SampleSound.addSynthDef;
 // Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52)
@@ -50,17 +51,24 @@ radius = 3;
 ~viewRadius = radius + 1;
 rate = 1; //0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (~1s), da
           // SampleSound (Intent 20) noch kein Overlap-Handling hat
-duration = 0.2; // Sekunden — feste Hördauer für alle Objekte (Intent 53), unabhängig von der
-                // tatsächlichen Länge der jeweiligen Sample-Datei
+shortThreshold = 1.0;  // Sekunden — kurze One-Shots komplett spielen
+targetDuration = 1.5;  // Sekunden — Zielausschnitt für längere Samples
+peakThreshold = 0.25;  // 0..1 relativ zur normalisierten Peak-Huelle
+previewBucketCount = 96;
 
 ~sampleObjects = sampleFiles.collect({ |pe, i|
 	var angle = (i / n) * 2pi;
 	var pos = [radius * sin(angle), radius * cos(angle), 0];
 	var phase = i / n;
+	var sound = SampleSound.new(pe.fullPath, rate, phase);
+	var suggestion = sound.suggestExcerpt(shortThreshold: shortThreshold,
+		targetDuration: targetDuration, peakThreshold: peakThreshold,
+		bucketCount: previewBucketCount);
 	var movable = Movable.new(pos, SteadyMoveRule.new, roomRadius: radius + 2); // Marge, da die
 		// Objekte exakt auf der Kreislinie sitzen (roomRadius nur fuer die organische
 		// Rueckfuehrung bei bewegten Objekten relevant, siehe Movable>>step)
-	var sound = SampleSound.new(pe.fullPath, rate, phase, duration: duration);
+	sound.startFrac = suggestion[\startFrac];
+	sound.duration = suggestion[\duration];
 	sound.preload(s); // laedt den Buffer schon jetzt, statt erst bei room.play in
 		// Block 2 — gibt der asynchronen Dateileseoperation Zeit (siehe SampleSound>>preload)
 	// Binauralizer wird vom Room über dessen Listener gebaut (Room>>register,
@@ -70,6 +78,8 @@ duration = 0.2; // Sekunden — feste Hördauer für alle Objekte (Intent 53), u
 
 "% Sample(s) im Kreis (max %): %\n".postf(n, maxSamples,
 	sampleFiles.collect({ |pe| pe.fileNameWithoutExtension }));
+"Ausschnitt-Heuristik: shortThreshold=%, targetDuration=%, peakThreshold=%\n".postf(
+	shortThreshold, targetDuration, peakThreshold);
 )
 
 // --- 2) Abspielen ---

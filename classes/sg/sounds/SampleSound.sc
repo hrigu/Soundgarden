@@ -99,6 +99,91 @@ SampleSound : Sound {
 		^previewCache[normalizedBucketCount]
 	}
 
+	// heuristischer Vorschlag fuer sample.scd: kurze Samples ganz, laengere ab dem ersten
+	// ausreichend starken Peak mit festem Fenster. Gibt nur einen Vorschlag zurueck, schreibt
+	// die Instanz noch nicht um.
+	suggestExcerpt { |shortThreshold = 0.5, targetDuration = 0.3, peakThreshold = 0.25,
+			bucketCount = 96|
+		var preview = this.samplePreview(bucketCount);
+		var durationSeconds = preview[\duration] ? 0.0;
+		var peaks = preview[\peaks] ? [];
+		var hitIndex;
+		var startFracSuggestion = 0.0;
+		var durationSuggestion;
+
+		if(durationSeconds <= shortThreshold) {
+			^(startFrac: 0.0, duration: 0.0, strategy: \fullFile)
+		};
+
+		hitIndex = peaks.detectIndex { |peak| peak >= peakThreshold };
+		if(hitIndex.notNil and: { peaks.size > 0 }) {
+			startFracSuggestion = hitIndex / peaks.size;
+		};
+
+		durationSuggestion = targetDuration.min(durationSeconds).max(0.0);
+		^(startFrac: startFracSuggestion, duration: durationSuggestion,
+			strategy: if(hitIndex.notNil) { \firstPeakWindow } { \fallbackWindow })
+	}
+
+	// Pegelschaetzung fuer den tatsaechlich gespielten Ausschnitt. Fuer duration = 0 wird
+	// der komplette Rest des Files ab startFrac analysiert. Dient dem pragmatischen
+	// Lautheitsausgleich in demos/sample.scd, nicht als allgemeine Loudness-Normierung.
+	excerptLevelEstimate {
+		var soundFile = SoundFile.openRead(path.standardizePath);
+		var fileName = this.sampleFileName;
+		var result;
+
+		if(soundFile.isNil) {
+			^(fileName: fileName, path: path, startFrame: 0, frameCount: 0, duration: 0.0,
+				rms: 0.0, peak: 0.0, error: "Sample-Datei nicht lesbar")
+		};
+
+		protect {
+			var totalFrames = soundFile.numFrames.asInteger.max(0);
+			var numChannels = soundFile.numChannels.asInteger.max(1);
+			var sampleRate = soundFile.sampleRate.asFloat.max(1.0);
+			var boundedStartFrac = startFrac.clip(0, 1);
+			var startFrame = (boundedStartFrac * totalFrames).floor.asInteger.clip(0, totalFrames);
+			var availableFrames = (totalFrames - startFrame).max(0);
+			var targetFrames = if(duration > 0) {
+				(duration * sampleRate).ceil.asInteger.max(1)
+			} {
+				availableFrames
+			};
+			var frameCount = targetFrames.min(availableFrames).max(0);
+			var rawData = FloatArray.newClear(frameCount * numChannels);
+			var sumSquares = 0.0;
+			var peak = 0.0;
+			var sampleCount = 0;
+
+			if(frameCount > 0) {
+				soundFile.seek(startFrame, 0);
+				soundFile.readData(rawData);
+				rawData.do { |sample|
+					var abs = sample.abs;
+					sumSquares = sumSquares + (sample * sample);
+					if(abs > peak) { peak = abs };
+					sampleCount = sampleCount + 1;
+				};
+			};
+
+			result = (
+				fileName: fileName,
+				path: path,
+				startFrame: startFrame,
+				frameCount: frameCount,
+				duration: frameCount / sampleRate,
+				rms: if(sampleCount > 0) { (sumSquares / sampleCount).sqrt } { 0.0 },
+				peak: peak,
+				error: nil
+			);
+		} {
+			soundFile.close;
+		};
+
+		^result
+	}
+
 	prBuildSamplePreview { |bucketCount|
 		var soundFile = SoundFile.openRead(path.standardizePath);
 		var fileName = this.sampleFileName;
