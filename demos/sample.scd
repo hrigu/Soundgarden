@@ -25,7 +25,7 @@
 (
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen (SuperCollider-Syntaxregel).
 var soundsDir, sampleFiles, n, radius, rate, maxSamples, shortThreshold, targetDuration,
-	peakThreshold, previewBucketCount;
+	peakThreshold, previewBucketCount, baseAmp, targetRms, minGain, maxGain, silenceFloor;
 
 SampleSound.addSynthDef;
 // Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52)
@@ -55,6 +55,11 @@ shortThreshold = 1.0;  // Sekunden — kurze One-Shots komplett spielen
 targetDuration = 1.5;  // Sekunden — Zielausschnitt für längere Samples
 peakThreshold = 0.25;  // 0..1 relativ zur normalisierten Peak-Huelle
 previewBucketCount = 96;
+baseAmp = 0.5;        // bisheriger SampleSound-Default
+targetRms = 0.18;     // pragmatischer Zielwert fuer den gespielten Ausschnitt
+minGain = 0.5;        // keine drastische Absenkung einzelner Samples
+maxGain = 2.0;        // keine extreme Verstaerkung leiser/unsauberer Dateien
+silenceFloor = 0.0001; // fast stille Ausschnitte nicht kuenstlich aufblasen
 
 ~sampleObjects = sampleFiles.collect({ |pe, i|
 	var angle = (i / n) * 2pi;
@@ -64,15 +69,28 @@ previewBucketCount = 96;
 	var suggestion = sound.suggestExcerpt(shortThreshold: shortThreshold,
 		targetDuration: targetDuration, peakThreshold: peakThreshold,
 		bucketCount: previewBucketCount);
+	var excerptLevel;
+	var gainFactor;
 	var movable = Movable.new(pos, SteadyMoveRule.new, roomRadius: radius + 2); // Marge, da die
 		// Objekte exakt auf der Kreislinie sitzen (roomRadius nur fuer die organische
 		// Rueckfuehrung bei bewegten Objekten relevant, siehe Movable>>step)
 	sound.startFrac = suggestion[\startFrac];
 	sound.duration = suggestion[\duration];
+	excerptLevel = sound.excerptLevelEstimate;
+	gainFactor = if((excerptLevel[\rms] ? 0.0) < silenceFloor) {
+		1.0
+	} {
+		(targetRms / excerptLevel[\rms]).clip(minGain, maxGain)
+	};
+	sound.amp = baseAmp * gainFactor;
 	sound.preload(s); // laedt den Buffer schon jetzt, statt erst bei room.play in
 		// Block 2 — gibt der asynchronen Dateileseoperation Zeit (siehe SampleSound>>preload)
 	// Binauralizer wird vom Room über dessen Listener gebaut (Room>>register,
 	// Listener>>makeBinauralizer) — dieses Skript kennt AtkBinauralizer nicht mehr direkt.
+	"% -> startFrac=%, duration=%, rms=%, peak=%, gain=%, amp=%\n".postf(
+		pe.fileName, sound.startFrac.round(0.001), sound.duration.round(0.001),
+		(excerptLevel[\rms] ? 0.0).round(0.0001), (excerptLevel[\peak] ? 0.0).round(0.0001),
+		gainFactor.round(0.001), sound.amp.round(0.001));
 	~room.register(movable, sound);
 });
 
@@ -80,6 +98,8 @@ previewBucketCount = 96;
 	sampleFiles.collect({ |pe| pe.fileNameWithoutExtension }));
 "Ausschnitt-Heuristik: shortThreshold=%, targetDuration=%, peakThreshold=%\n".postf(
 	shortThreshold, targetDuration, peakThreshold);
+"Lautheits-Heuristik: baseAmp=%, targetRms=%, minGain=%, maxGain=%, silenceFloor=%\n".postf(
+	baseAmp, targetRms, minGain, maxGain, silenceFloor);
 )
 
 // --- 2) Abspielen ---
