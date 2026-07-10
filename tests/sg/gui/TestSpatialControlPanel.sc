@@ -1,43 +1,7 @@
-// Test-Doubles für SpatialControlPanel-Solo-Logik: kein echtes GUI, kein Server, nur
-// nachvollziehbare amp-Set-Aufrufe auf Fake-Synths.
-FakeSynthForSpatialControlPanelTest {
-	var <log;
-
-	*new { |aLog| ^super.new.init(aLog) }
-
-	init { |aLog| log = aLog }
-
-	set { |key, value| log.add([key, value]) }
-}
-
-FakeSoundForSpatialControlPanelTest {
-	var <>amp;
-	var <synth;
-
-	*new { |amp = 0.5, synth| ^super.new.init(amp, synth) }
-
-	init { |anAmp, aSynth|
-		amp = anAmp;
-		synth = aSynth;
-	}
-}
-
-FakeSoundObjectForSpatialControlPanelTest {
-	var <>sound;
-
-	*new { |aSound| ^super.new.init(aSound) }
-
-	init { |aSound| sound = aSound }
-}
-
-FakeOrchestraForSpatialControlPanelTest {
-	var <>soundObjects;
-
-	*new { |someSoundObjects| ^super.new.init(someSoundObjects) }
-
-	init { |someSoundObjects| soundObjects = someSoundObjects }
-}
-
+// Test-Double für SpatialControlPanel: kein echtes GUI, kein Server. Solo/Mute-Logik ist
+// nach SoloMuteController ausgelagert (siehe tests/sg/gui/TestSoloMuteController.sc, Intent
+// 55) — hier bleiben nur noch die Tests für sampleSelectionRangeFor, die keine Orchestra
+// brauchen.
 FakeRoomForSpatialControlPanelTest {
 	var <>orchestra;
 
@@ -46,79 +10,9 @@ FakeRoomForSpatialControlPanelTest {
 	init { |anOrchestra| orchestra = anOrchestra }
 }
 
-// Test für die GUI-nahe Solo-Zustandslogik. Ausführen über run_tests.scd.
+// Test für die verbleibende GUI-nahe Logik von SpatialControlPanel. Ausführen über
+// run_tests.scd.
 TestSpatialControlPanel : UnitTest {
-
-	test_selectionChangeInSoloRestoresOriginalAmpBeforeMutingPreviousSelection {
-		var firstLog = List.new;
-		var secondLog = List.new;
-		var first = FakeSoundObjectForSpatialControlPanelTest.new(
-			FakeSoundForSpatialControlPanelTest.new(0.2, FakeSynthForSpatialControlPanelTest.new(firstLog))
-		);
-		var second = FakeSoundObjectForSpatialControlPanelTest.new(
-			FakeSoundForSpatialControlPanelTest.new(0.8, FakeSynthForSpatialControlPanelTest.new(secondLog))
-		);
-		var panel = SpatialControlPanel.new(
-			FakeRoomForSpatialControlPanelTest.new(
-				FakeOrchestraForSpatialControlPanelTest.new([first, second])
-			)
-		);
-
-		panel.selectSoundObject(first);
-		panel.setSoloSelectedOnly(true);
-		panel.selectSoundObject(second);
-
-		this.assertEquals(firstLog.asArray, [[\amp, 0.2], [\amp, 0.2], [\amp, 0.2], [\amp, 0]],
-			"beim Wechsel wird zuerst der komplette Originalzustand restauriert; erst danach " ++
-			"wird das zuvor selektierte Objekt als Nicht-Selektion stummgeschaltet");
-		this.assertEquals(secondLog.asArray, [[\amp, 0.8], [\amp, 0], [\amp, 0.8], [\amp, 0.8]],
-			"auch ein zuvor stummes Objekt wird beim Wechsel erst restauriert und bleibt danach " ++
-			"als neue Selektion hörbar");
-	}
-
-	test_disablingSoloRestoresAllObjectAmps {
-		var firstLog = List.new;
-		var secondLog = List.new;
-		var first = FakeSoundObjectForSpatialControlPanelTest.new(
-			FakeSoundForSpatialControlPanelTest.new(0.2, FakeSynthForSpatialControlPanelTest.new(firstLog))
-		);
-		var second = FakeSoundObjectForSpatialControlPanelTest.new(
-			FakeSoundForSpatialControlPanelTest.new(0.8, FakeSynthForSpatialControlPanelTest.new(secondLog))
-		);
-		var panel = SpatialControlPanel.new(
-			FakeRoomForSpatialControlPanelTest.new(
-				FakeOrchestraForSpatialControlPanelTest.new([first, second])
-			)
-		);
-
-		panel.selectSoundObject(first);
-		panel.setSoloSelectedOnly(true);
-		panel.setSoloSelectedOnly(false);
-
-		this.assertEquals(firstLog.last, [\amp, 0.2],
-			"beim Ausschalten von Solo kehrt das selektierte Objekt zu seiner Instanz-amp zurück");
-		this.assertEquals(secondLog.last, [\amp, 0.8],
-			"beim Ausschalten von Solo kehrt auch ein zuvor stummes Objekt zu seiner " ++
-			"Instanz-amp zurück");
-	}
-
-	test_enablingSoloWithoutSelectionKeepsConsistentState {
-		var log = List.new;
-		var soundObject = FakeSoundObjectForSpatialControlPanelTest.new(
-			FakeSoundForSpatialControlPanelTest.new(0.4, FakeSynthForSpatialControlPanelTest.new(log))
-		);
-		var panel = SpatialControlPanel.new(
-			FakeRoomForSpatialControlPanelTest.new(
-				FakeOrchestraForSpatialControlPanelTest.new([soundObject])
-			)
-		);
-
-		panel.setSoloSelectedOnly(true);
-
-		this.assertEquals(log.asArray, [[\amp, 0.4]],
-			"ohne Auswahl wird nichts dauerhaft stummgeschaltet, sondern der Originalpegel " ++
-			"wiederhergestellt");
-	}
 
 	test_sampleSelectionRangeUsesDurationRelativeToPreview {
 		var panel = SpatialControlPanel.new(FakeRoomForSpatialControlPanelTest.new);

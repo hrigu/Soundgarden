@@ -23,8 +23,7 @@ SpatialControlPanel {
 	var draggedSoundObject;
 	var isDraggingListener;
 	var isRotatingListener;
-	var soloSelectedOnly;
-	var soloAmpCache;
+	var soloMuteController;
 	var <selectedSoundObject;
 
 	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true, presetsDir|
@@ -41,8 +40,7 @@ SpatialControlPanel {
 		heldKeys = Set.new;
 		isDraggingListener = false;
 		isRotatingListener = false;
-		soloSelectedOnly = false;
-		soloAmpCache = IdentityDictionary.new;
+		soloMuteController = SoloMuteController.new(room.orchestra);
 	}
 
 	play { |updateRate = 20|
@@ -272,7 +270,7 @@ SpatialControlPanel {
 		soloButton = Button(objectControlsView, 380@24).states_([
 			["Nur dieses Objekt hören"],
 			["Solo aktiv — andere stumm"]
-		]).value_(soloSelectedOnly.asInteger).action_({ |button|
+		]).value_(soloMuteController.soloSelectedOnly.asInteger).action_({ |button|
 			this.setSoloSelectedOnly(button.value == 1);
 		});
 		objectControlsView.decorator.nextLine;
@@ -555,11 +553,9 @@ SpatialControlPanel {
 
 	selectSoundObject { |soundObject|
 		if(soundObject !== selectedSoundObject) {
-			if(soloSelectedOnly) {
-				this.restoreSoloAmps;
-			};
+			soloMuteController.restoreIfActive;
 			selectedSoundObject = soundObject;
-			this.applySoloState;
+			soloMuteController.applySoloState(selectedSoundObject);
 			if(controlsView.notNil) {
 				this.rebuildObjectControls;
 			};
@@ -568,55 +564,17 @@ SpatialControlPanel {
 	}
 
 	setSoloSelectedOnly { |aBool|
-		soloSelectedOnly = aBool.asBoolean;
-		this.applySoloState;
-		^this
-	}
-
-	restoreSoloAmps {
-		room.orchestra.soundObjects.do { |soundObject|
-			if(soundObject.sound.respondsTo(\amp)) {
-				soundObject.sound.synth !? {
-					soundObject.sound.synth.set(\amp, soundObject.sound.amp)
-				};
-			};
-		};
-	}
-
-	applySoloState {
-		if(soloSelectedOnly.not) {
-			this.restoreSoloAmps;
-			^this
-		};
-
-		if(selectedSoundObject.isNil) {
-			soloSelectedOnly = false;
-			this.restoreSoloAmps;
-			^this
-		};
-
-		room.orchestra.soundObjects.do { |soundObject|
-			if(soundObject.sound.respondsTo(\amp)) {
-				var amp = if(soundObject === selectedSoundObject) {
-					soundObject.sound.amp
-				} {
-					0
-				};
-				soundObject.sound.synth !? { soundObject.sound.synth.set(\amp, amp) };
-			};
-		};
+		soloMuteController.setSoloSelectedOnly(aBool, selectedSoundObject);
 		^this
 	}
 
 	stop {
-		this.restoreSoloAmps;
+		soloMuteController.reset;
 		routine !? { routine.stop };
 		draggedSoundObject = nil;
 		isDraggingListener = false;
 		isRotatingListener = false;
 		heldKeys = Set.new;
-		soloSelectedOnly = false;
-		soloAmpCache = IdentityDictionary.new;
 		objectScrollView = nil;
 		objectControlsView = nil;
 		window !? { window.close };
