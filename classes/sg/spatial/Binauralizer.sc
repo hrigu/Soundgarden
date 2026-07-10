@@ -5,6 +5,19 @@
 // InsectSound) und schreibt Stereo auf den Hardware-Output. Bewusst getrennt
 // von der Klangerzeugung, damit sich die Binauralisierung (z.B. später
 // ATK-HRTF, Intent 5) austauschen lässt, ohne den Klang selbst anzufassen.
+//
+// Gemeinsames Binauralizer-Interface (Duck-Typing, keine gemeinsame Basisklasse — siehe
+// AtkBinauralizer/DirectOutBinauralizer, die dieselben Methoden implementieren, ohne von
+// dieser Klasse zu erben): jede Binauralizer-Implementierung in diesem Projekt bietet
+//   - *addSynthDef(reverbBus) bzw. *setup(server, subjectID, reverbBus) (AtkBinauralizer,
+//     wegen asynchron zu ladendem HRTF-Kernel) — registriert die eigene SynthDef,
+//   - play(server, inBus, outBus, target, addAction) — startet den Synth, muss NACH der
+//     Klangquelle im Node-Baum laufen (siehe SoundObject>>play),
+//   - set(azimuth, distance) — aktualisiert Ausrichtung/Distanz auf dem laufenden Synth,
+//     pro Tick von Orchestra/SoundObject aufgerufen,
+//   - stop — gibt den eigenen Synth frei (nicht den Eingangs-Bus, der gehört der Klangquelle).
+// SoundObject/Room/Listener verwenden ausschließlich dieses Interface und kennen die
+// konkrete Binauralizer-Klasse nicht (siehe Listener>>makeBinauralizer, Intent 27).
 Binauralizer {
 	var <>lagTime;        // Glättungszeit für Azimuth-/Distanzänderungen, in Sekunden
 	var <>itdScale;       // max. Laufzeitdifferenz zwischen den Ohren, in Sekunden

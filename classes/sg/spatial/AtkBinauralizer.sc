@@ -1,8 +1,9 @@
 // AtkBinauralizer — Binauralisierung über echtes HRTF-Rendering (Ambisonic Toolkit, ATK),
-// als Ersatz für die einfache Pan/ITD-Näherung aus Binauralizer (Intent 5). Gleiche
-// öffentliche Schnittstelle wie Binauralizer (play/set/stop), damit SoundObject beide
-// austauschbar verwenden kann. Scope bewusst auf die horizontale Ebene beschränkt (siehe
-// Intent 5, 1.4) — Elevation (phi) ist fest 0.
+// als Ersatz für die einfache Pan/ITD-Näherung aus Binauralizer (Intent 5). Implementiert
+// dasselbe gemeinsame Binauralizer-Interface (play/set/stop, siehe Binauralizer.sc für die
+// vollständige Beschreibung), damit SoundObject beide austauschbar verwenden kann. Scope
+// bewusst auf die horizontale Ebene beschränkt (siehe Intent 5, 1.4) — Elevation (phi) ist
+// fest 0.
 //
 // Signalweg pro Instanz: Mono-Eingang → distanzabhängiger Tiefpass/Pegel (wie Binauralizer)
 // → PanB2 (horizontales B-Format, SuperCollider-Core) → FoaDecode (HRTF-Kernel) → Stereo.

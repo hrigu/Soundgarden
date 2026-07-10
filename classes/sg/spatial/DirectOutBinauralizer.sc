@@ -1,9 +1,10 @@
 // DirectOutBinauralizer — der "kein Binauralizer"-Fall (Room>>binauralizerClass = nil, siehe
 // Intent 51): gibt den Mono-Eingang unbearbeitet auf beide Kanäle aus, ohne Pan/ITD/Distanz-
-// Verarbeitung wie Binauralizer/AtkBinauralizer. Gleiche öffentliche Schnittstelle (play/set/
-// stop), damit SoundObject ihn austauschbar verwenden kann, ohne selbst zu wissen, dass gar
-// keine Binauralisierung passiert. set() ist bewusst ein No-op — Azimuth/Distanz haben hier
-// keine hörbare Wirkung.
+// Verarbeitung wie Binauralizer/AtkBinauralizer. Implementiert dasselbe gemeinsame
+// Binauralizer-Interface (play/set/stop, siehe Binauralizer.sc für die vollständige
+// Beschreibung), damit SoundObject ihn austauschbar verwenden kann, ohne selbst zu wissen,
+// dass gar keine Binauralisierung passiert. set() ist bewusst ein No-op — Azimuth/Distanz
+// haben hier keine hörbare Wirkung.
 DirectOutBinauralizer {
 	var <>reverbMix;  // 0..1 — wie stark dieses Objekt insgesamt in RoomReverb einspeist
 	var <synth;       // laufender Synth, sobald play() aufgerufen wurde
