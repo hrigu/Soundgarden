@@ -48,9 +48,9 @@ sampleFiles = sampleFiles.keep(maxSamples);
 n = sampleFiles.size;
 radius = 3;
 ~viewRadius = radius + 1;
-rate = 0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (~1s), da
+rate = 1; //0.1; // Hz — einmal alle 10s, bewusst langsamer als die Sample-Länge (~1s), da
           // SampleSound (Intent 20) noch kein Overlap-Handling hat
-duration = 0.8; // Sekunden — feste Hördauer für alle Objekte (Intent 53), unabhängig von der
+duration = 0.2; // Sekunden — feste Hördauer für alle Objekte (Intent 53), unabhängig von der
                 // tatsächlichen Länge der jeweiligen Sample-Datei
 
 ~sampleObjects = sampleFiles.collect({ |pe, i|
