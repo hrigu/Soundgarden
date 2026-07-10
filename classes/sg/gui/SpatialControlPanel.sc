@@ -14,7 +14,7 @@ SpatialControlPanel {
 	var <window;
 	var view;
 	var controlsView;
-	var roomControlsView;
+	var roomParamsView;
 	var objectControlsView;
 	var routine;
 	var heldKeys;
@@ -150,65 +150,12 @@ SpatialControlPanel {
 	installControls {
 		var roomHeight = 360;
 
-		roomControlsView = CompositeView(controlsView, Rect(0, 0, controlsView.bounds.width, roomHeight));
-		roomControlsView.decorator = FlowLayout(roomControlsView.bounds.insetBy(16, 16));
-		this.installRoomControls;
+		roomParamsView = RoomParamsView.new(controlsView,
+			Rect(0, 0, controlsView.bounds.width, roomHeight), room).build;
 
 		objectControlsView = SoundObjectControlsView.new(controlsView, roomHeight + 10, presetsDir,
 			soloMuteController);
 		objectControlsView.rebuild(selectedSoundObject);
-	}
-
-	installRoomControls {
-		var controlWidth = 380@26;
-		var headerWidth = 380@22;
-		var addGroupHeader = { |title|
-			var label = StaticText(roomControlsView, headerWidth);
-			label.string = title;
-			label.font = Font.default.copy.size_(15).boldVariant;
-			label.align = \left;
-			roomControlsView.decorator.nextLine;
-		};
-		var makeSlider = { |label, initValue, spec, action|
-			var slider = EZSlider(roomControlsView, controlWidth, label, spec,
-				{ |ez| action.(ez.value) }, initValue, false, 120, 56);
-			roomControlsView.decorator.nextLine;
-			slider
-		};
-
-		addGroupHeader.("Room-Parameter");
-		makeSlider.("Size", room.size, ControlSpec(2, 30, \lin, 0.1), { |value|
-			room.size = value;
-		});
-		makeSlider.("Height", room.height, ControlSpec(1, 20, \lin, 0.1), { |value|
-			room.height = value;
-		});
-		makeSlider.("Surface", room.surface, ControlSpec(0, 1, \lin, 0.01), { |value|
-			room.surface = value;
-		});
-		makeSlider.("Mix", room.mix, ControlSpec(0, 1, \lin, 0.01), { |value|
-			room.mix = value;
-		});
-
-		addGroupHeader.("Direkte Hall-Parameter");
-		// Wertebereich grosszuegig (kein dokumentiertes Hard-Limit von GVerb) -- Experimentier-
-		// Regler gegen metallisches Klingeln, siehe Room>>spread.
-		makeSlider.("Spread", room.spread, ControlSpec(0, 60, \lin, 0.5), { |value|
-			room.spread = value;
-		});
-		// inputBandwidth: Tiefpass vor dem Diffusions-Netzwerk, hell/dunkel des Hall-Eingangs.
-		makeSlider.("InputBandwidth", room.inputBandwidth, ControlSpec(0, 1, \lin, 0.01), { |value|
-			room.inputBandwidth = value;
-		});
-		// tailBalance: 0 = nur fruehe Reflexionen .. 1 = nur diffuser Nachhall-Schwanz.
-		makeSlider.("TailBalance", room.tailBalance, ControlSpec(0, 1, \lin, 0.01), { |value|
-			room.tailBalance = value;
-		});
-
-		addGroupHeader.("Soundobjekt-Parameter");
-		makeSlider.("ReverbSend", this.currentReverbMix, ControlSpec(0, 1, \lin, 0.01), { |value|
-			this.applyReverbMix(value);
-		});
 	}
 
 	applyHeldKeys { |dt|
@@ -323,22 +270,6 @@ SpatialControlPanel {
 
 		if(rel[0].abs > 0.0001 or: { rel[1].abs > 0.0001 }) {
 			listener.facing = atan2(rel[0], rel[1]).raddeg;
-		};
-	}
-
-	currentReverbMix {
-		var first = room.orchestra.soundObjects.detect({ |soundObject|
-			soundObject.binauralizer.notNil
-		});
-		^if(first.notNil) { first.binauralizer.reverbMix } { 0.3 }
-	}
-
-	applyReverbMix { |value|
-		room.orchestra.soundObjects.do { |soundObject|
-			soundObject.binauralizer.reverbMix = value;
-			soundObject.binauralizer.synth !? {
-				soundObject.binauralizer.synth.set(\reverbMix, value);
-			};
 		};
 	}
 
