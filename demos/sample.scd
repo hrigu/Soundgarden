@@ -26,7 +26,7 @@
 // Alle var-Deklarationen müssen ganz am Anfang des Blocks stehen (SuperCollider-Syntaxregel).
 var soundsDir, sampleFiles, n, radius, rate, maxSamples, shortThreshold, targetDuration,
 	peakThreshold, previewBucketCount, baseAmp, targetRms, minGain, maxGain, silenceFloor,
-	maxOutputPeak;
+	maxOutputPeak, configurator;
 
 SampleSound.addSynthDef;
 // Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52)
@@ -62,37 +62,23 @@ minGain = 0.5;        // keine drastische Absenkung einzelner Samples
 maxGain = 1.4;        // weniger pauschales Hochziehen vieler Samples
 silenceFloor = 0.0001; // fast stille Ausschnitte nicht kuenstlich aufblasen
 maxOutputPeak = 0.6;   // Peak-Schutz gegen einzelne dominante Transienten
+configurator = SampleSoundConfigurator.new(shortThreshold: shortThreshold,
+	targetDuration: targetDuration, peakThreshold: peakThreshold,
+	previewBucketCount: previewBucketCount, baseAmp: baseAmp, targetRms: targetRms,
+	minGain: minGain, maxGain: maxGain, silenceFloor: silenceFloor,
+	maxOutputPeak: maxOutputPeak);
 
 ~sampleObjects = sampleFiles.collect({ |pe, i|
 	var angle = (i / n) * 2pi;
 	var pos = [radius * sin(angle), radius * cos(angle), 0];
 	var phase = i / n;
-	var sound = SampleSound.new(pe.fullPath, rate, phase);
-	var suggestion = sound.suggestExcerpt(shortThreshold: shortThreshold,
-		targetDuration: targetDuration, peakThreshold: peakThreshold,
-		bucketCount: previewBucketCount);
-	var excerptLevel;
-	var rmsGain;
-	var peakSafetyGain;
-	var gainFactor;
+	var configured = configurator.prepare(pe.fullPath, rate, phase);
+	var sound = configured[\sound];
+	var suggestion = configured[\suggestion];
+	var excerptLevel = configured[\excerptLevel];
 	var movable = Movable.new(pos, SteadyMoveRule.new, roomRadius: radius + 2); // Marge, da die
 		// Objekte exakt auf der Kreislinie sitzen (roomRadius nur fuer die organische
 		// Rueckfuehrung bei bewegten Objekten relevant, siehe Movable>>step)
-	sound.startFrac = suggestion[\startFrac];
-	sound.duration = suggestion[\duration];
-	excerptLevel = sound.excerptLevelEstimate;
-	rmsGain = if((excerptLevel[\rms] ? 0.0) < silenceFloor) {
-		1.0
-	} {
-		targetRms / excerptLevel[\rms]
-	};
-	peakSafetyGain = if((excerptLevel[\peak] ? 0.0) <= 0.0) {
-		maxGain
-	} {
-		maxOutputPeak / excerptLevel[\peak]
-	};
-	gainFactor = min(rmsGain, peakSafetyGain).clip(minGain, maxGain);
-	sound.amp = baseAmp * gainFactor;
 	sound.preload(s); // laedt den Buffer schon jetzt, statt erst bei room.play in
 		// Block 2 — gibt der asynchronen Dateileseoperation Zeit (siehe SampleSound>>preload)
 	// Binauralizer wird vom Room über dessen Listener gebaut (Room>>register,
@@ -100,7 +86,8 @@ maxOutputPeak = 0.6;   // Peak-Schutz gegen einzelne dominante Transienten
 	"% -> startFrac=%, duration=%, rms=%, peak=%, rmsGain=%, peakGain=%, gain=%, amp=%\n".postf(
 		pe.fileName, sound.startFrac.round(0.001), sound.duration.round(0.001),
 		(excerptLevel[\rms] ? 0.0).round(0.0001), (excerptLevel[\peak] ? 0.0).round(0.0001),
-		rmsGain.round(0.001), peakSafetyGain.round(0.001), gainFactor.round(0.001),
+		configured[\rmsGain].round(0.001), configured[\peakSafetyGain].round(0.001),
+		configured[\gainFactor].round(0.001),
 		sound.amp.round(0.001));
 	~room.register(movable, sound);
 });
