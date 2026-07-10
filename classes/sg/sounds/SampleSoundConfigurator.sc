@@ -3,16 +3,16 @@
 // Reine sclang-Logik: waehlt den Ausschnitt, bewertet dessen Pegel und setzt startFrac,
 // duration und amp konsistent auf einem SampleSound.
 SampleSoundConfigurator {
-	var <>shortThreshold;
-	var <>targetDuration;
-	var <>peakThreshold;
-	var <>previewBucketCount;
-	var <>baseAmp;
-	var <>targetRms;
-	var <>minGain;
-	var <>maxGain;
-	var <>silenceFloor;
-	var <>maxOutputPeak;
+	var <>shortThreshold;   // Sekunden — kurze Samples bis zu dieser Dauer komplett spielen
+	var <>targetDuration;   // Sekunden — Fensterlaenge fuer automatisch zugeschnittene Samples
+	var <>peakThreshold;    // 0..1 — ab diesem normalisierten Peak startet der Ausschnitt
+	var <>previewBucketCount; // Anzahl Buckets fuer die Peak-Huelle der Ausschnittssuche
+	var <>baseAmp;          // Grundlautstaerke vor automatischem Gain-Ausgleich
+	var <>targetRms;        // Ziel-RMS fuer den gespielten Ausschnitt
+	var <>minGain;          // untere Grenze des automatischen Gain-Faktors
+	var <>maxGain;          // obere Grenze des automatischen Gain-Faktors
+	var <>silenceFloor;     // unterhalb davon kein RMS-basiertes Hochziehen
+	var <>maxOutputPeak;    // Peak-Schutz fuer dominante Transienten nach dem Gain-Ausgleich
 
 	*new { |shortThreshold = 1.0, targetDuration = 1.5, peakThreshold = 0.25,
 			previewBucketCount = 96, baseAmp = 0.5, targetRms = 0.12, minGain = 0.5,
