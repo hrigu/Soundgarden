@@ -13,9 +13,10 @@ Soundgarden ist ein SuperCollider-Spielplatz mit aktuell zwei Arbeitssträngen:
    `experiments/live_coding_rig/set_template.scd`) — bestehende elektronische
    Tracks live umformen (Filter, Echo, Bitcrush, Stutter, Reverb) während einer
    Fusion-Tanzparty, über JITLib (`Ndef`), rein per Tastatur (kein MIDI-Controller).
-2. **Spatial-Audio-Prototyp** (`classes/sg/`, `demos/insects.scd`) — virtuelle Klangobjekte
-   ("Insekten"), die sich nach einer Bewegungsregel durch einen definierten Raum bewegen und
-   dem Hörer über Kopfhörer binaural zugespielt werden.
+2. **Spatial-Audio-Prototyp** (`classes/sg/`, `demos/grill/insects.scd`) — virtuelle
+   Klangobjekte ("Insekten", Samples, Songs), die sich nach einer Bewegungsregel durch einen
+   definierten Raum bewegen (oder stationär bleiben) und dem Hörer über Kopfhörer binaural
+   zugespielt werden.
 
 Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 
@@ -33,8 +34,9 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 - `run_tests.scd` — automatisierte Tests (`UnitTest`) für die reine sclang-Logik.
 - Live-Set-Workflow: `boot/boot.scd` → `experiments/live_coding_rig/fx.scd` →
   `experiments/live_coding_rig/set_template.scd` (Block für Block, `Cmd+Enter`).
-- Spatial-Audio-Prototyp: `boot/boot.scd` → `demos/insects.scd` —
-  **Kopfhörer benutzen**, binaurale Effekte funktionieren über Lautsprecher nicht richtig.
+- Spatial-Audio-Prototyp: `boot/boot.scd` → eine der Varianten in `demos/grill/` (bzw.
+  `demos/sample.scd`, `demos/reverb.scd`, ...) — **Kopfhörer benutzen**, binaurale Effekte
+  funktionieren über Lautsprecher nicht richtig.
 
 ## Architektur
 
@@ -44,17 +46,37 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
   `LanguageConfig.addIncludePath` + `thisProcess.recompile` in `boot/load_classes.scd` (kein
   globaler Extensions-Ordner; beide Pfade werden rekursiv eingelesen).
 - Spatial-Audio-Klassen liegen unter `classes/sg/` (kein echter SC-Namespace — SuperCollider
-  hat nur einen globalen, flachen Klassen-Namensraum — sondern reine Ordnerkonvention, drei
+  hat nur einen globalen, flachen Klassen-Namensraum — sondern reine Ordnerkonvention, vier
   Unter-Ordner nach Zuständigkeit):
-  - `classes/sg/sounds/` — `Sound`, `InsectSound` (reine Klangerzeugung; `Sound>>call`
-    löst einen kurzen Klang-Akzent aus, für Call-and-Response zwischen Soundobjekten)
+  - `classes/sg/sounds/` — `Sound` (Basisklasse: Bus-/Synth-Lifecycle, `editableParams`/
+    `setParam`-Hook fürs GUI, `call` löst einen kurzen Klang-Akzent für Call-and-Response
+    aus), `InsectSound` (Flügelschlag+Brummen, optional per `CallingPattern` rhythmisiert),
+    `CricketSound` (`InsectSound`-Ableitung mit bioakustisch recherchierten Defaults),
+    `SampleSound` (rhythmisch getriggertes Sample, mit `startFrac`/`duration`-Ausschnitt-Wahl
+    und Waveform-Preview fürs GUI), `SampleSoundConfigurator` (Ausschnitts-/Lautheits-
+    Heuristik für `SampleSound`), `SongSound` (durchlaufender Song/Atmo als Klangquelle),
+    `CallingPattern`/`RhythmPatternCreator` (An/Aus-Zeitmuster für Ruf-Rhythmen),
+    `SoundPresetLibrary` (Klangparameter-Presets als `.scd`-Dateien speichern/laden)
   - `classes/sg/soundobjects/` — `SoundObject`, `Movable`, `MoveRule`, `CircularMoveRule`,
-    `SteadyMoveRule` (Bewegung + Klangobjekt)
-  - `classes/sg/spatial/` — `Listener`, `Binauralizer`, `Orchestra`, `KeyboardListenerControl`,
-    `SpaceView` (Raumwahrnehmung/-steuerung; Listener per Tastatur beweglich: W/S/A/D/Q/E, siehe
-    `KeyboardListenerControl`, braucht ein fokussiertes Fenster; `SpaceView` zeigt Listener +
-    Soundobjekte live in einer 2D-Draufsicht, eigenes Fenster, kein eigener State)
-  - zugehörige Tests spiegelbildlich unter `tests/sg/soundobjects/`, `tests/sg/spatial/`
+    `SteadyMoveRule` (Bewegung + Klangobjekt), `SoundObjectBuilder` (baut ein `SoundObject`
+    aus zwei Params-Events statt Sound/Movable von Hand zu instanzieren)
+  - `classes/sg/spatial/` — `Listener` (Position/Blickrichtung, kennt seine
+    "Ohren"-Strategie, siehe `binauralizerClass`/`makeBinauralizer`), `Orchestra` (zentraler
+    Taktgeber, tickt alle registrierten `SoundObject`s), `Room` (kapselt Raumakustik +
+    `Orchestra` + gemeinsamen `RoomReverb`, einziger Ort fürs Größe/Höhe/Oberfläche →
+    Hallparameter-Mapping), `RoomReverb` (ein geteilter GVerb-Hall für den ganzen Raum),
+    `Binauralizer` (einfache Pan/ITD/Distanz-Näherung, reine Core-UGens), `AtkBinauralizer`
+    (echtes HRTF-Rendering über ATK/`FoaDecoderKernel`, geteilter Decoder-Kernel pro Session),
+    `DirectOutBinauralizer` (Durchleitung ohne Binauralisierung, Fallback für
+    `binauralizerClass = nil`) — alle drei Binauralizer-Klassen teilen sich informell
+    (Duck-Typing) das Interface `play`/`set`/`stop`, kanonisch dokumentiert in
+    `Binauralizer.sc`
+  - `classes/sg/gui/` — `SpatialControlPanel` (ein Fenster: editierbare Raum-Draufsicht +
+    Regler für Room-/Hall-/Soundobjekt-Parameter, Tastatursteuerung des Listeners W/S/A/D/Q/E,
+    Solo/Mute, Preset-Load/Save), `RoomControlPanel` (dünner Lifecycle-Wrapper um
+    `SpatialControlPanel` fürs Demo-Skript, hält genau eine Panel-Instanz)
+  - zugehörige Tests spiegelbildlich unter `tests/sg/sounds/`, `tests/sg/soundobjects/`,
+    `tests/sg/spatial/`, `tests/sg/gui/` (nur rein logische, servertfreie GUI-Tests)
   - `BootTrackDetection` gehört bewusst nicht zu `sg` (andere Domäne: Live-Set statt
     Spatial-Audio).
 - `sc3-plugins` ist bewusst (noch) nicht installiert — wo möglich mit Core-UGens gearbeitet
