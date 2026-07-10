@@ -1,6 +1,6 @@
 // Listener — der Hörer. Position und Blickrichtung (facing, in Grad, 0 = entlang +y) können
 // sich bewegen/drehen (siehe moveForward/strafeLeft/rotate etc., z.B. von
-// KeyboardListenerControl genutzt). Rechnet Weltkoordinaten in "was hört er" um: Azimuth
+// SpatialControlPanel genutzt). Rechnet Weltkoordinaten in "was hört er" um: Azimuth
 // relativ zur eigenen Blickrichtung (0 = vorne, positiv = rechts, ±pi = hinten) und Distanz.
 // Kennt zusätzlich seine "Ohren" (binauralizerClass, siehe makeBinauralizer) — Binauralisierung
 // ist eine Eigenschaft des Hörers, nicht der Klangquelle (Intent 27).

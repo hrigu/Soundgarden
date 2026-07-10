@@ -51,8 +51,7 @@ Zuständigkeit sortiert (reine Ordnerkonvention — SuperCollider selbst kennt k
 Namespaces):
 - `classes/sg/sounds/` — `Sound`, `InsectSound`
 - `classes/sg/soundobjects/` — `SoundObject`, `Movable`, `MoveRule`, `CircularMoveRule`
-- `classes/sg/spatial/` — `Listener`, `Binauralizer`, `AtkBinauralizer`, `Orchestra`,
-  `KeyboardListenerControl`, `SpaceView`
+- `classes/sg/spatial/` — `Listener`, `Binauralizer`, `AtkBinauralizer`, `Orchestra`
 - passende Tests spiegelbildlich unter `tests/sg/soundobjects/`, `tests/sg/spatial/`
 
 Damit SuperCollider alles kennt, einmalig beim Erst-Setup **als allererstes** (vor
@@ -96,10 +95,6 @@ Objektmodell:
   `moveBackward`/`strafeLeft`/`strafeRight`/`rotate`, alle relativ zur aktuellen
   Blickrichtung. Berechnet aus einer Weltposition Azimuth (relativ zur eigenen
   Blickrichtung) und Distanz.
-- **`KeyboardListenerControl`** — bewegt/dreht einen `Listener` kontinuierlich
-  per Tastatur, solange eine Taste gehalten wird (**W**/**S** vor/zurück,
-  **A**/**D** seitlich, **Q**/**E** drehen). Braucht ein fokussiertes Fenster
-  (SuperCollider-Standardidiom für Tastatur-Input).
 - **`SoundObject`** — verbindet ein `Movable` mit einem klingenden Synth
   (`Sound`-Subklasse) und einem Binauralisierer (`Binauralizer` oder
   `AtkBinauralizer`, austauschbar, gleiche Schnittstelle); kennt den `Listener`
@@ -113,14 +108,15 @@ Objektmodell:
   einen kurzen Klang-Akzent aus (Call-and-Response, siehe `Sound>>call`) —
   ein zufälliges anderes registriertes Objekt ruft nach kurzer Verzögerung
   zurück.
-- **`SpaceView`** — live aktualisierte 2D-Draufsicht: Listener (Position +
-  Blickrichtung als Pfeil) und alle registrierten Soundobjekte, von oben
-  betrachtet. Bewegt selbst nichts, liest bei jedem Neuzeichnen einfach den
-  aktuellen Zustand der `Orchestra`.
+- **`SpatialControlPanel`** (`classes/sg/gui/`) — ein Fenster mit editierbarer 2D-Draufsicht
+  (Listener + alle registrierten Soundobjekte, von oben betrachtet) und Reglern für Raum-/
+  Klangparameter. Tastatursteuerung des Listeners (**W**/**S** vor/zurück, **A**/**D**
+  seitlich, **Q**/**E** drehen) läuft mit hinein, solange eine Taste gehalten wird — braucht
+  dafür ein fokussiertes Fenster (SuperCollider-Standardidiom für Tastatur-Input).
 
 Ausführen: `boot/load_classes.scd` → `boot/boot.scd` → eine der Varianten in `demos/grill/`
 (Block für Block), mit Kopfhörern. Für die Tastatursteuerung muss das
-`KeyboardListenerControl`-Fenster fokussiert sein.
+`SpatialControlPanel`-Fenster fokussiert sein.
 
 - `demos/grill/one_insect.scd` — Minimalbeispiel, ein einzelnes Insekt.
 - `demos/grill/three_insects.scd` — 3 fest benannte, individuell konfigurierte Insekten mit
