@@ -34,7 +34,7 @@ AtkBinauralizer {
 
 	// erzeugt eine Instanz mit den gegebenen (oder Default-)Parametern
 	*new { |lagTime = 0.08, cutoffMin = 600, cutoffMax = 9000, ampRolloff = 0.9,
-			reverbMix = 0.3|
+			reverbMix = 0.2|
 		^super.new.init(lagTime, cutoffMin, cutoffMax, ampRolloff, reverbMix);
 	}
 
@@ -84,7 +84,7 @@ AtkBinauralizer {
 
 		SynthDef(\atkBinauralizer, { |in = 0, out = 0, azimuth = 0, distance = 1,
 				lagTime = 0.08, cutoffMin = 600, cutoffMax = 9000, ampRolloff = 0.9,
-				reverbMix = 0.3|
+				reverbMix = 0.2|
 			// azimuth kommt von Listener>>relativeAzimuth auf (-pi, pi] gewrappt an; beim
 			// Vorbeiziehen hinter dem Hörer springt der Rohwert um ~2pi (+pi -> -pi). Lag.kr
 			// direkt auf azimuth würde diesen Sprung linear durchfahren (hörbarer Klick, da

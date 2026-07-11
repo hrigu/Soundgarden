@@ -82,7 +82,7 @@ Listener {
 	// bekommen ihren Binauralizer nicht mehr direkt zugewiesen, sondern über Room>>register,
 	// das diese Methode aufruft. Interna: welche Klasse/Strategie verwendet wird, ist Sache
 	// des Listeners, nicht des aufrufenden Skripts (siehe Intent 27).
-	makeBinauralizer { |reverbMix = 0.3|
+	makeBinauralizer { |reverbMix = 0.2|
 		^binauralizerClass.new(reverbMix: reverbMix)
 	}
 

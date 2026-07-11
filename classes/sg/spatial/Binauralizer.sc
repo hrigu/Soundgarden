@@ -30,7 +30,7 @@ Binauralizer {
 
 	// erzeugt eine Instanz mit den gegebenen (oder Default-)Parametern
 	*new { |lagTime = 0.08, itdScale = 0.0006, cutoffMin = 600, cutoffMax = 9000,
-			ampRolloff = 0.9, behindDampMin = 0.55, reverbMix = 0.3|
+			ampRolloff = 0.9, behindDampMin = 0.55, reverbMix = 0.2|
 		^super.new.init(lagTime, itdScale, cutoffMin, cutoffMax, ampRolloff, behindDampMin,
 			reverbMix);
 	}
@@ -67,7 +67,7 @@ Binauralizer {
 	*addSynthDef { |reverbBus|
 		SynthDef(\binauralizer, { |in = 0, out = 0, azimuth = 0, distance = 1,
 				lagTime = 0.08, itdScale = 0.0006, cutoffMin = 600, cutoffMax = 9000,
-				ampRolloff = 0.9, behindDampMin = 0.55, reverbMix = 0.3|
+				ampRolloff = 0.9, behindDampMin = 0.55, reverbMix = 0.2|
 			// azimuth kommt von Listener>>relativeAzimuth auf (-pi, pi] gewrappt an; beim
 			// Vorbeiziehen hinter dem Hörer springt der Rohwert um ~2pi (+pi -> -pi). Lag.kr
 			// direkt auf azimuth würde diesen Sprung linear durchfahren (hörbarer Klick, da

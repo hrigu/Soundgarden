@@ -38,7 +38,7 @@ Room {
 	// (siehe Klassenkommentar); ohne Angabe legt Room einen Default-Listener an. Ein künftiges
 	// Multi-Room-Setup (ein Listener wandert zwischen mehreren Rooms, siehe Intent 27) baut auf
 	// listener.setup/teardown auf — keine eigene Mechanik dafür heute.
-	*new { |server, listener, size = 8, height = 3, surface = 0.5, mix = 1, spread = 15,
+	*new { |server, listener, size = 8, height = 3, surface = 0.5, mix = 0.25, spread = 15,
 			inputBandwidth = 0.5, tailBalance = 0.5|
 		var aListener = listener ?? { Listener.new };
 		// RoomReverb ist ein Interna des Room (siehe Klassenkommentar) — Room registriert
@@ -81,7 +81,7 @@ Room {
 	// baut ein SoundObject aus movable+sound, mit einem Binauralizer passend zu den "Ohren"
 	// des eigenen Listeners (siehe Listener>>makeBinauralizer) — Skripte kennen Binauralizer/
 	// AtkBinauralizer ab hier nicht mehr direkt (Intent 27).
-	register { |movable, sound, reverbMix = 0.3|
+	register { |movable, sound, reverbMix = 0.2|
 		var binauralizer = listener.makeBinauralizer(reverbMix);
 		^this.finishRegistering(SoundObject.new(movable, sound, binauralizer))
 	}
@@ -91,7 +91,7 @@ Room {
 	// aus einer Basis-Konfiguration abgeleitet werden (Intent 29). SoundObjectBuilder kennt
 	// den Binauralizer nicht selbst (Intent 27) — der kommt wie bei register aus
 	// listener.makeBinauralizer.
-	registerFromBuilder { |soundParams, movableParams, reverbMix = 0.3, soundClass, movableClass|
+	registerFromBuilder { |soundParams, movableParams, reverbMix = 0.2, soundClass, movableClass|
 		var binauralizer = listener.makeBinauralizer(reverbMix);
 		^this.finishRegistering(
 			SoundObjectBuilder.build(soundParams, movableParams, binauralizer, soundClass,

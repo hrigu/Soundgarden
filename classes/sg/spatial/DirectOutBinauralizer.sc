@@ -9,7 +9,7 @@ DirectOutBinauralizer {
 	var <>reverbMix;  // 0..1 — wie stark dieses Objekt insgesamt in RoomReverb einspeist
 	var <synth;       // laufender Synth, sobald play() aufgerufen wurde
 
-	*new { |reverbMix = 0.3|
+	*new { |reverbMix = 0.2|
 		^super.new.init(reverbMix);
 	}
 
@@ -20,7 +20,7 @@ DirectOutBinauralizer {
 	// registriert die \directOutBinauralizer-SynthDef beim Server — reine Durchleitung, kein
 	// Pan/ITD/Tiefpass. reverbBus siehe Binauralizer>>addSynthDef (gleiches Muster).
 	*addSynthDef { |reverbBus|
-		SynthDef(\directOutBinauralizer, { |in = 0, out = 0, reverbMix = 0.3|
+		SynthDef(\directOutBinauralizer, { |in = 0, out = 0, reverbMix = 0.2|
 			var sig = In.ar(in, 1);
 			Out.ar(out, sig.dup);
 			if(reverbBus.notNil) {
