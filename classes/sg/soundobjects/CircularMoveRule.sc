@@ -23,6 +23,18 @@ CircularMoveRule : MoveRule {
 		startAngle = aStartAngle;
 	}
 
+	// editableParams — siehe MoveRule. Wertebereiche grosszügig ums jeweilige Default herum,
+	// zum Explorieren gedacht (Intent 46, gleicher Stil wie InsectSound>>editableParams).
+	*editableParams {
+		^[
+			[\baseRadius, ControlSpec(0.5, 10, \lin)],
+			[\breathAmount, ControlSpec(0, 5, \lin)],
+			[\breathRate, ControlSpec(0, 2, \lin)],
+			[\angularSpeed, ControlSpec(-3, 3, \lin)],
+			[\startAngle, ControlSpec(0, 2pi, \lin)]
+		]
+	}
+
 	// next — siehe MoveRule. Radius atmet sinusförmig um baseRadius, der
 	// Winkel wächst linear mit t ab startAngle; pos wird nicht gebraucht
 	// (rein zeitgesteuert).

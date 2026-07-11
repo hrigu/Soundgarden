@@ -12,4 +12,19 @@ MoveRule {
 	next { |pos, t, dt|
 		^this.subclassResponsibility(thisMethod)
 	}
+
+	// editableParams — von Subklassen zu überschreiben: Liste von [key, ControlSpec] für alle
+	// serialisierbaren Bewegungsparameter (Intent 46, analog zu Sound>>editableParams — dient
+	// hier der Szenen-/Objekt-Preset-Serialisierung, noch nicht dem Live-GUI-Editieren). Leer
+	// = keine Parameter, generischer Default für parameterlose Regeln wie SteadyMoveRule.
+	*editableParams {
+		^[]
+	}
+
+	// setParam — aktualisiert einen Bewegungsparameter per <>-Setter (z.B. beim Anwenden eines
+	// SoundObject-Presets, Intent 46). Anders als Sound>>setParam kein Synth-Bezug — eine
+	// MoveRule hat keinen laufenden Server-Zustand, der live nachgezogen werden müsste.
+	setParam { |key, value|
+		this.perform((key ++ "_").asSymbol, value);
+	}
 }

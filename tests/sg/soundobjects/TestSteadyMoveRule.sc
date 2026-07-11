@@ -14,4 +14,10 @@ TestSteadyMoveRule : UnitTest {
 
 		this.assertEquals(pos, #[1.5, -2.5, 0.5], "bleibt an beliebiger Position, auch bei großem t/dt");
 	}
+
+	test_editableParamsIsEmpty {
+		this.assertEquals(SteadyMoveRule.editableParams, [],
+			"SteadyMoveRule hat keine Bewegungsparameter (Intent 46) -- erbt die leere " ++
+			"Liste von MoveRule unverändert");
+	}
 }
