@@ -96,4 +96,45 @@ TestTimeline : UnitTest {
 
 		this.assertFloatEquals(timeline.elapsed, 0.7);
 	}
+
+	// staggeredTimes (Intent 58): allgemeine Utility für "gestaffelte Einsatzzeitpunkte mit
+	// wachsender Dichte + Jitter", extrahiert aus dawn_chorus.scd (dort für Vogel- und
+	// Grillen-Einsatzplan dupliziert). jitter: 0 macht die Tests deterministisch.
+	test_staggeredTimesWithoutJitterIsLinearlySpaced {
+		var times = Timeline.staggeredTimes(count: 4, spanDur: 8, startTime: 0, jitter: 0,
+			power: 1);
+
+		this.assertEquals(times, [2.0, 4.0, 6.0, 8.0]);
+	}
+
+	test_staggeredTimesShiftsByStartTime {
+		var times = Timeline.staggeredTimes(count: 2, spanDur: 4, startTime: 10, jitter: 0);
+
+		this.assertEquals(times, [12.0, 14.0]);
+	}
+
+	test_staggeredTimesAppliesPowerCurveToStaggerLaterEventsCloser {
+		var times = Timeline.staggeredTimes(count: 2, spanDur: 10, startTime: 0, jitter: 0,
+			power: 2);
+
+		this.assertEquals(times, [2.5, 10.0]);
+	}
+
+	test_staggeredTimesClipsToClipMax {
+		var times = Timeline.staggeredTimes(count: 3, spanDur: 10, startTime: 0, jitter: 0,
+			clipMax: 5);
+
+		this.assertFloatEquals(times[0], 10.0 / 3);
+		this.assertEquals(times[1], 5.0);
+		this.assertEquals(times[2], 5.0);
+	}
+
+	test_staggeredTimesStaysWithinClipBoundsDespiteJitter {
+		var times = Timeline.staggeredTimes(count: 20, spanDur: 10, startTime: 5, jitter: 50,
+			clipMax: 12);
+
+		times.do { |t|
+			this.assert(t >= 5 and: { t <= 12 }, "Zeitpunkt % ausserhalb [5, 12]".format(t));
+		};
+	}
 }

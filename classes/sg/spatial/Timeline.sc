@@ -15,6 +15,22 @@ Timeline {
 
 	*new { |totalDur| ^super.new.init(totalDur) }
 
+	// staggeredTimes — Utility (Intent 58): erzeugt count Zeitpunkte, gestaffelt statt im
+	// Unisono, mit wachsender Dichte Richtung Ende des Zeitraums. Extrahiert aus
+	// oeuvre/dawn/dawn_chorus.scd, wo Vogel- und Grillen-Einsatzplan dieselbe Formel dupliziert
+	// hatten. power > 1 staucht spätere Einsätze näher zusammen (dichter Chor kurz vor Ende
+	// des Zeitraums), power = 1 verteilt gleichmäßig linear. clipMax (Default: startTime +
+	// spanDur) verhindert, dass Jitter Zeitpunkte über eine gewünschte Obergrenze hinausschiebt
+	// (z.B. über einen späteren Cue hinweg) — unabhängig von spanDur wählbar, weil die
+	// gewünschte Obergrenze nicht immer mit dem Ende des Einsatz-Zeitraums selbst zusammenfällt.
+	*staggeredTimes { |count, spanDur, startTime = 0, jitter = 0, power = 1, clipMax|
+		clipMax = clipMax ?? { startTime + spanDur };
+		^(1..count).collect { |i|
+			(startTime + (((i / count) ** power) * spanDur) + jitter.rand2)
+				.clip(startTime, clipMax)
+		}
+	}
+
 	init { |aTotalDur|
 		totalDur = aTotalDur;
 		cues = [];
