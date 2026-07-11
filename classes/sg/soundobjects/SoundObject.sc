@@ -55,4 +55,20 @@ SoundObject {
 		binauralizer.stop;
 		sound.stop;
 	}
+
+	// fadeOutAndStop — klickfreies Stoppen (Intent 58): sound.amp erst auf 0 fahren (Lag.kr in
+	// den SynthDefs glättet den Sprung), fadeTime abwarten (muss mindestens die Lag-Zeit der
+	// jeweiligen Sound-Subklasse decken, siehe BirdSound/InsectSound/CricketSound), erst danach
+	// stop -- ein sofortiges stop würde den Synth per n_free abrupt kappen und klickt.
+	// Extrahiert aus oeuvre/dawn/dawn_chorus.scd, wo dasselbe Muster mehrfach dupliziert war.
+	// onComplete läuft nach dem stop (z.B. für orchestra.unregister/Listen-Cleanup durch den
+	// Aufrufer) -- SoundObject kennt die Orchestra selbst nicht (siehe Klassenkommentar oben).
+	fadeOutAndStop { |fadeTime = 0.5, onComplete|
+		sound.setParam(\amp, 0);
+		Routine({
+			fadeTime.wait;
+			this.stop;
+			onComplete.value(this);
+		}).play;
+	}
 }
