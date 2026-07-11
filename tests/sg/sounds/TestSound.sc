@@ -24,6 +24,28 @@ FakeSoundForSoundTest : Sound {
 	setSynth { |aSynth| synth = aSynth }
 }
 
+// Minimale Sound-Subklasse mit einem Pflicht-Konstruktorargument (id) und einem editierbaren
+// Parameter (freq), um buildFromSavedParams (Intent 46) isoliert zu testen.
+FakeConfigurableSoundForSoundTest : Sound {
+	var <id;
+	var <>freq;
+
+	*new { |id, freq = 440| ^super.new.init(id, freq) }
+
+	init { |anId, aFreq|
+		id = anId;
+		freq = aFreq;
+	}
+
+	*editableParams {
+		^[[\freq, ControlSpec(20, 2000, \exp)]]
+	}
+
+	*requiredConstructorArgs {
+		^[\id]
+	}
+}
+
 // Test für Sound. Ausführen über run_tests.scd.
 TestSound : UnitTest {
 
@@ -60,5 +82,20 @@ TestSound : UnitTest {
 	test_defaultEditableParamsIsEmpty {
 		this.assertEquals(Sound.editableParams, [],
 			"generischer Default: keine bearbeitbaren Parameter ohne Override");
+	}
+
+	test_defaultRequiredConstructorArgsIsEmpty {
+		this.assertEquals(Sound.requiredConstructorArgs, [],
+			"generischer Default (Intent 46): kein *new einer Subklasse braucht zwingend " ++
+			"weitere Konstruktor-Argumente ausser den editableParams");
+	}
+
+	test_buildFromSavedParamsUsesRequiredConstructorArgsThenEditableParams {
+		var sound = FakeConfigurableSoundForSoundTest.buildFromSavedParams((id: \abc, freq: 880));
+
+		this.assertEquals(sound.id, \abc,
+			"buildFromSavedParams (Intent 46) übergibt requiredConstructorArgs an *new");
+		this.assertEquals(sound.freq, 880,
+			"buildFromSavedParams wendet danach editableParams per setParam an");
 	}
 }

@@ -56,4 +56,28 @@ Sound {
 	*editableParams {
 		^[]
 	}
+
+	// requiredConstructorArgs — von Subklassen zu überschreiben, deren *new zwingende,
+	// nicht-editierbare Konstruktor-Argumente braucht (z.B. \path bei SampleSound/SongSound —
+	// eine Audiodatei lässt sich nicht nachträglich per Setter austauschen). Reihenfolge der
+	// Keys muss der Positionsreihenfolge in *new entsprechen (Intent 46, Grundlage für
+	// RoomSceneLibrary/SoundObjectPresetLibrary: eine Sound-Instanz komplett aus gespeicherten
+	// Werten neu aufbauen, ohne dass jede Subklasse ihre eigene *fromSavedParams schreiben muss).
+	// Leer = generischer Default für Subklassen, deren *new ganz ohne Pflichtargumente auskommt.
+	*requiredConstructorArgs {
+		^[]
+	}
+
+	// buildFromSavedParams — baut eine neue Instanz aus einem Event mit mindestens allen
+	// Keys aus requiredConstructorArgs und editableParams (z.B. aus SoundObjectPresetLibrary/
+	// RoomSceneLibrary geladen, Intent 46). Erst die Pflichtargumente an *new übergeben (in
+	// requiredConstructorArgs-Reihenfolge), dann alle editableParams per setParam anwenden --
+	// dieselbe Zwei-Phasen-Logik, die SoundObjectBuilder für Movable/Sound ohne
+	// Pflichtargumente schon nutzt, hier nur um die Pflichtargument-Phase erweitert.
+	*buildFromSavedParams { |params|
+		var constructorArgs = this.requiredConstructorArgs.collect { |key| params[key] };
+		var sound = this.new(*constructorArgs);
+		this.editableParams.do { |pair| sound.setParam(pair[0], params[pair[0]]) };
+		^sound
+	}
 }

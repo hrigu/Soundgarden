@@ -25,6 +25,23 @@ TestSampleSound : UnitTest {
 		};
 	}
 
+	test_requiredConstructorArgsListsPath {
+		this.assertEquals(SampleSound.requiredConstructorArgs, [\path],
+			"path ist Pflicht für *new, aber kein editierbarer Slider-Parameter (Intent 46)");
+	}
+
+	test_buildFromSavedParamsReconstructsPathAndEditableParams {
+		var sound = SampleSound.buildFromSavedParams((path: "irrelevant/path.wav", rate: 3,
+			phase: 0.25, amp: 0.6, startFrac: 0.1, duration: 0.5));
+
+		this.assertEquals(sound.path, "irrelevant/path.wav");
+		this.assertEquals(sound.rate, 3);
+		this.assertEquals(sound.phase, 0.25);
+		this.assertEquals(sound.amp, 0.6);
+		this.assertEquals(sound.startFrac, 0.1);
+		this.assertEquals(sound.duration, 0.5);
+	}
+
 	// startFrac/duration (Intent 53) -- reine Konstruktor-/Accessor-Logik, kein Server nötig
 	// (wie bei rate/phase/amp bereits der Fall).
 	test_startFracAndDurationDefaultToZeroForOldBehaviour {

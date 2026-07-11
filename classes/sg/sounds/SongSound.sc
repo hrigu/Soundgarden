@@ -39,6 +39,12 @@ SongSound : Sound {
 		]
 	}
 
+	// requiredConstructorArgs — siehe Sound/SampleSound. path ist Pflicht für *new, aber kein
+	// editierbarer Slider-Parameter (Intent 46).
+	*requiredConstructorArgs {
+		^[\path]
+	}
+
 	preload { |server|
 		^buffer = Buffer.readChannel(server, path, channels: [0]);
 	}

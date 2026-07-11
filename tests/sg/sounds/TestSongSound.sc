@@ -14,4 +14,18 @@ TestSongSound : UnitTest {
 				"jeder Eintrag ist [key, ControlSpec] -- " ++ pair[0]);
 		};
 	}
+
+	test_requiredConstructorArgsListsPath {
+		this.assertEquals(SongSound.requiredConstructorArgs, [\path],
+			"path ist Pflicht für *new, aber kein editierbarer Slider-Parameter (Intent 46)");
+	}
+
+	test_buildFromSavedParamsReconstructsPathAndEditableParams {
+		var sound = SongSound.buildFromSavedParams((path: "irrelevant/song.wav", rate: 1.2,
+			amp: 0.5));
+
+		this.assertEquals(sound.path, "irrelevant/song.wav");
+		this.assertEquals(sound.rate, 1.2);
+		this.assertEquals(sound.amp, 0.5);
+	}
 }

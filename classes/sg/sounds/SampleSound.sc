@@ -72,6 +72,14 @@ SampleSound : Sound {
 		]
 	}
 
+	// requiredConstructorArgs — siehe Sound. path ist kein editierbarer Slider-Parameter
+	// (siehe editableParams), aber Pflicht für *new -- ohne diesen Override würde
+	// buildFromSavedParams (Intent 46) path stillschweigend ignorieren und mit path = nil
+	// scheitern.
+	*requiredConstructorArgs {
+		^[\path]
+	}
+
 	// lädt den Buffer vorab (asynchron) — optional, aber empfohlen: ohne preload lädt
 	// makeSynth den Buffer erst bei play(), dann kann der allererste Trigger auf einen
 	// noch leeren Buffer treffen ("Buffer UGen: no buffer data", harmlos, aber unschön).
