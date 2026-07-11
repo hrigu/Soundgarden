@@ -108,8 +108,11 @@ configurator = SampleSoundConfigurator.new(shortThreshold: shortThreshold,
 // Zeigt Listener und alle Sample-Objekte in einem Fenster; W/S/A/D/Q/E steuern den Listener.
 ~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "presets"
 	+/+ "sample").fullPath;
+// scenesDir: Ordner für ganze Raum-Szenen (Intent 46) -- gleiches Muster, eigener Unterordner.
+~scenesDir = PathName(thisProcess.nowExecutingPath.dirname.dirname +/+ "presets"
+	+/+ "sample" +/+ "rooms").fullPath;
 ~controlPanel = RoomControlPanel.new(~room, viewRadius: ~viewRadius, editable: true,
-	presetsDir: ~presetsDir);
+	presetsDir: ~presetsDir, scenesDir: ~scenesDir);
 ~controlPanel.show;
 
 // --- 4) Stoppen ---

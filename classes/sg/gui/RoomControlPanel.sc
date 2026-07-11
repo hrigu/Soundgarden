@@ -8,23 +8,28 @@ RoomControlPanel {
 	var <>rotateSpeed;
 	var <>editable;
 	var <>presetsDir;
+	var <>scenesDir;
 	var <panel;
 
-	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true, presetsDir|
-		^super.new.init(room, viewRadius, moveSpeed, rotateSpeed, editable, presetsDir);
+	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true, presetsDir,
+			scenesDir|
+		^super.new.init(room, viewRadius, moveSpeed, rotateSpeed, editable, presetsDir,
+			scenesDir);
 	}
 
-	init { |aRoom, aViewRadius, aMoveSpeed, aRotateSpeed, anEditable, aPresetsDir|
+	init { |aRoom, aViewRadius, aMoveSpeed, aRotateSpeed, anEditable, aPresetsDir, aScenesDir|
 		room = aRoom;
 		viewRadius = aViewRadius;
 		moveSpeed = aMoveSpeed;
 		rotateSpeed = aRotateSpeed;
 		editable = anEditable;
 		presetsDir = aPresetsDir;
+		scenesDir = aScenesDir;
 	}
 
 	buildPanel {
-		^SpatialControlPanel.new(room, viewRadius, moveSpeed, rotateSpeed, editable, presetsDir);
+		^SpatialControlPanel.new(room, viewRadius, moveSpeed, rotateSpeed, editable, presetsDir,
+			scenesDir);
 	}
 
 	ensurePanel {

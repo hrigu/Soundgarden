@@ -12,6 +12,7 @@ SpatialControlPanel {
 	var <>rotateSpeed;
 	var <>editable;
 	var <>presetsDir;
+	var <>scenesDir;
 	var <window;
 	var controlsView;
 	var spaceCanvas;
@@ -20,17 +21,20 @@ SpatialControlPanel {
 	var routine;
 	var soloMuteController;
 
-	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true, presetsDir|
-		^super.new.init(room, viewRadius, moveSpeed, rotateSpeed, editable, presetsDir);
+	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true, presetsDir,
+			scenesDir|
+		^super.new.init(room, viewRadius, moveSpeed, rotateSpeed, editable, presetsDir,
+			scenesDir);
 	}
 
-	init { |aRoom, aViewRadius, aMoveSpeed, aRotateSpeed, anEditable, aPresetsDir|
+	init { |aRoom, aViewRadius, aMoveSpeed, aRotateSpeed, anEditable, aPresetsDir, aScenesDir|
 		room = aRoom;
 		viewRadius = aViewRadius;
 		moveSpeed = aMoveSpeed;
 		rotateSpeed = aRotateSpeed;
 		editable = anEditable;
 		presetsDir = aPresetsDir;
+		scenesDir = aScenesDir;
 		soloMuteController = SoloMuteController.new(room.orchestra);
 	}
 
@@ -94,13 +98,15 @@ SpatialControlPanel {
 		};
 	}
 
-	// rechter Bedienbereich: oben statische Room-/Hall-Regler, unten dynamische Regler fürs
-	// ausgewählte Soundobjekt.
+	// rechter Bedienbereich: oben statische Room-/Hall-Regler (+ optional Szenen-Speichern/
+	// Laden, siehe scenesDir), unten dynamische Regler fürs ausgewählte Soundobjekt.
 	installControls {
 		var roomHeight = 360;
 
 		roomParamsView = RoomParamsView.new(controlsView,
-			Rect(0, 0, controlsView.bounds.width, roomHeight), room).build;
+			Rect(0, 0, controlsView.bounds.width, roomHeight), room, scenesDir);
+		roomParamsView.onSceneLoaded = { this.onSceneLoaded };
+		roomParamsView.build;
 
 		objectControlsView = SoundObjectControlsView.new(controlsView, roomHeight + 10, presetsDir,
 			soloMuteController);
@@ -112,6 +118,15 @@ SpatialControlPanel {
 		soloMuteController.restoreIfActive;
 		soloMuteController.applySoloState(soundObject);
 		objectControlsView !? { objectControlsView.rebuild(soundObject) };
+	}
+
+	// von RoomParamsView aufgerufen, nachdem eine Szene erfolgreich geladen wurde (Intent 46):
+	// die bisherige Selektion existiert danach nicht mehr (RoomSceneLibrary.applyTo hat alle
+	// Soundobjekte neu aufgebaut) -- Auswahl zurücksetzen und den Objekt-Regler-Bereich auf
+	// "kein Soundobjekt ausgewählt" zurückfahren, statt ein totes Soundobjekt weiter anzuzeigen.
+	onSceneLoaded {
+		spaceCanvas.clearSelection;
+		objectControlsView !? { objectControlsView.rebuild(nil) };
 	}
 
 	setSoloSelectedOnly { |aBool|

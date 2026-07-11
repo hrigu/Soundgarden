@@ -76,8 +76,11 @@ soundRatio = 1 / 30; // ~1:30 Sound zu Stille
 (
 ~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "presets"
 	+/+ "crickets_with_breaks").fullPath;
+// scenesDir: Ordner für ganze Raum-Szenen (Intent 46) -- gleiches Muster, eigener Unterordner.
+~scenesDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "presets"
+	+/+ "crickets_with_breaks" +/+ "rooms").fullPath;
 ~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true,
-	presetsDir: ~presetsDir);
+	presetsDir: ~presetsDir, scenesDir: ~scenesDir);
 ~controlPanel.show;
 )
 

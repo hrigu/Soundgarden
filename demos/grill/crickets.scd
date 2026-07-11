@@ -89,10 +89,13 @@ num_sample_crickets = 0;
 (
 // presetsDir: Ordner für die Sound-Preset-Bibliothek (Intent 43) -- gleiches Pfad-Muster wie
 // das bestehende soundsDir in anderen Demos (thisProcess.nowExecutingPath, projektrelativ).
+// scenesDir: Ordner für ganze Raum-Szenen (Intent 46) -- gleiches Muster, eigener Unterordner.
 ~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "presets"
 	+/+ "crickets").fullPath;
+~scenesDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "presets"
+	+/+ "crickets" +/+ "rooms").fullPath;
 ~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true,
-	presetsDir: ~presetsDir);
+	presetsDir: ~presetsDir, scenesDir: ~scenesDir);
 ~controlPanel.show;
 )
 

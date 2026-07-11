@@ -102,6 +102,14 @@ SpaceCanvas {
 		^this
 	}
 
+	// setzt die Selektion ohne onSelect-Callback zurück -- für Fälle, in denen das
+	// selektierte Soundobjekt von aussen ungültig wurde (z.B. nach RoomSceneLibrary.applyTo,
+	// siehe SpatialControlPanel>>onSceneLoaded, Intent 46), nicht durch einen Nutzer-Klick.
+	clearSelection {
+		selectedSoundObject = nil;
+		^this
+	}
+
 	keyDown { |char|
 		heldKeys.add(char.asString.toLower);
 		^this

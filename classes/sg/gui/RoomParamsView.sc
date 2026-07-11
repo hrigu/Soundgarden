@@ -1,29 +1,37 @@
 // RoomParamsView — statischer oberer Bereich von SpatialControlPanel, extrahiert aus
 // SpatialControlPanel (Intent 55): Regler für Room-/Hall-Parameter (size/height/surface/mix,
 // spread/inputBandwidth/tailBalance) sowie ein Objekt-übergreifender ReverbSend-Regler, der
-// reverbMix auf allen registrierten Binauralizern gleichzeitig setzt. Anders als
-// SoundObjectControlsView baut sich dieser Bereich nur einmal auf (build) — die Regler selbst
-// bleiben über die Lebensdauer des Panels bestehen, nur ihre Werte ändern sich.
+// reverbMix auf allen registrierten Binauralizern gleichzeitig setzt. Optional (scenesDir)
+// zusätzlich ein Bereich zum Speichern/Laden ganzer Raum-Szenen über RoomSceneLibrary (Intent
+// 46) — analog zur Objekt-Preset-UI in SoundObjectControlsView, nur für den ganzen Room statt
+// ein einzelnes Soundobjekt. build ist idempotent (entfernt eine vorherige view zuerst) und
+// wird nach erfolgreichem Szenen-Laden erneut aufgerufen, damit die Regler die neu geladenen
+// Werte zeigen (siehe onSceneLoaded/SpatialControlPanel>>onSceneLoaded).
 RoomParamsView {
 	var <parentView;  // controlsView von SpatialControlPanel — Eltern-View
 	var <rect;        // Position/Grösse innerhalb von parentView
 	var <room;
+	var <>scenesDir;
+	var <>onSceneLoaded;  // Callback ({|room| ...}), feuert nach erfolgreichem Szenen-Laden
 	var view;
 
-	*new { |aParentView, aRect, aRoom|
-		^super.new.init(aParentView, aRect, aRoom);
+	*new { |aParentView, aRect, aRoom, aScenesDir|
+		^super.new.init(aParentView, aRect, aRoom, aScenesDir);
 	}
 
-	init { |aParentView, aRect, aRoom|
+	init { |aParentView, aRect, aRoom, aScenesDir|
 		parentView = aParentView;
 		rect = aRect;
 		room = aRoom;
+		scenesDir = aScenesDir;
 	}
 
 	build {
+		view !? { view.remove };
 		view = CompositeView(parentView, rect);
 		view.decorator = FlowLayout(view.bounds.insetBy(16, 16));
 		this.installControls;
+		if(scenesDir.notNil) { this.installSceneControls };
 		^this
 	}
 
@@ -77,6 +85,45 @@ RoomParamsView {
 		makeSlider.("ReverbSend", this.currentReverbMix, ControlSpec(0, 1, \lin, 0.01), { |value|
 			this.applyReverbMix(value);
 		});
+	}
+
+	// Bereich zum Speichern/Laden ganzer Raum-Szenen (Intent 46) -- nur aufgebaut, wenn
+	// scenesDir gesetzt ist (analog presetsDir/SoundObjectControlsView).
+	installSceneControls {
+		var controlWidth = 380@26;
+		var headerWidth = 380@22;
+		var label = StaticText(view, headerWidth);
+		var nameField = TextField(view, controlWidth);
+		var sceneMenu = PopUpMenu(view, controlWidth);
+		var refreshSceneMenu = { sceneMenu.items = RoomSceneLibrary.listNames(scenesDir) };
+
+		label.string = "Szene";
+		label.font = Font.default.copy.size_(15).boldVariant;
+		label.align = \left;
+		view.decorator.nextLine;
+
+		refreshSceneMenu.value;
+		view.decorator.nextLine;
+
+		Button(view, controlWidth).states_([["Szene speichern"]]).action_({
+			if(nameField.string.size > 0) {
+				RoomSceneLibrary.save(scenesDir, nameField.string, room);
+				refreshSceneMenu.value;
+			};
+		});
+		view.decorator.nextLine;
+
+		Button(view, controlWidth).states_([["Szene laden"]]).action_({
+			var name = sceneMenu.item;
+			var sceneEvent = if(name.notNil) { RoomSceneLibrary.load(scenesDir, name) } { nil };
+
+			if(sceneEvent.notNil) {
+				RoomSceneLibrary.applyTo(room, sceneEvent);
+				this.build;
+				onSceneLoaded.(room);
+			};
+		});
+		view.decorator.nextLine;
 	}
 
 	currentReverbMix {
