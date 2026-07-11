@@ -20,8 +20,8 @@ config = (
     roomSize: 10,
     roomHeight: 3,
     roomSurface: 0.35,
-    roomMix: 0.16, //0
-    reverbMix: 0.41, //0
+    //roomMix: 0.16, //0
+    //reverbMix: 0.41, //0
 
 //	roomSize: 8,
 //	roomHeight: 3,

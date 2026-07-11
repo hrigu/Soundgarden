@@ -18,7 +18,7 @@ BirdSound.addSynthDef;
 CricketSound.addSynthDef;
 // Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52).
 ~listener = Listener.new(binauralizerClass: AtkBinauralizer);
-~room = Room.new(s, listener: ~listener, size: 8, height: 3, surface: 0.5, mix: 0.3);
+~room = Room.new(s, listener: ~listener, size: 8, height: 3, surface: 0.5);
 
 // --- Parameter zum Experimentieren -----------------------------------------------------
 totalDur = 100;           // Gesamtdauer des Stücks in Sekunden
