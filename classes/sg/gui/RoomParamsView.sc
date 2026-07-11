@@ -4,15 +4,23 @@
 // reverbMix auf allen registrierten Binauralizern gleichzeitig setzt. Optional (scenesDir)
 // zusätzlich ein Bereich zum Speichern/Laden ganzer Raum-Szenen über RoomSceneLibrary (Intent
 // 46) — analog zur Objekt-Preset-UI in SoundObjectControlsView, nur für den ganzen Room statt
-// ein einzelnes Soundobjekt. build ist idempotent (entfernt eine vorherige view zuerst) und
-// wird nach erfolgreichem Szenen-Laden erneut aufgerufen, damit die Regler die neu geladenen
-// Werte zeigen (siehe onSceneLoaded/SpatialControlPanel>>onSceneLoaded).
+// ein einzelnes Soundobjekt.
+//
+// Der Inhalt läuft seit Intent 46 in einer ScrollView (wie SoundObjectControlsView): eine
+// erste Version mit fester CompositeView-Höhe hat den Szenen-Bereich bei zu knapp bemessener
+// SpatialControlPanel>>installControls-Höhe unerreichbar abgeschnitten (siehe Challenges) --
+// scrollbar macht das robust gegen jede künftige Erweiterung, statt Pixelhöhen zu erraten.
+//
+// build ist idempotent (entfernt eine vorherige view/scrollView zuerst) und wird nach
+// erfolgreichem Szenen-Laden erneut aufgerufen, damit die Regler die neu geladenen Werte
+// zeigen (siehe onSceneLoaded/SpatialControlPanel>>onSceneLoaded).
 RoomParamsView {
 	var <parentView;  // controlsView von SpatialControlPanel — Eltern-View
 	var <rect;        // Position/Grösse innerhalb von parentView
 	var <room;
 	var <>scenesDir;
 	var <>onSceneLoaded;  // Callback ({|room| ...}), feuert nach erfolgreichem Szenen-Laden
+	var scrollView;
 	var view;
 
 	*new { |aParentView, aRect, aRoom, aScenesDir|
@@ -27,8 +35,22 @@ RoomParamsView {
 	}
 
 	build {
+		// grosszügig bemessen (3 Header + 8 Slider fürs Room/Hall-Grundgerüst, optional 1
+		// weiterer Header + Namensfeld + Dropdown + 2 Buttons fürs Szenen-Speichern/Laden) --
+		// bewusst mit Puffer, damit ScrollView im Normalfall gar nicht scrollen muss.
+		var baseHeight = 340;
+		var sceneHeight = if(scenesDir.notNil) { 170 } { 0 };
+		var contentHeight = rect.height.max(baseHeight + sceneHeight);
+		var visibleWidth = rect.width - 16;
+
 		view !? { view.remove };
-		view = CompositeView(parentView, rect);
+		scrollView !? { scrollView.remove };
+		scrollView = ScrollView(parentView, rect);
+		scrollView.hasBorder_(false);
+		scrollView.hasHorizontalScroller_(false);
+		scrollView.hasVerticalScroller_(true);
+
+		view = CompositeView(scrollView, Rect(0, 0, visibleWidth, contentHeight));
 		view.decorator = FlowLayout(view.bounds.insetBy(16, 16));
 		this.installControls;
 		if(scenesDir.notNil) { this.installSceneControls };
