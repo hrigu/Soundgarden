@@ -2,7 +2,8 @@
 // recherchierter Gryllus-bimaculatus-Bioakustik) UND optional echte Grillen-Samples
 // (SampleSound) im selben Raum, jedes einzeln per Klick in der Raum-Draufsicht auswählbar und
 // live editierbar (Intent 43) -- inkl. Preset-Bibliothek zum Speichern/Laden guter
-// Klangeinstellungen (siehe SoundPresetLibrary, presets/crickets/). Anders als insects.scd
+// Klangeinstellungen, inzwischen inkl. Position/Bewegungsregel (siehe SoundObjectPresetLibrary,
+// Intent 46, presets/crickets/). Anders als insects.scd
 // (grosser, generischer Insekten-Schwarm) hier bewusst wenige Objekte -- ein Grillenchor, kein
 // Schwarm. Jede CricketSound-Instanz bekommt automatisch ein eigenes, per RhythmPatternCreator
 // generiertes Pattern (CricketSound-Default) -- dadurch zirpen die Grillen nicht synchron im

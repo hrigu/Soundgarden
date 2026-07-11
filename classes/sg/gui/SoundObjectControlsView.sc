@@ -199,13 +199,16 @@ SoundObjectControlsView {
 		^[start, end]
 	}
 
-	// Preset-Bibliothek fürs ausgewählte Soundobjekt.
+	// Preset-Bibliothek fürs ausgewählte Soundobjekt -- umfasst seit Intent 46 nicht mehr nur
+	// den Sound, sondern das ganze SoundObject (Klang + Position + Bewegungsregel, siehe
+	// SoundObjectPresetLibrary).
 	buildPresetControls {
 		var sound = selectedSoundObject.sound;
 		var nameField = TextField(contentView, 380@24);
 		var presetMenu = PopUpMenu(contentView, 380@24);
 		var refreshPresetMenu = {
-			presetMenu.items = SoundPresetLibrary.listNamesForSoundClass(presetsDir, sound.class)
+			presetMenu.items = SoundObjectPresetLibrary.listNamesForSoundClass(presetsDir,
+				sound.class)
 		};
 
 		refreshPresetMenu.value;
@@ -213,7 +216,7 @@ SoundObjectControlsView {
 
 		Button(contentView, 380@24).states_([["Preset speichern"]]).action_({
 			if(nameField.string.size > 0) {
-				SoundPresetLibrary.save(presetsDir, nameField.string, sound);
+				SoundObjectPresetLibrary.save(presetsDir, nameField.string, selectedSoundObject);
 				refreshPresetMenu.value;
 			};
 		});
@@ -221,11 +224,11 @@ SoundObjectControlsView {
 
 		Button(contentView, 380@24).states_([["Preset laden"]]).action_({
 			var name = presetMenu.item;
-			var preset = if(name.notNil) { SoundPresetLibrary.load(presetsDir, name) } { nil };
+			var preset = if(name.notNil) { SoundObjectPresetLibrary.load(presetsDir, name) } { nil };
 
 			if(preset.notNil) {
 				if(preset[\soundClass] == sound.class.name) {
-					SoundPresetLibrary.applyTo(sound, preset);
+					SoundObjectPresetLibrary.applyTo(selectedSoundObject, preset);
 					this.rebuild(selectedSoundObject);
 				} {
 					("Preset '" ++ name ++ "' passt nicht zu " ++ sound.class.name.asString

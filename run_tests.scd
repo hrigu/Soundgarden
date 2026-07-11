@@ -22,4 +22,4 @@ TestInsectSound.run;
 TestSampleSound.run;
 TestSampleSoundConfigurator.run;
 TestSongSound.run;
-TestSoundPresetLibrary.run;
+TestSoundObjectPresetLibrary.run;
