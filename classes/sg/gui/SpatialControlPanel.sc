@@ -101,7 +101,11 @@ SpatialControlPanel {
 	// rechter Bedienbereich: oben statische Room-/Hall-Regler (+ optional Szenen-Speichern/
 	// Laden, siehe scenesDir), unten dynamische Regler fürs ausgewählte Soundobjekt.
 	installControls {
-		var roomHeight = 360;
+		// 360 reichte für Room-/Hall-/ReverbSend-Regler allein; der optionale Szenen-Bereich
+		// (Header + Namensfeld + Dropdown + 2 Buttons, Intent 46) braucht spürbar mehr Platz --
+		// 480 lässt beides samt Rand komfortabel Platz (siehe RoomParamsView>>installControls/
+		// installSceneControls für die genaue Zeilenzahl).
+		var roomHeight = 480;
 
 		roomParamsView = RoomParamsView.new(controlsView,
 			Rect(0, 0, controlsView.bounds.width, roomHeight), room, scenesDir);
