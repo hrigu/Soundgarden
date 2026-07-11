@@ -1,18 +1,17 @@
-// dawn_chorus.scd — Dämmerungs-Komposition (Intent 57): über ~3 Minuten hinweg beginnen
-// vereinzelt Vögel zu rufen, es werden mit wachsender Dichte immer mehr, bis plötzlich die
-// Sonne durchbricht — kurzer Akzent auf allen Vögeln (Sound>>call, Intent 17), sie verstummen
-// (klickfrei dank Lag.kr auf amp, siehe BirdSound.sc), und die Grillen übernehmen -- ebenfalls
-// nach und nach statt im Unisono (gleiche Konfiguration wie demos/grill/crickets_with_breaks.scd,
-// aber gestaffelter Einsatz wie bei den Vögeln). Getrieben von Timeline (classes/sg/spatial/
-// Timeline.sc) — dem allgemeinen Modell für "Klang über Zeit verändern": at() für einmalige
-// Cues (ein neuer Vogel setzt ein, der Sonnenaufgang-Moment), analog zu Orchestras zentraler
-// Tick-Routine.
+// dawn_chorus.scd — Dämmerungs-Komposition (Intent 57, modularisiert in Intent 58): über
+// ~1 Minute hinweg beginnen vereinzelt Vögel zu rufen, es werden mit wachsender Dichte immer
+// mehr, bis plötzlich die Sonne durchbricht — dreifacher Akzent auf allen Vögeln (Sound>>call,
+// Intent 17), sie verstummen gestaffelt (klickfrei via SoundObject>>fadeOutAndStop), und nach
+// einer kurzen Pause übernehmen die Grillen -- ebenfalls nach und nach statt im Unisono.
+// Getrieben von Timeline (classes/sg/spatial/Timeline.sc) — dem allgemeinen Modell für "Klang
+// über Zeit verändern": at() für einmalige Cues, Timeline.staggeredTimes für die
+// Einsatzpläne (gestaffelte Zeitpunkte mit wachsender Dichte + Jitter, siehe dort).
 //
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning/HRTF) funktionieren nicht über
 // Lautsprecher richtig.
 (
-var totalDur, sunriseTime, numBirds, numCrickets, birdTimes, cricketFadeInDur, cricketTimes,
-	birdFadeOutDur, cricketCycleDur, cricketSoundRatio, cricketStartDelay;
+var totalDur, sunriseTime, numBirds, numCrickets, birdFadeOutDur, cricketStartDelay,
+	cricketFadeInDur, cricketCycleDur, cricketSoundRatio, birdTimes, cricketTimes;
 
 BirdSound.addSynthDef;
 CricketSound.addSynthDef;
@@ -20,39 +19,33 @@ CricketSound.addSynthDef;
 ~listener = Listener.new(binauralizerClass: Binauralizer);
 ~room = Room.new(s, listener: ~listener, size: 8, height: 3, surface: 0.5, mix: 0.3);
 
-totalDur = 60;
-sunriseTime = 25;
-numBirds = 44;
-numCrickets = 50;
-cricketFadeInDur = 10; // Grillen setzen nach dem Sonnenaufgang gestaffelt ein, siehe cricketTimes
-cricketStartDelay = 5; // Pause nach dem Sonnenaufgang, bevor die erste Grille einsetzt -- der
-// Sonnenaufgang-Moment (dreifacher Vogelruf) soll erst für sich stehen, bevor der nächste
-// Abschnitt beginnt, statt direkt in die Grillen überzugehen.
-birdFadeOutDur = 8; // Vögel verstummen nach dem Sonnenaufgang gestaffelt statt im Unisono, siehe unten
-// Grillen-Rhythmus wie crickets_with_breaks.scd: lange Gesamtzykluslänge bei wenigen Segmenten
-// (numSegments unten) lässt RhythmPatternCreator mal kurze, mal auffällig lange Einzel-Pausen
-// erzeugen -- statt des permanenten Zirpens von vorher (dort fehlte ein pattern komplett).
-cricketCycleDur = 40;
+// --- Parameter zum Experimentieren -----------------------------------------------------
+totalDur = 60;           // Gesamtdauer des Stücks in Sekunden
+sunriseTime = 25;        // Zeitpunkt des Sonnenaufgang-Moments
+numBirds = 44;           // Anzahl Vögel, die bis zum Sonnenaufgang gestaffelt einsetzen
+numCrickets = 50;        // Anzahl Grillen, die nach dem Sonnenaufgang gestaffelt einsetzen
+birdFadeOutDur = 8;      // Zeitraum nach dem Sonnenaufgang, über den die Vögel gestaffelt
+                         // verstummen (jede zu einem zufälligen Zeitpunkt darin)
+cricketStartDelay = 5;   // Pause nach dem Sonnenaufgang, bevor die erste Grille einsetzt --
+                         // der Sonnenaufgang-Moment soll erst für sich stehen
+cricketFadeInDur = 10;   // Zeitraum, über den die Grillen nach cricketStartDelay einsetzen
+cricketCycleDur = 40;    // Grillen-Rhythmus wie crickets_with_breaks.scd: lange
+                         // Gesamtzykluslänge bei wenigen Segmenten (numSegments unten) lässt
+                         // RhythmPatternCreator mal kurze, mal auffällig lange Pausen erzeugen
 cricketSoundRatio = 1 / 30; // ~1:30 Sound zu Stille, wie crickets_with_breaks.scd
+// ----------------------------------------------------------------------------------------
 
 ~activeBirds = List.new;
 ~crickets = List.new;
 ~timeline = Timeline.new(totalDur);
 
-// Vogel-Einsatzplan: wachsende Dichte Richtung Sonnenaufgang -- Potenz > 1 staucht spätere
-// Einsätze näher zusammen (wenige, weit auseinanderliegende Rufe am Anfang der Dämmerung,
-// dichter Chor kurz davor). clip hält alle Einsätze sicher vor dem Sonnenaufgang-Cue.
-birdTimes = (1..numBirds).collect { |i|
-	(((i / numBirds) ** 1.8 * sunriseTime) + rrand(-2.0, 2.0)).clip(0, sunriseTime - 1)
-};
-
-// Grillen-Einsatzplan: wie bei den Vögeln kein Unisono-Einsatz, sondern nach und nach --
-// gleichmäßig über cricketFadeInDur nach dem Sonnenaufgang verteilt, mit Jitter. clip hält
-// alle Einsätze innerhalb der Timeline-Gesamtdauer.
-cricketTimes = (1..numCrickets).collect { |i|
-	(sunriseTime + cricketStartDelay + ((i / numCrickets) * cricketFadeInDur) + rrand(-0.8, 0.8))
-		.clip(sunriseTime + cricketStartDelay, totalDur - 1)
-};
+// Vogel-Einsatzplan: wachsende Dichte Richtung Sonnenaufgang (power > 1 staucht spätere
+// Einsätze näher zusammen). Grillen-Einsatzplan: gleichmäßig über cricketFadeInDur nach
+// cricketStartDelay verteilt, mit Jitter (power = 1, Default). Siehe Timeline>>staggeredTimes.
+birdTimes = Timeline.staggeredTimes(count: numBirds, spanDur: sunriseTime, jitter: 2.0,
+	power: 1.8, clipMax: sunriseTime - 1);
+cricketTimes = Timeline.staggeredTimes(count: numCrickets, spanDur: cricketFadeInDur,
+	startTime: sunriseTime + cricketStartDelay, jitter: 0.8, clipMax: totalDur - 1);
 
 birdTimes.do { |t|
 	~timeline.at(t, {
@@ -107,13 +100,12 @@ birdTimes.do { |t|
 		~activeBirds.do { |so|
 			Routine({
 				birdFadeOutDur.rand.wait; // gestaffelter Offset, Akzent-Decay ist oben schon abgewartet
-				so.sound.setParam(\amp, 0);
-				0.5.wait; // Lag.kr(amp, 0.15)-Ausklang abwarten, bevor der Synth ganz freigegeben wird
-				so.stop;
-				~room.orchestra.unregister(so);
-				// aus der Liste entfernen -- sonst würde der Stück-Ende-Cue unten denselben,
-				// längst gestoppten Vogel nochmal stoppen ("Node not found"/"Bus already freed").
-				~activeBirds.remove(so);
+				so.fadeOutAndStop(0.5, { |stopped|
+					~room.orchestra.unregister(stopped);
+					// aus der Liste entfernen -- sonst würde der Stück-Ende-Cue unten
+					// denselben, längst gestoppten Vogel nochmal stoppen.
+					~activeBirds.remove(stopped);
+				});
 			}).play;
 		};
 	}).play;
@@ -157,23 +149,15 @@ cricketTimes.do { |t, i|
 
 // Stück-Ende: eigener Cue statt Callback in Timeline (die Klasse kennt kein onDone), feuert
 // dank Timeline>>tick zuverlässig im selben tick, der auch isDone auslöst (siehe Timeline.sc).
-// Bislang zirpten die Grillen (und ggf. noch nicht ausgefadete Vögel) einfach weiter, weil
-// nur die Timeline selbst stoppte -- hier jetzt zusätzlich alle verbliebenen Sound-Objekte
-// klickfrei stoppen (erst amp -> 0, dann nach Lag.kr-Ausklang stop), gleiches Muster wie beim
-// Sonnenaufgang-Fade-out der Vögel oben.
+// Alle verbliebenen Sound-Objekte klickfrei stoppen (fadeOutAndStop), statt sie einfach
+// weiterlaufen zu lassen -- nur die Timeline selbst stoppte bisher.
 ~timeline.at(totalDur, {
 	"Stück ist fertig.".postln;
-	(~crickets ++ ~activeBirds).do { |so| so.sound.setParam(\amp, 0) };
-
-	Routine({
-		0.3.wait; // Lag.kr(amp)-Ausklang abwarten (0.1s Grillen, 0.15s Vögel)
-		(~crickets ++ ~activeBirds).do { |so|
-			so.stop;
-			~room.orchestra.unregister(so);
-		};
-		~crickets = List.new;
-		~activeBirds = List.new;
-	}).play;
+	(~crickets ++ ~activeBirds).do { |so|
+		so.fadeOutAndStop(0.3, { |stopped| ~room.orchestra.unregister(stopped) });
+	};
+	~crickets = List.new;
+	~activeBirds = List.new;
 });
 
 // --- 2) Abspielen ---
