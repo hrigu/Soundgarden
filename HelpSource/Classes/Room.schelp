@@ -58,7 +58,10 @@ Deckenhöhe in Metern. Default 3.
 argument:: surface
 Oberflächenbeschaffenheit zwischen 0 (rau/absorbierend) und 1 (glatt/hart). Default 0.5.
 argument:: mix
-Hall-Gesamtpegel. Default 1.
+Hall-Gesamtpegel. Default 0.25 — bewusst trocken: zu viel Hall verdeckt frühe ITD-/
+Pegel-Unterschiede und erschwert die binaurale Seitenortung, die der eigentliche Zweck des
+Spatial-Audio-Setups ist. Hall lässt sich jederzeit live hochdrehen (siehe unten), verlorene
+Ortung ist dagegen kein guter Startpunkt (Intent 36).
 
 INSTANCEMETHODS::
 
@@ -93,7 +96,7 @@ argument:: sound
 Ein fertiger link::Classes/Sound:: (z.B. link::Classes/InsectSound::).
 argument:: reverbMix
 Anteil des Trockensignals, der in den geteilten Hall-Bus fliesst (an den Binauralizer
-durchgereicht). Default 0.3.
+durchgereicht). Default 0.2 (Intent 36, siehe code::mix::-Argument oben).
 returns:: Das neu angelegte, bereits registrierte SoundObject.
 
 method:: registerFromBuilder
@@ -108,7 +111,7 @@ argument:: movableParams
 Ein link::Classes/Event:: mit den Setter-Parametern für Movable (code::pos::,
 code::moveRule::, code::roomRadius::, ...).
 argument:: reverbMix
-Wie bei code::register::. Default 0.3.
+Wie bei code::register::. Default 0.2.
 argument:: soundClass
 Optional, überschreibt die Standard-Sound-Klasse (link::Classes/InsectSound::) des Builders.
 argument:: movableClass
@@ -166,7 +169,7 @@ EXAMPLES::
 
 code::
 (
-~room = Room.new(s, size: 8, height: 3, surface: 0.5, mix: 1);
+~room = Room.new(s, size: 8, height: 3, surface: 0.5, mix: 0.25);
 ~room.addSynthDef(AtkBinauralizer, subjectID: 21);
 
 ~insect = ~room.registerFromBuilder(
@@ -181,7 +184,7 @@ code::
 ~room.size = 12;
 ~room.height = 4;
 ~room.surface = 1;
-~room.mix = 0.2;
+~room.mix = 0.5;
 
 ~room.stop;
 ::
