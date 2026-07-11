@@ -20,6 +20,7 @@ TestRhythmPatternCreator.run;
 TestCricketSound.run;
 TestSound.run;
 TestInsectSound.run;
+TestBirdSound.run;
 TestSampleSound.run;
 TestSampleSoundConfigurator.run;
 TestSongSound.run;
