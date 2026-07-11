@@ -20,19 +20,19 @@ CricketSound.addSynthDef;
 ~room = Room.new(s, listener: ~listener, size: 8, height: 3, surface: 0.5, mix: 0.3);
 
 // --- Parameter zum Experimentieren -----------------------------------------------------
-totalDur = 60;           // Gesamtdauer des Stücks in Sekunden
-sunriseTime = 25;        // Zeitpunkt des Sonnenaufgang-Moments
+totalDur = 120;           // Gesamtdauer des Stücks in Sekunden
+sunriseTime = 40;        // Zeitpunkt des Sonnenaufgang-Moments
 numBirds = 44;           // Anzahl Vögel, die bis zum Sonnenaufgang gestaffelt einsetzen
 numCrickets = 50;        // Anzahl Grillen, die nach dem Sonnenaufgang gestaffelt einsetzen
-birdFadeOutDur = 8;      // Zeitraum nach dem Sonnenaufgang, über den die Vögel gestaffelt
+birdFadeOutDur = 16;      // Zeitraum nach dem Sonnenaufgang, über den die Vögel gestaffelt
                          // verstummen (jede zu einem zufälligen Zeitpunkt darin)
-cricketStartDelay = 5;   // Pause nach dem Sonnenaufgang, bevor die erste Grille einsetzt --
+cricketStartDelay = 8;   // Pause nach dem Sonnenaufgang, bevor die erste Grille einsetzt --
                          // der Sonnenaufgang-Moment soll erst für sich stehen
-cricketFadeInDur = 10;   // Zeitraum, über den die Grillen nach cricketStartDelay einsetzen
-cricketCycleDur = 40;    // Grillen-Rhythmus wie crickets_with_breaks.scd: lange
+cricketFadeInDur = 20;   // Zeitraum, über den die Grillen nach cricketStartDelay einsetzen
+cricketCycleDur = 50;    // Grillen-Rhythmus wie crickets_with_breaks.scd: lange
                          // Gesamtzykluslänge bei wenigen Segmenten (numSegments unten) lässt
                          // RhythmPatternCreator mal kurze, mal auffällig lange Pausen erzeugen
-cricketSoundRatio = 1 / 30; // ~1:30 Sound zu Stille, wie crickets_with_breaks.scd
+cricketSoundRatio = 1 / 40; // ~1:40 Sound zu Stille (etwas sparsamer als crickets_with_breaks.scd)
 // ----------------------------------------------------------------------------------------
 
 ~activeBirds = List.new;
