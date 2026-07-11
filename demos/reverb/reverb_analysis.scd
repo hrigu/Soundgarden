@@ -11,6 +11,9 @@ var config, insectMovableBase, insectSoundBase, insectSoundVariants, positions,
 InsectSound.addSynthDef;
 SampleSound.addSynthDef;
 
+~sampleName = "djembe__phrase_fortissimo_rhythm";
+
+
 // Zentrale Session-Konfiguration: diese Werte werden beim Hoertest am haeufigsten
 // variiert, deshalb liegen sie gebuendelt an einer Stelle statt verteilt im Skript.
 config = (
