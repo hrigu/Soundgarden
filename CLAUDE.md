@@ -18,6 +18,11 @@ Soundgarden ist ein SuperCollider-Spielplatz mit aktuell zwei Arbeitssträngen:
    definierten Raum bewegen (oder stationär bleiben) und dem Hörer über Kopfhörer binaural
    zugespielt werden.
 
+`demos/` enthält technische Beispiele/Vorführungen einzelner Features; `oeuvre/` (z.B.
+`oeuvre/dawn/dawn_chorus.scd`, Intent 57/58) eigenständige Kompositionen, die über Timeline
+(`classes/sg/spatial/Timeline.sc`) eine zeitliche Entwicklung durchlaufen — beide nutzen
+dieselben `classes/sg/`-Bausteine, unterscheiden sich nur im Zweck (Beispiel vs. fertiges Stück).
+
 Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 
 ## Befehle
@@ -35,8 +40,9 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 - Live-Set-Workflow: `boot/boot.scd` → `experiments/live_coding_rig/fx.scd` →
   `experiments/live_coding_rig/set_template.scd` (Block für Block, `Cmd+Enter`).
 - Spatial-Audio-Prototyp: `boot/boot.scd` → eine der Varianten in `demos/grill/` (bzw.
-  `demos/sample.scd`, `demos/reverb.scd`, ...) — **Kopfhörer benutzen**, binaurale Effekte
-  funktionieren über Lautsprecher nicht richtig.
+  `demos/sample.scd`, `demos/reverb.scd`, ...) oder eine Komposition unter `oeuvre/` (z.B.
+  `oeuvre/dawn/dawn_chorus.scd`) — **Kopfhörer benutzen**, binaurale Effekte funktionieren über
+  Lautsprecher nicht richtig.
 
 ## Architektur
 
@@ -57,12 +63,17 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
     Heuristik für `SampleSound`), `SongSound` (durchlaufender Song/Atmo als Klangquelle),
     `CallingPattern`/`RhythmPatternCreator` (An/Aus-Zeitmuster für Ruf-Rhythmen),
     `SoundPresetLibrary` (Klangparameter-Presets als `.scd`-Dateien speichern/laden)
-  - `classes/sg/soundobjects/` — `SoundObject`, `Movable`, `MoveRule`, `CircularMoveRule`,
-    `SteadyMoveRule` (Bewegung + Klangobjekt), `SoundObjectBuilder` (baut ein `SoundObject`
-    aus zwei Params-Events statt Sound/Movable von Hand zu instanzieren)
-  - `classes/sg/spatial/` — `Listener` (Position/Blickrichtung, kennt seine
-    "Ohren"-Strategie, siehe `binauralizerClass`/`makeBinauralizer`), `Orchestra` (zentraler
-    Taktgeber, tickt alle registrierten `SoundObject`s), `Room` (kapselt Raumakustik +
+  - `classes/sg/soundobjects/` — `SoundObject` (Bewegung + Klang + Binauralizer;
+    `fadeOutAndStop` stoppt klickfrei: amp → 0, Lag-Ausklang abwarten, dann stop, mit
+    optionalem `onComplete`-Callback fürs Aufräumen durch den Aufrufer, z.B. Orchestra-
+    Unregister), `Movable`, `MoveRule`, `CircularMoveRule`, `SteadyMoveRule`,
+    `SoundObjectBuilder` (baut ein `SoundObject` aus zwei Params-Events statt Sound/Movable
+    von Hand zu instanzieren)
+  - `classes/sg/spatial/` — `Timeline` (allgemeines Modell für "Klang über Zeit verändern":
+    `at`/`ramp`-Cues, `staggeredTimes`-Utility für gestaffelte Einsatzzeitpunkte mit
+    wachsender Dichte + Jitter, siehe Intent 57/58), `Listener` (Position/Blickrichtung, kennt
+    seine "Ohren"-Strategie, siehe `binauralizerClass`/`makeBinauralizer`), `Orchestra`
+    (zentraler Taktgeber, tickt alle registrierten `SoundObject`s), `Room` (kapselt Raumakustik +
     `Orchestra` + gemeinsamen `RoomReverb`, einziger Ort fürs Größe/Höhe/Oberfläche →
     Hallparameter-Mapping), `RoomReverb` (ein geteilter GVerb-Hall für den ganzen Raum),
     `Binauralizer` (einfache Pan/ITD/Distanz-Näherung, reine Core-UGens), `AtkBinauralizer`
