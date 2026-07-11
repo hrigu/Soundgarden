@@ -4,7 +4,10 @@
 (
 s = Server.default;
 s.options.numBuffers = 1024 * 16;
-s.options.memSize = 8192 * 16;
+// hoch angesetzt: dawn_chorus.scd hält zeitweise >30 AtkBinauralizer-Synths gleichzeitig
+// aktiv, jeder mit HRTF-Faltung (Convolution2 in FoaDecode) -- bei zu knappem memSize
+// schlägt das mit "Convolution2_Ctor: alloc failed" fehl.
+s.options.memSize = 8192 * 64;
 // nicht nötig, wenn Mikrofon-Input des Bluetooth-Headsets in den Systemeinstellungen deaktiviert ist
 //s.options.numInputBusChannels = 0; // kein Mikrofon-Input nötig — vermeidet Samplerate-Konflikte
                                     // mit Bluetooth-Headsets (deren Mikrofon oft nur 16kHz liefert)

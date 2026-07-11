@@ -73,8 +73,12 @@ BirdSound : Sound {
 			var ampCtrl = Lag.kr(amp, 0.15);
 			var sig = SinOsc.ar(freq) * chirpEnv;
 			// gate schaltet das CallingPattern (Intent 30) An/Aus, kurze Lag-Zeit wie bei
-			// InsectSound, damit auch kurze Ruf-Phrasen hörbar bleiben.
-			Out.ar(out, sig * ampCtrl * (1 + (callEnv * 1.5)) * Lag.kr(gate, 0.05));
+			// InsectSound, damit auch kurze Ruf-Phrasen hörbar bleiben. callEnv hebt das gate
+			// zusätzlich für die Dauer des Akzents an (max) -- sonst wäre der Sonnenaufgang-Akzent
+			// (Sound>>call, alle Vögel gleichzeitig) auf den meisten Vögeln unhörbar, weil deren
+			// CallingPattern-gate im Moment des Cues zufällig gerade auf 0 (Ruf-Pause) steht.
+			var gateCtrl = max(Lag.kr(gate, 0.05), callEnv);
+			Out.ar(out, sig * ampCtrl * (1 + (callEnv * 1.5)) * gateCtrl);
 		}).add;
 	}
 

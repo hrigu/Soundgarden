@@ -66,10 +66,17 @@ Timeline {
 		var dt = 1.0 / updateRate;
 
 		routine = Routine({
-			loop {
-				this.tick(dt);
-				if(this.isDone) { ^nil };
-				dt.wait;
+			// block/break statt "^nil": ein Non-Local-Return würde versuchen, aus dieser Methode
+			// (Timeline:play) zurückzukehren -- deren Frame ist aber längst weg, da play direkt
+			// nach dem Routine-Start mit ^this zurückkehrt. Erreicht die Routine (asynchron, bei
+			// einem späteren dt.wait-Resume) dann isDone, schlägt das mit "Out of context return"
+			// fehl. block/break bricht stattdessen nur aus der Routine-Funktion selbst aus.
+			block { |break|
+				loop {
+					this.tick(dt);
+					if(this.isDone) { break.value(nil) };
+					dt.wait;
+				}
 			}
 		}).play;
 
