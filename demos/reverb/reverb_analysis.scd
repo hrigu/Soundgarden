@@ -5,9 +5,11 @@
 // --- 1) Setup + Start: alles an einer Stelle vorbereiten ---
 (
 var config, insectMovableBase, insectSoundBase, insectSoundVariants, positions,
-	makeSequencePattern, chirpWindow;
+	makeSequencePattern, chirpWindow, soundsDir, sampleFiles, normalizedSampleName,
+	exactMatch, partialMatch, sampleFile;
 
 InsectSound.addSynthDef;
+SampleSound.addSynthDef;
 
 // Zentrale Session-Konfiguration: diese Werte werden beim Hoertest am haeufigsten
 // variiert, deshalb liegen sie gebuendelt an einer Stelle statt verteilt im Skript.
@@ -47,7 +49,9 @@ config = (
 		(wingRate: 225, ringFreq1: 3000, ringFreq2: 4500, amp: 0.2),
 		(wingRate: 150, wingDuty: 0.38, ringFreq1: 1900, ringFreq2: 2900, amp: 0.24),
 		(wingRate: 270, wingDuty: 0.2, ringFreq1: 3800, ringFreq2: 5600, amp: 0.18)
-	]
+	],
+	samplePosition: [0, -3, 0],
+	sampleAmp: 0.6
 );
 
 ~analysisConfig = config;
@@ -96,6 +100,47 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 	)
 };
 
+// Vergleichsklang aus der eigenen sounds/-Bibliothek: ~sampleName kann vor diesem Block
+// gesetzt werden (Dateiname oder Namensfragment, z.B. ~sampleName = "Submarine";). Match
+// bevorzugt fileNameWithoutExtension, sonst ein Namensfragment; ohne Treffer bzw. ohne
+// gesetzten Namen bleibt das Sample-Objekt einfach weg (kein Abbruch des Setups, siehe
+// crickets.scd fuer dasselbe optionale Muster).
+~sampleObject = nil;
+if(~sampleName.notNil) {
+	soundsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "sounds");
+	sampleFiles = [];
+	soundsDir.filesDo({ |pe|
+		if(
+			pe.isFile
+			and: { pe.fileName.beginsWith(".").not }
+			and: { BootTrackDetection.isValidExtension(pe.extension) }
+		) {
+			sampleFiles = sampleFiles.add(pe);
+		};
+	});
+
+	normalizedSampleName = ~sampleName.asString.toLower;
+	exactMatch = sampleFiles.detect({ |pe|
+		pe.fileNameWithoutExtension.asString.toLower == normalizedSampleName
+	});
+	partialMatch = sampleFiles.detect({ |pe|
+		pe.fileNameWithoutExtension.asString.toLower.contains(normalizedSampleName)
+	});
+	sampleFile = exactMatch ?? partialMatch;
+
+	if(sampleFile.notNil) {
+		~sampleObject = ~room.register(
+			Movable.new(config[\samplePosition], SteadyMoveRule.new,
+				roomRadius: config[\roomRadius]),
+			SampleSound.new(sampleFile.fullPath, amp: config[\sampleAmp]),
+			reverbMix: config[\reverbMix]
+		);
+		"Raumhall-Analyse: Vergleichs-Sample: %\n".postf(sampleFile.fileNameWithoutExtension);
+	} {
+		"Raumhall-Analyse: kein Sample zu ~sampleName='%' unter sounds/ gefunden -- kein Sample-Objekt.\n".postf(~sampleName);
+	};
+};
+
 "Raumhall-Analyse: Demo vorbereitet. Mit ~startDemo.() abspielen.\n".post;
 
 ~applyTuning = {
@@ -104,6 +149,7 @@ makeSequencePattern = { |prefixSilence, suffixSilence|
 	~room.surface = config[\roomSurface];
 	~room.mix = config[\roomMix];
 	~insects.do { |insect| insect.binauralizer.synth.set(\reverbMix, config[\reverbMix]) };
+	~sampleObject !? { ~sampleObject.binauralizer.synth.set(\reverbMix, config[\reverbMix]) };
 };
 
 ~startDemo = {
