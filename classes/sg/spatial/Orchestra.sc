@@ -66,6 +66,16 @@ Orchestra {
 		soundObjects.do { |soundObject| soundObject.stop };
 	}
 
+	// stoppt alle registrierten SoundObjects UND leert danach die Registry (anders als stop,
+	// das die Registry bewusst erhält) — für einen kompletten Neuaufbau der Szene, z.B. beim
+	// Laden einer RoomSceneLibrary-Szene in einen bereits laufenden Room (Intent 46). Die
+	// eigene Tick-Routine bleibt unangetastet: sie läuft mit einer leeren Registry einfach als
+	// No-op weiter, bis neue SoundObjects registriert werden.
+	clear {
+		soundObjects.do { |soundObject| soundObject.stop };
+		soundObjects = [];
+	}
+
 	// wählt ein zufälliges anderes registriertes SoundObject (nie caller selbst) für
 	// Call-and-Response; nil, falls keine anderen registriert sind. Reine sclang-Logik,
 	// ohne Server-Bezug, daher separat von call() testbar (siehe tests/TestOrchestra.sc).

@@ -75,6 +75,22 @@ TestOrchestra : UnitTest {
 		orchestra.stop;
 	}
 
+	test_clearStopsAllRegisteredSoundObjectsAndEmptiesRegistry {
+		var listener = Listener.new;
+		var soundObject1 = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
+		var soundObject2 = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);
+		var orchestra = Orchestra.new(listener);
+
+		orchestra.register(soundObject1);
+		orchestra.register(soundObject2);
+		orchestra.clear;
+
+		this.assert(soundObject1.stopped, "clear (Intent 46) stoppt jedes registrierte Objekt");
+		this.assert(soundObject2.stopped, "clear (Intent 46) stoppt jedes registrierte Objekt");
+		this.assertEquals(orchestra.soundObjects.size, 0,
+			"anders als stop leert clear die Registry -- fürs Neuaufbauen einer Szene");
+	}
+
 	test_stopStopsAllRegisteredSoundObjectsButKeepsRegistry {
 		var listener = Listener.new;
 		var soundObject1 = FakeSoundObjectForOrchestraTest.new(#[0, 1, 0]);

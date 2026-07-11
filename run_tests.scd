@@ -11,6 +11,7 @@ TestSteadyMoveRule.run;
 TestMovable.run;
 TestListener.run;
 TestRoom.run;
+TestRoomSceneLibrary.run;
 TestSoloMuteController.run;
 TestSoundObjectControlsView.run;
 TestSoundObjectBuilder.run;
