@@ -2,6 +2,10 @@
 sounds/*
 !sounds/.gitkeep
 
+# Aufnahmen aus oeuvre/-Kompositionen — bleiben lokal
+recordings/*
+!recordings/.gitkeep
+
 # SuperCollider / macOS cruft
 .DS_Store
 *.scsyndef

@@ -17,12 +17,12 @@ var totalDur, sunriseTime, numBirds, numCrickets, birdFadeOutDur, cricketStartDe
 BirdSound.addSynthDef;
 CricketSound.addSynthDef;
 // Der Listener wird extern konfiguriert/instanziiert und dann dem Room übergeben (Intent 52).
-~listener = Listener.new(binauralizerClass: Binauralizer);
+~listener = Listener.new(binauralizerClass: AtkBinauralizer);
 ~room = Room.new(s, listener: ~listener, size: 8, height: 3, surface: 0.5, mix: 0.3);
 
 // --- Parameter zum Experimentieren -----------------------------------------------------
-totalDur = 120;           // Gesamtdauer des Stücks in Sekunden
-sunriseTime = 40;        // Zeitpunkt des Sonnenaufgang-Moments
+totalDur = 100;           // Gesamtdauer des Stücks in Sekunden
+sunriseTime = 30;        // Zeitpunkt des Sonnenaufgang-Moments
 numBirds = 44;           // Anzahl Vögel, die bis zum Sonnenaufgang gestaffelt einsetzen
 numCrickets = 50;        // Anzahl Grillen, die nach dem Sonnenaufgang gestaffelt einsetzen
 birdFadeOutDur = 16;      // Zeitraum nach dem Sonnenaufgang, über den die Vögel gestaffelt
@@ -39,6 +39,10 @@ cricketVolumeRampDur = cricketFadeInDur; // Zeitraum, über den die Grillen-Laut
                          // ansteigt (siehe ~timeline.ramp weiter unten) -- unabhängig von den
                          // einzelnen Grillen-Rufrhythmen (RhythmPatternCreator/pattern oben)
 // ----------------------------------------------------------------------------------------
+
+// totalDur ist eine lokale var dieses Blocks -- für die Aufnahmedauer in Block 2 (eigener
+// Ausführungskontext) als ~-Variable verfügbar machen.
+~totalDur = totalDur;
 
 ~activeBirds = List.new;
 ~crickets = List.new;
@@ -193,6 +197,17 @@ cricketTimes.do { |t, i|
 )
 
 
+// Aufnahme des kompletten Stücks (Server-Output, also inkl. binauraler Verarbeitung) von
+// Anfang bis Ende -- duration stoppt sie automatisch nach der Stückdauer + Sicherheitsmarge
+// (Vögel/Grillen klingen nach dem Stück-Ende-Cue noch bis zu ~0.8s aus, siehe fadeOutAndStop).
+~recordingsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "recordings")
+	.fullPath;
+if(File.exists(~recordingsDir).not) { File.mkdir(~recordingsDir) };
+~recordingPath = ~recordingsDir +/+ "dawn_chorus_"
+	++ Date.getDate.format("%Y-%m-%d_%H-%M-%S") ++ ".wav";
+s.record(path: ~recordingPath, duration: ~totalDur + 2);
+"Aufnahme gestartet: %".format(~recordingPath).postln;
+
 "Beginn der Dämmerung.".postln;
 ~room.play;
 ~timeline.play;
@@ -208,6 +223,10 @@ cricketTimes.do { |t, i|
 
 // --- 4) Stoppen ---
 ~timeline.stop;
+
+// Fallback, falls das Stück vorzeitig abgebrochen wird -- normalerweise stoppt s.record schon
+// selbst über die oben gesetzte duration. Kein Fehler, falls längst nicht mehr aufgenommen wird.
+s.stopRecording;
 
 // room.teardown stoppt, gibt den Reverb-Bus frei UND delegiert an listener.teardown, das bei
 // AtkBinauralizer den HRTF-Kernel freigibt (siehe Room>>teardown/Listener>>teardown, Intent
