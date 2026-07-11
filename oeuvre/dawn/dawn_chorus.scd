@@ -1,6 +1,6 @@
 // dawn_chorus.scd — Dämmerungs-Komposition (Intent 57, modularisiert in Intent 58): über
 // ~1 Minute hinweg beginnen vereinzelt Vögel zu rufen, es werden mit wachsender Dichte immer
-// mehr, bis plötzlich die Sonne durchbricht — dreifacher Akzent auf allen Vögeln (Sound>>call,
+// mehr, bis plötzlich die Sonne durchbricht — fünffacher Akzent auf allen Vögeln (Sound>>call,
 // Intent 17), sie verstummen gestaffelt (klickfrei via SoundObject>>fadeOutAndStop), und nach
 // einer kurzen Pause übernehmen die Grillen -- ebenfalls nach und nach statt im Unisono.
 // Getrieben von Timeline (classes/sg/spatial/Timeline.sc) — dem allgemeinen Modell für "Klang
@@ -11,7 +11,8 @@
 // Lautsprecher richtig.
 (
 var totalDur, sunriseTime, numBirds, numCrickets, birdFadeOutDur, cricketStartDelay,
-	cricketFadeInDur, cricketCycleDur, cricketSoundRatio, birdTimes, cricketTimes;
+	cricketFadeInDur, cricketCycleDur, cricketSoundRatio, cricketVolumeRampDur, birdTimes,
+	cricketTimes;
 
 BirdSound.addSynthDef;
 CricketSound.addSynthDef;
@@ -33,10 +34,18 @@ cricketCycleDur = 50;    // Grillen-Rhythmus wie crickets_with_breaks.scd: lange
                          // Gesamtzykluslänge bei wenigen Segmenten (numSegments unten) lässt
                          // RhythmPatternCreator mal kurze, mal auffällig lange Pausen erzeugen
 cricketSoundRatio = 1 / 40; // ~1:40 Sound zu Stille (etwas sparsamer als crickets_with_breaks.scd)
+cricketVolumeRampDur = cricketFadeInDur; // Zeitraum, über den die Grillen-Lautstärke insgesamt
+                         // von ganz leise auf die volle, jeweils konfigurierte Lautstärke
+                         // ansteigt (siehe ~timeline.ramp weiter unten) -- unabhängig von den
+                         // einzelnen Grillen-Rufrhythmen (RhythmPatternCreator/pattern oben)
 // ----------------------------------------------------------------------------------------
 
 ~activeBirds = List.new;
 ~crickets = List.new;
+// merkt sich pro Grille die eigentliche Ziel-Lautstärke (soundParams[\amp] unten), damit der
+// Lautstärke-Ramp sie mit dem aktuellen Ramp-Faktor multiplizieren kann, ohne den Zielwert
+// selbst durch wiederholtes Lesen von sound.amp zu verfälschen (siehe ~timeline.ramp unten).
+~cricketTargetAmp = IdentityDictionary.new;
 ~timeline = Timeline.new(totalDur);
 
 // Vogel-Einsatzplan: wachsende Dichte Richtung Sonnenaufgang (power > 1 staucht spätere
@@ -80,9 +89,9 @@ birdTimes.do { |t|
 	});
 };
 
-// Sonnenaufgang: heller Akzent auf allen aktiven Vögeln (Sound>>call, Intent 17), dreifach
+// Sonnenaufgang: heller Akzent auf allen aktiven Vögeln (Sound>>call, Intent 17), 5-fach
 // statt einmalig -- ein einzelner Call (Env.perc, ~0.35s Decay) ging im dichten Vogelchor
-// akustisch fast unter, drei Rufe im Abstand machen den Moment klar erkennbar. Dieser Moment
+// akustisch fast unter, mehrere Rufe im Abstand machen den Moment klar erkennbar. Dieser Moment
 // bleibt synchron, alle Vögel reagieren gemeinsam auf den Lichteinbruch. Das Verstummen danach
 // ist aber gestaffelt statt im Unisono (jeder Vogel bekommt seine eigene Routine mit
 // zufälligem Offset über birdFadeOutDur), damit die letzten Vögel noch singen, während schon
@@ -92,7 +101,7 @@ birdTimes.do { |t|
 	"Sonnenaufgang.".postln;
 
 	Routine({
-		3.do {
+		5.do {
 			~activeBirds.do { |so| so.sound.call };
 			0.4.wait; // Akzent-Decay (Env.perc 0.35s) abwarten, bevor der nächste Ruf kommt
 		};
@@ -120,6 +129,12 @@ cricketTimes.do { |t, i|
 		var radius = rrand(2.0, 4.5);
 		var ringFreq1 = rrand(1500, 7000);
 		var numSegments = [6, 8, 10, 12].choose;
+		// targetAmp ist die eigentlich konfigurierte Lautstärke dieser Grille -- die tatsächlich
+		// initial gesetzte amp (unten) ist bereits mit dem an dieser Stelle (Zeitpunkt t) fälligen
+		// Ramp-Faktor skaliert, damit eine Grille, die mitten im Ramp einsetzt, nicht kurz voll
+		// laut aufblitzt, bevor der nächste Ramp-Tick sie wieder auf den passenden Wert bringt.
+		var targetAmp = 0.35 * rrand(0.5, 1.5);
+		var rampFrac = ((t - (sunriseTime + cricketStartDelay)) / cricketVolumeRampDur).clip(0, 1);
 		var soundParams = (
 			wingRate: rrand(15, 45),
 			wingDuty: rrand(0.3, 0.7),
@@ -127,7 +142,7 @@ cricketTimes.do { |t, i|
 			ringFreq2: ringFreq1 + rrand(-400, 400),
 			ringDecay1: rrand(0.005, 0.05),
 			ringDecay2: rrand(0.005, 0.04),
-			amp: 0.35 * rrand(0.5, 1.5),
+			amp: targetAmp * rampFrac,
 			pattern: RhythmPatternCreator.new(
 				totalDur: cricketCycleDur,
 				numSegments: numSegments,
@@ -143,9 +158,22 @@ cricketTimes.do { |t, i|
 		var so = ~room.registerFromBuilder(soundParams, movableParams, soundClass: CricketSound);
 		so.play(~room.server);
 		~crickets.add(so);
+		~cricketTargetAmp[so] = targetAmp;
 		if(i == 0) { "Erste Grille.".postln };
 	});
 };
+
+// Grillen-Lautstärke-Ramp: steigt gemeinsam für alle Grillen von ganz leise (0) auf die volle,
+// jeweils konfigurierte Lautstärke (~cricketTargetAmp), über cricketVolumeRampDur ab dem
+// Einsatz der ersten Grille. Wirkt auf ~crickets statt auf eine feste Liste, weil neue Grillen
+// während des Ramps laufend dazukommen (siehe cricketTimes.do oben) -- jeder ramp-Tick erfasst
+// automatisch alle bis dahin registrierten. Nach dem Stück-Ende-Cue (unten) ist ~crickets
+// bereits geleert, bevor dieser ramp im selben tick erneut aufgerufen wird (siehe
+// Timeline>>tick: cues laufen vor ramps), überschreibt also nicht den dortigen Fadeout.
+~timeline.ramp(sunriseTime + cricketStartDelay, sunriseTime + cricketStartDelay + cricketVolumeRampDur,
+	0.0, 1.0, { |factor|
+		~crickets.do { |so| so.sound.setParam(\amp, ~cricketTargetAmp[so] * factor) };
+	});
 
 // Stück-Ende: eigener Cue statt Callback in Timeline (die Klasse kennt kein onDone), feuert
 // dank Timeline>>tick zuverlässig im selben tick, der auch isDone auslöst (siehe Timeline.sc).
