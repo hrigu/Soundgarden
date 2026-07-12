@@ -21,7 +21,8 @@ CoupledOscillators {
 	var naturalFreqs;     // eigene, unbeeinflusste Frequenz jedes Oszillators, in Hz
 	var <>conductorFreq;      // feste Zielfrequenz des Dirigenten, in Hz
 	var <>conductorCoupling;  // Kc, Stärke der Kopplung an den Dirigenten (live veränderbar)
-	var <conductorPhase;      // Phase des Dirigenten, läuft unbeeinflusst von den Oszillatoren
+	var <conductorPhase;      // Phase des Dirigenten, läuft unbeeinflusst von den Oszillatoren --
+	                          // bewusst UNwrapped (kein mod 2pi), siehe tick-Kommentar unten
 	var roleOffsets;      // fester Phasenversatz pro Oszillator (Position im Pattern)
 	var roleMultipliers;  // rationales Tempo-Verhältnis pro Oszillator zur conductorFreq
 
@@ -65,7 +66,16 @@ CoupledOscillators {
 			phases[i] = newPhase % 2pi;
 		};
 
-		conductorPhase = (conductorPhase + (conductorFreq * 2pi * dt)) % 2pi;
+		// conductorPhase bewusst NICHT mod 2pi zurückgewickelt (Bug-Fix, Intent 61 Task 2.3):
+		// roleAngle = roleMultiplier * conductorPhase wird nur innerhalb von sin() verwendet,
+		// wo ein Sprung von genau 2pi unsichtbar ist -- das gilt aber nur, wenn roleMultiplier
+		// eine ganze Zahl ist (roleMultiplier * 2pi bleibt dann ein Vielfaches von 2pi). Bei
+		// einem gebrochenen roleMultiplier (z.B. 0.5 für eine "Halbzeit"-Rolle) würde ein
+		// gewrapptes conductorPhase bei jedem Dirigenten-Umlauf einen echten Phasensprung in
+		// roleAngle erzeugen und die Kopplung destabilisieren (siehe
+		// TestCoupledOscillators>>test_tickWithFractionalRoleMultiplierLocksToRationalMultipleOfConductorFreq).
+		// Unwrapped bleibt für die Dauer eines Stücks (Minuten) unproblematisch für Float-Präzision.
+		conductorPhase = conductorPhase + (conductorFreq * 2pi * dt);
 
 		^fired
 	}
