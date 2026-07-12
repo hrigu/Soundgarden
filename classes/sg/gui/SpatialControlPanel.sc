@@ -13,6 +13,7 @@ SpatialControlPanel {
 	var <>editable;
 	var <>presetsDir;
 	var <>scenesDir;
+	var <>recordingsDir;
 	var <window;
 	var controlsView;
 	var spaceCanvas;
@@ -22,12 +23,13 @@ SpatialControlPanel {
 	var soloMuteController;
 
 	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true, presetsDir,
-			scenesDir|
+			scenesDir, recordingsDir|
 		^super.new.init(room, viewRadius, moveSpeed, rotateSpeed, editable, presetsDir,
-			scenesDir);
+			scenesDir, recordingsDir);
 	}
 
-	init { |aRoom, aViewRadius, aMoveSpeed, aRotateSpeed, anEditable, aPresetsDir, aScenesDir|
+	init { |aRoom, aViewRadius, aMoveSpeed, aRotateSpeed, anEditable, aPresetsDir, aScenesDir,
+			aRecordingsDir|
 		room = aRoom;
 		viewRadius = aViewRadius;
 		moveSpeed = aMoveSpeed;
@@ -35,6 +37,7 @@ SpatialControlPanel {
 		editable = anEditable;
 		presetsDir = aPresetsDir;
 		scenesDir = aScenesDir;
+		recordingsDir = aRecordingsDir;
 		soloMuteController = SoloMuteController.new(room.orchestra);
 	}
 
@@ -108,7 +111,7 @@ SpatialControlPanel {
 		var roomHeight = 480;
 
 		roomParamsView = RoomParamsView.new(controlsView,
-			Rect(0, 0, controlsView.bounds.width, roomHeight), room, scenesDir);
+			Rect(0, 0, controlsView.bounds.width, roomHeight), room, scenesDir, recordingsDir);
 		roomParamsView.onSceneLoaded = { this.onSceneLoaded };
 		roomParamsView.build;
 
@@ -144,6 +147,10 @@ SpatialControlPanel {
 		spaceCanvas !? { spaceCanvas.stop };
 		objectControlsView !? { objectControlsView.free };
 		objectControlsView = nil;
+		// Sicherheitsnetz (Intent 60): eine noch laufende Aufnahme soll nicht einfach verwaist
+		// weiterlaufen, nur weil das Panel geschlossen wurde, ohne vorher auf "Aufnahme
+		// stoppen" zu klicken.
+		roomParamsView !? { roomParamsView.stopRecordingIfActive };
 		window !? { window.close };
 	}
 

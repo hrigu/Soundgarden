@@ -19,19 +19,31 @@ RoomParamsView {
 	var <rect;        // Position/Grösse innerhalb von parentView
 	var <room;
 	var <>scenesDir;
+	var <>recordingsDir;
 	var <>onSceneLoaded;  // Callback ({|room| ...}), feuert nach erfolgreichem Szenen-Laden
 	var scrollView;
 	var view;
+	var <recorder;      // RoomRecorder-Instanz, nur gebaut wenn recordingsDir gesetzt ist
+	var recordButton;
 
-	*new { |aParentView, aRect, aRoom, aScenesDir|
-		^super.new.init(aParentView, aRect, aRoom, aScenesDir);
+	*new { |aParentView, aRect, aRoom, aScenesDir, aRecordingsDir|
+		^super.new.init(aParentView, aRect, aRoom, aScenesDir, aRecordingsDir);
 	}
 
-	init { |aParentView, aRect, aRoom, aScenesDir|
+	init { |aParentView, aRect, aRoom, aScenesDir, aRecordingsDir|
 		parentView = aParentView;
 		rect = aRect;
 		room = aRoom;
 		scenesDir = aScenesDir;
+		recordingsDir = aRecordingsDir;
+		if(recordingsDir.notNil) { recorder = RoomRecorder.new(recordingsDir) };
+	}
+
+	// Sicherheitsnetz beim Schliessen des Panels (siehe SpatialControlPanel>>stop): eine noch
+	// laufende Aufnahme soll nicht einfach verwaist weiterlaufen, nur weil niemand mehr auf
+	// "Aufnahme stoppen" geklickt hat.
+	stopRecordingIfActive {
+		recorder !? { |r| if(r.isRecording) { r.stop(room.server) } };
 	}
 
 	build {
@@ -40,7 +52,8 @@ RoomParamsView {
 		// bewusst mit Puffer, damit ScrollView im Normalfall gar nicht scrollen muss.
 		var baseHeight = 340;
 		var sceneHeight = if(scenesDir.notNil) { 170 } { 0 };
-		var contentHeight = rect.height.max(baseHeight + sceneHeight);
+		var recordingHeight = if(recordingsDir.notNil) { 70 } { 0 };
+		var contentHeight = rect.height.max(baseHeight + sceneHeight + recordingHeight);
 		var visibleWidth = rect.width - 16;
 
 		view !? { view.remove };
@@ -54,6 +67,7 @@ RoomParamsView {
 		view.decorator = FlowLayout(view.bounds.insetBy(16, 16));
 		this.installControls;
 		if(scenesDir.notNil) { this.installSceneControls };
+		if(recordingsDir.notNil) { this.installRecordingControls };
 		^this
 	}
 
@@ -143,6 +157,38 @@ RoomParamsView {
 				RoomSceneLibrary.applyTo(room, sceneEvent);
 				this.build;
 				onSceneLoaded.(room);
+			};
+		});
+		view.decorator.nextLine;
+	}
+
+	// Start/Stop-Recording-Bereich (Intent 60) -- nur aufgebaut, wenn recordingsDir gesetzt ist
+	// (analog installSceneControls/scenesDir). Zwei-Zustands-Button wie der Solo-Button in
+	// SoundObjectControlsView: Zustand 0 = "Aufnahme starten", Zustand 1 = "Aufnahme stoppen".
+	installRecordingControls {
+		var controlWidth = 380@26;
+		var headerWidth = 380@22;
+		var label = StaticText(view, headerWidth);
+		var statusLabel = StaticText(view, controlWidth);
+
+		label.string = "Aufnahme";
+		label.font = Font.default.copy.size_(15).boldVariant;
+		label.align = \left;
+		view.decorator.nextLine;
+
+		statusLabel.string = "Keine Aufnahme";
+		view.decorator.nextLine;
+
+		recordButton = Button(view, controlWidth).states_([
+			["Aufnahme starten"],
+			["Aufnahme stoppen"]
+		]).action_({ |button|
+			if(button.value == 1) {
+				var path = recorder.start(room.server);
+				statusLabel.string = "Aufnahme läuft: " ++ PathName(path).fileName;
+			} {
+				recorder.stop(room.server);
+				statusLabel.string = "Keine Aufnahme";
 			};
 		});
 		view.decorator.nextLine;

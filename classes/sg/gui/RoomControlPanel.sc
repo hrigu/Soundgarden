@@ -9,15 +9,17 @@ RoomControlPanel {
 	var <>editable;
 	var <>presetsDir;
 	var <>scenesDir;
+	var <>recordingsDir;
 	var <panel;
 
 	*new { |room, viewRadius = 8, moveSpeed = 2, rotateSpeed = 90, editable = true, presetsDir,
-			scenesDir|
+			scenesDir, recordingsDir|
 		^super.new.init(room, viewRadius, moveSpeed, rotateSpeed, editable, presetsDir,
-			scenesDir);
+			scenesDir, recordingsDir);
 	}
 
-	init { |aRoom, aViewRadius, aMoveSpeed, aRotateSpeed, anEditable, aPresetsDir, aScenesDir|
+	init { |aRoom, aViewRadius, aMoveSpeed, aRotateSpeed, anEditable, aPresetsDir, aScenesDir,
+			aRecordingsDir|
 		room = aRoom;
 		viewRadius = aViewRadius;
 		moveSpeed = aMoveSpeed;
@@ -25,11 +27,12 @@ RoomControlPanel {
 		editable = anEditable;
 		presetsDir = aPresetsDir;
 		scenesDir = aScenesDir;
+		recordingsDir = aRecordingsDir;
 	}
 
 	buildPanel {
 		^SpatialControlPanel.new(room, viewRadius, moveSpeed, rotateSpeed, editable, presetsDir,
-			scenesDir);
+			scenesDir, recordingsDir);
 	}
 
 	ensurePanel {
