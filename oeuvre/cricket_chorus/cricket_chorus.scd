@@ -27,8 +27,13 @@ CricketSound.addSynthDef;
 ~room = Room.new(s, listener: ~listener, size: 8, height: 3, surface: 0.5);
 
 // ~conductorFreq: gemeinsamer Grundpuls in Hz, auf den der Chor letztlich konvergiert (Intent
-// 61, "Dirigent") -- 1.3Hz entspricht ~78 Anschlägen pro Minute.
-~conductorFreq = 1.3;
+// 61, "Dirigent"). Bewusst niedrig (0.13Hz entspricht ~7.7s zwischen zwei Rufen im Grundschlag)
+// -- bei den ursprünglich getesteten 1.3Hz überlappten sich die kurzen Rufe der 12 Stimmen zu
+// dicht, um das Einrasten überhaupt heraushören zu können (Nutzer-Feedback nach Hörtest, Task
+// 2.3: Pausen sollen ~10x länger sein). Da naturalFreq/Rollen-Zielfrequenzen unten proportional
+// zu ~conductorFreq abgeleitet sind, skaliert eine kleinere ~conductorFreq automatisch auch alle
+// Pausen mit hoch.
+~conductorFreq = 0.13;
 
 // 12 kuratierte Stimmen: jede mit eigenem Klangcharakter (ringFreq1/wingRate/wingDuty/
 // ringDecay/amp), eigener, kurzer Ruflänge (chirpDur) und einer festen rhythmischen Rolle
@@ -109,12 +114,14 @@ CricketSound.addSynthDef;
 ~chaosDur = 8;         // reine Chaos-Phase am Anfang, bevor die Kopplung zu wirken beginnt
 ~coupleRampDur = 40;   // Dauer, über die conductorCoupling von 0 auf ihren Zielwert steigt
 // ~targetCoupling: die am weitesten von ihrer Rollen-Zielfrequenz gestreute Stimme (Doppelzeit-
-// Schicht, naturalFreq bis zu 1.04Hz über ihrer Zielfrequenz 2*conductorFreq) braucht
-// conductorCoupling > ca. 6.5, um überhaupt einzurasten (Schwelle ~ |naturalFreq - Zielfreq| *
-// 2pi, siehe CoupledOscillators-Tests). 12 gibt genug Sicherheitsmarge für zuverlässiges,
-// nicht bloss knapp-kritisches (und damit sehr langsames) Einrasten. Feintuning per Hörtest
-// (Task 2.3).
-~targetCoupling = 12;
+// Schicht) braucht conductorCoupling > ca. |naturalFreq - Zielfreq| * 2pi, um überhaupt
+// einzurasten (siehe CoupledOscillators-Tests) -- dieser Frequenz-Abstand skaliert proportional
+// zu ~conductorFreq mit, die Schwelle sinkt also mit ~conductorFreq mit (bei 0.13Hz statt 1.3Hz
+// ~10x kleiner, daher hier ebenfalls ~10x kleiner als ursprünglich). 1.2 gibt weiterhin genug
+// Sicherheitsmarge für zuverlässiges, nicht bloss knapp-kritisches (und damit sehr langsames)
+// Einrasten, ohne die Kopplung im Verhältnis unnötig zu verstärken (das würde ein schlagartiges
+// statt allmähliches Einrasten erzeugen). Feintuning per Hörtest (Task 2.3).
+~targetCoupling = 1.2;
 
 ~oscillators = CoupledOscillators.new(
 	naturalFreqs: ~naturalFreqs,
