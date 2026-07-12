@@ -18,6 +18,8 @@ TestSoundObjectControlsView.run;
 TestSoundObjectBuilder.run;
 TestCallingPattern.run;
 TestRhythmPatternCreator.run;
+TestBirdMotif.run;
+TestBirdMotifExamples.run;
 TestCricketSound.run;
 TestSound.run;
 TestInsectSound.run;
