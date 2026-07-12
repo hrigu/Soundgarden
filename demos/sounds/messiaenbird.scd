@@ -55,7 +55,7 @@ SynthDef(\monitorMono, { |in = 0, out = 0, amp = 1|
 // Halbtonschritte relativ zur Startfrequenz, nicht relativ zur Vornote (siehe BirdMotif.sc).
 (
 ~bird = MessiaenBirdSound.new(
-	BirdMotif.fromIntervals(4000, [0, 3, 7, 10, 7, 3], [0.1, 0.09, 0.08, 0.09, 0.08, 0.1]),
+	BirdMotif.fromIntervals(2000, [0, 3, 7, 10, 7, 3, 1], [0.1, 0.09, 0.08, 0.09, 0.08, 0.1, 0.2]),
 	loop: true
 );
 ~bird.play(s);
