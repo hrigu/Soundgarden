@@ -24,6 +24,7 @@ TestCricketSound.run;
 TestSound.run;
 TestInsectSound.run;
 TestBirdSound.run;
+TestMessiaenBirdSound.run;
 TestSampleSound.run;
 TestSampleSoundConfigurator.run;
 TestSongSound.run;
