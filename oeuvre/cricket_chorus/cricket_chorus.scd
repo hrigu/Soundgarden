@@ -142,35 +142,15 @@ CricketSound.addSynthDef;
 // kurzen Gate-An/Aus-Impuls (Ruflänge = die kuratierte chirpDur dieser Stimme) auf dem
 // jeweiligen laufenden Synth aus.
 ~oscDt = 0.02;
-// DEBUG (Task 2.3, Bug-Diagnose): zählt aktive Gate-An-Phasen und wie oft ~oscRoutine tickt,
-// um im Post-Fenster sichtbar zu machen, ob/wie oft tatsächlich gegated wird -- temporär, bis
-// die Ursache des "durchgehenden Zirpens" gefunden ist.
-~debugFireCount = 0;
-~debugTickCount = 0;
 ~oscRoutine = Routine({
 	loop {
 		var fired = ~oscillators.tick(~oscDt);
-		~debugTickCount = ~debugTickCount + 1;
-		if(~debugTickCount % 250 == 0) {
-			("[debug] t=" ++ (~debugTickCount * ~oscDt).round(0.1)
-				++ "  ticks=" ++ ~debugTickCount ++ "  fires bisher=" ++ ~debugFireCount
-				++ "  registrierte SoundObjects=" ++ ~room.orchestra.soundObjects.size).postln;
-		};
 		fired.do { |i|
-			~debugFireCount = ~debugFireCount + 1;
-			("[debug] FIRE idx=" ++ i ++ " t=" ++ (~debugTickCount * ~oscDt).round(0.01)
-				++ " chirpDur=" ++ ~chirpDurs[i]).postln;
 			Routine({
 				var synth = ~soundObjects[i].sound.synth;
-				try {
-					("[debug]   gate=1 idx=" ++ i ++ " nodeID=" ++ synth.nodeID).postln;
-					synth.set(\gate, 1);
-					~chirpDurs[i].wait;
-					("[debug]   gate=0 idx=" ++ i ++ " nodeID=" ++ synth.nodeID).postln;
-					synth.set(\gate, 0);
-				} { |err|
-					("[debug]   FEHLER in Gate-Routine idx=" ++ i ++ ": " ++ err).postln;
-				};
+				synth.set(\gate, 1);
+				~chirpDurs[i].wait;
+				synth.set(\gate, 0);
 			}).play;
 		};
 		~oscDt.wait;
@@ -192,17 +172,10 @@ CricketSound.addSynthDef;
 
 (
 "Beginn des Grillenchors -- unkoordiniert.".postln;
-// DEBUG (Task 2.3, Bug-Diagnose): registrierte Objekte VOR dem Play zählen -- sollten genau 12
-// sein. Deutlich mehr deutet auf Karteileichen aus einem vorherigen, nicht abgebauten Lauf hin
-// (~room.teardown vergessen bzw. Block mehrfach ohne Neustart ausgeführt).
-("[debug] registrierte SoundObjects vor Play: " ++ ~room.orchestra.soundObjects.size).postln;
 ~room.play;
 // Start: keine Grille dauerzirpt (SynthDef-Default gate=1) -- nur die vom Dirigenten
 // getriggerten Kurz-Rufe sollen hörbar sein.
-~soundObjects.do { |so|
-	("[debug] setze gate=0 auf nodeID " ++ so.sound.synth.nodeID).postln;
-	so.sound.synth.set(\gate, 0);
-};
+~soundObjects.do { |so| so.sound.synth.set(\gate, 0) };
 ~oscRoutine.play;
 ~timeline.play;
 )

@@ -50,11 +50,6 @@ SoloMuteController {
 	}
 
 	applySoloState { |selectedSoundObject|
-		// DEBUG (Intent 61, Bug-Diagnose "durchgehendes Zirpen trotz Solo") -- temporär.
-		("[debug] applySoloState aufgerufen -- soloSelectedOnly=" ++ soloSelectedOnly
-			++ " selectedSoundObject=" ++ selectedSoundObject
-			++ " registrierte SoundObjects=" ++ orchestra.soundObjects.size).postln;
-
 		if(soloSelectedOnly.not) {
 			this.restoreSoloAmps;
 			^this
@@ -74,10 +69,6 @@ SoloMuteController {
 					0
 				};
 				soundObject.sound.synth !? { soundObject.sound.synth.set(\amp, amp) };
-				// DEBUG -- temporär.
-				("[debug]   soundObject " ++ soundObject.identityHash
-					++ (if(soundObject === selectedSoundObject) { " (SELEKTIERT)" } { " -> amp=0" })
-					++ "  synth=" ++ soundObject.sound.synth).postln;
 			};
 		};
 		^this
