@@ -26,7 +26,8 @@ var spawnBird = { |motif, ampRange, brightnessRange|
 		roomRadius: radius + 2
 	);
 	var sound = MessiaenBirdSound.new(motif,
-		amp: rrand(*ampRange), brightness: rrand(*brightnessRange), loop: true);
+		amp: rrand(ampRange[0], ampRange[1]), brightness: rrand(brightnessRange[0], brightnessRange[1]),
+		loop: true);
 	var so = ~room.register(movable, sound);
 	so.play(~room.server);
 	~activeBirds.add(so);
