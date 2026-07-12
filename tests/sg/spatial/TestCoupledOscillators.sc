@@ -130,4 +130,37 @@ TestCoupledOscillators : UnitTest {
 				"Oszillator % stabilisiert sich nahe seiner eigenen Rollen-Zielphase (Abweichung %), nicht bei einer gemeinsamen Unisono-Phase".format(i, diff));
 		};
 	}
+
+	// roleMultiplier (Intent 61, "rhythmische Unterteilung"): ein Oszillator mit
+	// roleMultiplier: 2 soll auf das DOPPELTE der conductorFreq locken (Doppelzeit-Rolle), nicht
+	// auf die conductorFreq selbst. Zwei Belege: (1) die Abweichung von der eigenen
+	// Rollen-Zielphase (roleMultiplier * conductorPhase) bleibt über eine weitere simulierte
+	// Sekunde praktisch konstant -- Frequenzgleichheit mit der Rollen-Zielfrequenz; (2) die
+	// Abweichung von der reinen conductorPhase (also roleMultiplier: 1 gerechnet) driftet in
+	// derselben Zeit deutlich -- der Oszillator ist eben NICHT einfach im 1:1-Unisono zum
+	// Dirigenten gelockt. Zahlen per Python-Referenzsimulation der geplanten tick-Formel vorab
+	// geprüft (siehe Intent-Planung).
+	test_tickWithRoleMultiplierLocksToRationalMultipleOfConductorFreq {
+		var osc = CoupledOscillators.new(naturalFreqs: [2.8], coupling: 0,
+			initialPhases: [0],
+			conductorFreq: 1.5, conductorCoupling: 4.0,
+			roleOffsets: [0], roleMultipliers: [2]);
+		var roleDiffBefore, plainDiffBefore, roleDiffAfter, plainDiffAfter;
+
+		500.do { osc.tick(0.01) }; // 5s Einschwingzeit
+
+		roleDiffBefore = ((osc.phases[0] - (2 * osc.conductorPhase) + pi) % 2pi) - pi;
+		plainDiffBefore = ((osc.phases[0] - osc.conductorPhase + pi) % 2pi) - pi;
+
+		100.do { osc.tick(0.01) }; // weitere simulierte Sekunde
+
+		roleDiffAfter = ((osc.phases[0] - (2 * osc.conductorPhase) + pi) % 2pi) - pi;
+		plainDiffAfter = ((osc.phases[0] - osc.conductorPhase + pi) % 2pi) - pi;
+
+		this.assertFloatEquals(roleDiffAfter, roleDiffBefore,
+			"Abweichung zur Rollen-Zielphase (2x conductorPhase) bleibt konstant -- Oszillator ist auf 2x conductorFreq gelockt",
+			0.01);
+		this.assert((plainDiffAfter - plainDiffBefore).abs > 1.0,
+			"Abweichung zur reinen conductorPhase driftet deutlich -- Oszillator ist NICHT im 1:1-Unisono zum Dirigenten");
+	}
 }
