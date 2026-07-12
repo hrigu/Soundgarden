@@ -89,10 +89,13 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
     `DirectOutBinauralizer` (Durchleitung ohne Binauralisierung, Fallback für
     `binauralizerClass = nil`) — alle drei Binauralizer-Klassen teilen sich informell
     (Duck-Typing) das Interface `play`/`set`/`stop`, kanonisch dokumentiert in
-    `Binauralizer.sc`
+    `Binauralizer.sc`; `RoomRecorder` (Start/Stop-Aufnahme + Dateiname-/Zeitstempel-Erzeugung,
+    idempotent wie `SoundObject>>stop` — Name bewusst nicht `Recorder`, das kollidiert mit einer
+    gleichnamigen SuperCollider-Kernklasse, Intent 60)
   - `classes/sg/gui/` — `SpatialControlPanel` (ein Fenster: editierbare Raum-Draufsicht +
     Regler für Room-/Hall-/Soundobjekt-Parameter, Tastatursteuerung des Listeners W/S/A/D/Q/E,
-    Solo/Mute, Preset-Load/Save), `RoomControlPanel` (dünner Lifecycle-Wrapper um
+    Solo/Mute, Preset-Load/Save, optionaler Start/Stop-Recording-Bereich über `recordingsDir`,
+    siehe `RoomRecorder`), `RoomControlPanel` (dünner Lifecycle-Wrapper um
     `SpatialControlPanel` fürs Demo-Skript, hält genau eine Panel-Instanz)
   - zugehörige Tests spiegelbildlich unter `tests/sg/sounds/`, `tests/sg/soundobjects/`,
     `tests/sg/spatial/`, `tests/sg/gui/` (nur rein logische, servertfreie GUI-Tests)
