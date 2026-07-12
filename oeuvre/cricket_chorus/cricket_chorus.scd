@@ -162,9 +162,15 @@ CricketSound.addSynthDef;
 				++ " chirpDur=" ++ ~chirpDurs[i]).postln;
 			Routine({
 				var synth = ~soundObjects[i].sound.synth;
-				synth.set(\gate, 1);
-				~chirpDurs[i].wait;
-				synth.set(\gate, 0);
+				try {
+					("[debug]   gate=1 idx=" ++ i ++ " nodeID=" ++ synth.nodeID).postln;
+					synth.set(\gate, 1);
+					~chirpDurs[i].wait;
+					("[debug]   gate=0 idx=" ++ i ++ " nodeID=" ++ synth.nodeID).postln;
+					synth.set(\gate, 0);
+				} { |err|
+					("[debug]   FEHLER in Gate-Routine idx=" ++ i ++ ": " ++ err).postln;
+				};
 			}).play;
 		};
 		~oscDt.wait;
