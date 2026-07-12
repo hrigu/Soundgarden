@@ -14,9 +14,19 @@
 //   - Doppelzeit (roleMultiplier 2): 3 schnelle, helle Grillen im doppelten Tempo
 //   - Halbzeit (roleMultiplier 0.5): 3 tiefe, seltene Grillen im halben Tempo
 //
-// Erster Block: die 12 Stimmen + ihre Rollen definieren und stationär im Raum registrieren
-// (pattern: nil -- kein internes CallingPattern, gate wird extern per CoupledOscillators-
-// Feuerungs-Event getriggert). Zweiter Block: Dirigent (CoupledOscillators), Tick-Routine,
+// Die Drittel-Offsets (0/2pi/3/4pi/3) kombiniert mit den Tempo-Verhältnissen 0.5/1/2 sind nicht
+// gezielt auf einen bestimmten Takt hin entworfen -- rechnerisch ergibt sich daraus aber ein
+// 12/8-Gefühl (per Hörtest bestätigt, Task 2.3): die 3 Doppelzeit-Stimmen verschachteln sich zu
+// 6 gleichmässigen Achteln pro Dirigenten-Zyklus (roleAngle = 2*conductorPhase + Offset); bezogen
+// auf den doppelt so langen Halbzeit-Zyklus als Takt-Referenz macht das 12 Achtel pro Takt. Puls-
+// und Off-Beat-Schicht liegen auf demselben Sechstel-Raster (Vielfache von pi/3) und akzentuieren
+// darin einzelne der 12 Achtel.
+//
+// Erster Block: die 12 Stimmen + ihre Rollen definieren und stationär im Raum registrieren,
+// danach explizit pattern = nil auf jeder Sound-Instanz setzen -- kein internes
+// CallingPattern, gate wird extern per CoupledOscillators-Feuerungs-Event getriggert
+// (pattern: nil im soundParams-Event allein reicht dafür NICHT, siehe Kommentar bei
+// ~soundObjects.do weiter unten). Zweiter Block: Dirigent (CoupledOscillators), Tick-Routine,
 // Timeline (rampt conductorCoupling hoch, beendet das Stück).
 //
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning/HRTF) funktionieren nicht über
@@ -27,13 +37,13 @@ CricketSound.addSynthDef;
 ~room = Room.new(s, listener: ~listener, size: 8, height: 3, surface: 0.5);
 
 // ~conductorFreq: gemeinsamer Grundpuls in Hz, auf den der Chor letztlich konvergiert (Intent
-// 61, "Dirigent"). Bewusst niedrig (0.13Hz entspricht ~7.7s zwischen zwei Rufen im Grundschlag)
-// -- bei den ursprünglich getesteten 1.3Hz überlappten sich die kurzen Rufe der 12 Stimmen zu
-// dicht, um das Einrasten überhaupt heraushören zu können (Nutzer-Feedback nach Hörtest, Task
-// 2.3: Pausen sollen ~10x länger sein). Da naturalFreq/Rollen-Zielfrequenzen unten proportional
-// zu ~conductorFreq abgeleitet sind, skaliert eine kleinere ~conductorFreq automatisch auch alle
-// Pausen mit hoch.
-~conductorFreq = 0.13;
+// 61, "Dirigent"). Zwischen den ursprünglich getesteten 1.3Hz (Rufe überlappten zu dicht, um das
+// Einrasten heraushören zu können) und den daraufhin probierten 0.13Hz (Nutzer-Feedback: Pausen
+// 10x länger) -- bei 0.13Hz wirkte der eingerastete Groove dann aber "sehr langsam" (weiterer
+// Hörtest, Task 2.3), daher 0.35Hz als Kompromiss (~2.9s Periode im Grundschlag). Da
+// naturalFreq/Rollen-Zielfrequenzen unten proportional zu ~conductorFreq abgeleitet sind, skaliert
+// eine Änderung hier automatisch auch alle Pausen/das Tempo des eingerasteten Grooves mit.
+~conductorFreq = 0.35;
 
 // 12 kuratierte Stimmen: jede mit eigenem Klangcharakter (ringFreq1/wingRate/wingDuty/
 // ringDecay/amp), eigener, kurzer Ruflänge (chirpDur) und einer festen rhythmischen Rolle
@@ -101,6 +111,18 @@ CricketSound.addSynthDef;
 	~room.registerFromBuilder(voice[\soundParams], movableParams, soundClass: CricketSound)
 };
 
+// pattern: nil im soundParams-Event (oben) reicht NICHT, um CricketSounds eingebautes
+// CallingPattern abzuschalten: CricketSound>>*new generiert bei pattern=nil per `??` immer
+// automatisch ein eigenes (siehe CricketSound-Klassenkommentar, getestet in
+// TestCricketSound>>test_ohneExplizitesPatternErzeugtCricketSoundEinDefaultPattern o.ä.) --
+// der `??`-Operator unterscheidet nicht zwischen "nicht übergeben" und "explizit nil". Ohne
+// diese Zeile liefe pro Grille zusätzlich eine ~330ms-Zirp-Routine, die ständig gegen das
+// externe Gate der Tick-Routine unten ansteuert -- DAS war die eigentliche Ursache des
+// durchgehenden Zirpens (Task 2.3), nicht CoupledOscillators/SoloMuteController. Muss vor
+// ~room.play (Block 3) gesetzt werden, da Sound>>play die patternRoutine nur startet, wenn
+// pattern zu diesem Zeitpunkt noch notNil ist.
+~soundObjects.do { |so| so.sound.pattern = nil };
+
 // parallel zu ~soundObjects extrahiert, für den Dirigenten unten.
 ~roleOffsets = ~voices.collect { |v| v[\roleOffset] };
 ~roleMultipliers = ~voices.collect { |v| v[\roleMultiplier] };
@@ -114,14 +136,22 @@ CricketSound.addSynthDef;
 ~chaosDur = 8;         // reine Chaos-Phase am Anfang, bevor die Kopplung zu wirken beginnt
 ~coupleRampDur = 40;   // Dauer, über die conductorCoupling von 0 auf ihren Zielwert steigt
 // ~targetCoupling: die am weitesten von ihrer Rollen-Zielfrequenz gestreute Stimme (Doppelzeit-
-// Schicht) braucht conductorCoupling > ca. |naturalFreq - Zielfreq| * 2pi, um überhaupt
-// einzurasten (siehe CoupledOscillators-Tests) -- dieser Frequenz-Abstand skaliert proportional
-// zu ~conductorFreq mit, die Schwelle sinkt also mit ~conductorFreq mit (bei 0.13Hz statt 1.3Hz
-// ~10x kleiner, daher hier ebenfalls ~10x kleiner als ursprünglich). 1.2 gibt weiterhin genug
-// Sicherheitsmarge für zuverlässiges, nicht bloss knapp-kritisches (und damit sehr langsames)
-// Einrasten, ohne die Kopplung im Verhältnis unnötig zu verstärken (das würde ein schlagartiges
-// statt allmähliches Einrasten erzeugen). Feintuning per Hörtest (Task 2.3).
-~targetCoupling = 1.2;
+// Schicht) braucht conductorCoupling > ca. |naturalFreq - Zielfreq| * 2pi, nur um überhaupt
+// FREQUENZ-seitig einzurasten (siehe CoupledOscillators-Tests) -- das reicht aber nicht für
+// hörbare Synchronität: knapp über dieser Schwelle (z.B. 1.2) bleibt eine deutliche
+// PHASEN-Abweichung bestehen (sin(dev) = Frequenzabstand*2pi / conductorCoupling), die drei
+// Puls-Stimmen feuern dann zwar mit derselben Periode, aber bis zu ~1s versetzt -- am Ohr nicht
+// von unkoordiniertem Rufen zu unterscheiden (Nutzer-Feedback nach Hörtest, Task 2.3: "höre kein
+// Konvertieren zu einem Groove"). Per Simulation mit den echten 12 Stimmen-Parametern verifiziert:
+// erst bei deutlich höherer Kopplung rasten Puls-Stimmen auf ca. 0.2-0.3s zusammen (bei 7.7s
+// Periode praktisch gleichzeitig) und die Doppelzeit-Schicht bildet ein sauber gestaffeltes statt
+// verwaschenes Dreier-Muster. Unterschiedliche Schichten rasten dabei trotzdem zu
+// unterschiedlichen Zeitpunkten während der Rampe ein (kleinerer Frequenzabstand zuerst, grösserer
+// -- Doppelzeit -- später), das allmähliche Einrasten bleibt also erhalten, nur die
+// Sync-Präzision am Ende steigt deutlich. Skaliert mit ~conductorFreq (Frequenzabstände in Hz
+// wachsen proportional mit): bei ~conductorFreq 0.35 statt 0.13 (~2.7x) daher hier ebenfalls
+// ~2.7x höher als die zuvor per Simulation verifizierten 8. Feintuning per Hörtest (Task 2.3).
+~targetCoupling = 22;
 
 ~oscillators = CoupledOscillators.new(
 	naturalFreqs: ~naturalFreqs,
