@@ -10,26 +10,28 @@
 BirdMotifExamples {
 
 	// perlender, schneller Lauf (Amsel-artig): Auf-und-ab in kleinen Schritten, gleichmäßig kurze
-	// Noten.
-	*blackbirdRun {
+	// Noten. startFreq konfigurierbar (Intent 59, Nutzer-Wunsch nach mehr Varianz) -- Default
+	// entspricht dem bisherigen fest verdrahteten Wert, damit bestehende Aufrufer unverändert
+	// klingen.
+	*blackbirdRun { |startFreq = 3200|
 		var steps = [0, 2, 4, 5, 7, 5, 4, 2];
 		var durs = steps.collect { |step| rrand(0.08, 0.15) };
-		^BirdMotif.fromIntervals(3200, steps, durs)
+		^BirdMotif.fromIntervals(startFreq, steps, durs)
 	}
 
 	// sehr schnelle Triller-Kaskade (Zaunkönig-artig): viele, sehr kurze Noten, eng benachbarte
 	// Tonhöhen, die zwischen zwei Nachbartönen alternieren.
-	*wrenTrillCascade {
+	*wrenTrillCascade { |startFreq = 5500|
 		var steps = (0..15).collect { |i| if(i.even) { 0 } { 1 } };
 		var durs = steps.collect { |step| rrand(0.02, 0.05) };
-		^BirdMotif.fromIntervals(5500, steps, durs)
+		^BirdMotif.fromIntervals(startFreq, steps, durs)
 	}
 
 	// großer Intervallsprung-Rufvogel: wenige, längere Noten mit einem Sprung von einer Oktave
 	// oder mehr, gefolgt von einer kurzen Rückkehr.
-	*callBirdLeaps {
+	*callBirdLeaps { |startFreq = 2200|
 		var steps = [0, 14, 2];
 		var durs = steps.collect { |step| rrand(0.15, 0.4) };
-		^BirdMotif.fromIntervals(2200, steps, durs)
+		^BirdMotif.fromIntervals(startFreq, steps, durs)
 	}
 }

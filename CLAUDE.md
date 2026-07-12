@@ -62,7 +62,15 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
     und Waveform-Preview fürs GUI), `SampleSoundConfigurator` (Ausschnitts-/Lautheits-
     Heuristik für `SampleSound`), `SongSound` (durchlaufender Song/Atmo als Klangquelle),
     `CallingPattern`/`RhythmPatternCreator` (An/Aus-Zeitmuster für Ruf-Rhythmen),
-    `SoundPresetLibrary` (Klangparameter-Presets als `.scd`-Dateien speichern/laden)
+    `SoundPresetLibrary` (Klangparameter-Presets als `.scd`-Dateien speichern/laden),
+    `BirdSound` (fester `baseFreq`-Zwitscher-Akzent für die Dämmerungs-Komposition, Intent 57),
+    `BirdMotif`/`BirdMotifExamples` (Tonhöhen-/Rhythmus-Sequenz statt reinem An/Aus-Timing —
+    `fromIntervals` beschreibt ein Motiv als Halbtonschritte relativ zur `startFreq`;
+    `BirdMotifExamples` liefert Messiaen-inspirierte Platzhalter-Motive, keine Zitate aus dem
+    urheberrechtlich geschützten Catalogue d'oiseaux, Intent 59), `MessiaenBirdSound`
+    (spielt ein `BirdMotif` über eine Routine ab, die pro Note `freq`/`noteDur`/`t_trig` auf
+    einen einzigen laufenden Synth setzt statt bei jeder Note neu zu starten; `pitchShift`
+    transponiert die Tonhöhen live übers GUI, ohne `motif` selbst neu zu bauen)
   - `classes/sg/soundobjects/` — `SoundObject` (Bewegung + Klang + Binauralizer;
     `fadeOutAndStop` stoppt klickfrei: amp → 0, Lag-Ausklang abwarten, dann stop, mit
     optionalem `onComplete`-Callback fürs Aufräumen durch den Aufrufer, z.B. Orchestra-
@@ -105,6 +113,13 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
   mit `Latch` + `round`
   nachgebaut.
 - Kein MIDI-Controller vorgesehen — Steuerung ist bewusst reine Tastatur (`Cmd+Enter` je Block).
+- `rrand(*someArray)` funktioniert **nicht** wie ein normaler Funktionsaufruf mit Array-Splatting:
+  `rrand(lo, hi)` wird vom Compiler wie ein Binäroperator (`lo.rrand(hi)`) übersetzt, nicht wie
+  eine generische Methode — das Splatting landet dann als einzelnes Args-Array beim (fehlenden)
+  Empfänger `nil` statt auf zwei echte Argumente verteilt zu werden. Fehlerbild: `ERROR: binary
+  operator 'rrand' failed. RECEIVER: nil` erst zur Laufzeit, kein Compile-Fehler. Immer explizit
+  `rrand(range[0], range[1])` schreiben, nie `rrand(*range)` (zweimal in Intent 59 aufgetreten,
+  siehe `oeuvre/messiaen_birds/messiaen_birds.scd`).
 - Bluetooth-Headsets (z.B. AirPods, Bose) liefern für ihr Mikrofon oft nur 16kHz, während der
   Output mit 44100Hz läuft — das lässt den Server-Boot mit einem Samplerate-Konflikt scheitern,
   UND hält macOS die Verbindung systemweit im HFP-Modus (mono, verrauscht, kein Stereo-Panning

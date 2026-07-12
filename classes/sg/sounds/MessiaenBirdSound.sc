@@ -9,17 +9,28 @@ MessiaenBirdSound : Sound {
 	var <>amp;        // Grundlautstärke des Klangs selbst, unabhängig von Position
 	var <>brightness; // 0..1, Anteil des perkussiven Rausch-"Chiff" am Attack (siehe addSynthDef)
 	var <>loop;       // false = Motiv einmal spielen, true = endlos wiederholen
+	var <>pitchShift; // Halbtöne, mit denen die im Motiv fest hinterlegten Tonhöhen live
+	                  // transponiert werden (Intent 59, Nutzer-Wunsch nach mehr Varianz im GUI
+	                  // -- motif selbst bleibt unverändert, siehe transposedFreq/requiredConstructorArgs)
 	var motifRoutine; // treibt die Noten des Motivs während play(), siehe play/stop
 
-	*new { |motif, amp = 0.35, brightness = 0.5, loop = false|
-		^super.new.init(motif, amp, brightness, loop);
+	*new { |motif, amp = 0.35, brightness = 0.5, loop = false, pitchShift = 0|
+		^super.new.init(motif, amp, brightness, loop, pitchShift);
 	}
 
-	init { |aMotif, aAmp, aBrightness, aLoop|
+	init { |aMotif, aAmp, aBrightness, aLoop, aPitchShift|
 		motif = aMotif;
 		amp = aAmp;
 		brightness = aBrightness;
 		loop = aLoop;
+		pitchShift = aPitchShift;
+	}
+
+	// reine Tonhöhen-Umrechnung, ohne Server-Bezug -- pitchShift in Halbtönen, wie
+	// BirdMotif>>fromIntervals. Live abgefragt (siehe play), Änderungen an pitchShift wirken
+	// deshalb schon auf die nächste Note, ohne motif selbst neu bauen zu müssen.
+	transposedFreq { |baseFreq|
+		^baseFreq * (2 ** (pitchShift / 12))
 	}
 
 	// startet Synth wie Sound>>play, zusätzlich eine Routine, die pro Note des Motivs freq/
@@ -31,7 +42,7 @@ MessiaenBirdSound : Sound {
 			block { |break|
 				loop {
 					motif.notes.do { |note|
-						synth.set(\freq, note[0], \noteDur, note[1], \t_trig, 1);
+						synth.set(\freq, this.transposedFreq(note[0]), \noteDur, note[1], \t_trig, 1);
 						(note[1] * (note[2] ? 0.8)).wait;
 						(note[1] * (1 - (note[2] ? 0.8))).wait;
 					};
@@ -74,7 +85,8 @@ MessiaenBirdSound : Sound {
 	*editableParams {
 		^[
 			[\amp, ControlSpec(0, 1, \lin)],
-			[\brightness, ControlSpec(0, 1, \lin)]
+			[\brightness, ControlSpec(0, 1, \lin)],
+			[\pitchShift, ControlSpec(-24, 24, \lin)]
 		]
 	}
 

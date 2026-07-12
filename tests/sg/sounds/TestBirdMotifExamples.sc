@@ -37,6 +37,20 @@ TestBirdMotifExamples : UnitTest {
 		};
 	}
 
+	test_startFreqDefaultsMatchPreviousHardcodedValues {
+		// Default-Werte müssen erhalten bleiben, damit bestehende Aufrufer (z.B.
+		// demos/sounds/messiaenbird.scd) unverändert klingen.
+		this.assertEquals(BirdMotifExamples.blackbirdRun.notes[0][0], 3200.0);
+		this.assertEquals(BirdMotifExamples.wrenTrillCascade.notes[0][0], 5500.0);
+		this.assertEquals(BirdMotifExamples.callBirdLeaps.notes[0][0], 2200.0);
+	}
+
+	test_startFreqIsConfigurablePerFactory {
+		this.assertEquals(BirdMotifExamples.blackbirdRun(4000).notes[0][0], 4000.0);
+		this.assertEquals(BirdMotifExamples.wrenTrillCascade(6000).notes[0][0], 6000.0);
+		this.assertEquals(BirdMotifExamples.callBirdLeaps(1800).notes[0][0], 1800.0);
+	}
+
 	test_callBirdLeapsHasLargeIntervalJumps {
 		var motif = BirdMotifExamples.callBirdLeaps;
 		var freqs = motif.notes.collect { |note| note[0] };
