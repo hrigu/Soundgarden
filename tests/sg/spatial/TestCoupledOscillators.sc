@@ -103,4 +103,31 @@ TestCoupledOscillators : UnitTest {
 				0.01);
 		};
 	}
+
+	// roleOffsets (Intent 61, "Pattern statt Unisono"): vier Oszillatoren mit gleichem
+	// roleMultiplier (1), aber vier verschiedenen roleOffset-Werten, gleichmässig über den
+	// Kreis verteilt (0, pi/2, pi, 3pi/2) -- wie vier feste rhythmische Positionen in einem
+	// gemeinsamen Takt. Nach dem Einschwingen (5s) stabilisiert sich jeder Oszillator nahe
+	// seiner EIGENEN Rollen-Zielphase (conductorPhase * roleMultiplier + roleOffset), nicht bei
+	// einer gemeinsamen Phase wie im Unisono-Fall -- das ist der Unterschied zwischen "Puls" und
+	// "Pattern". Toleranz (0.5 rad) grosszügig, weil die Streuung der natürlichen Frequenzen
+	// (wie im Dirigenten-Test) einen kleinen, aber stabilen Rest-Versatz zur Zielphase erzeugt,
+	// siehe Python-Referenzsimulation der geplanten tick-Formel (Diffs dort < 0.32 rad).
+	test_tickWithDifferentRoleOffsetsLocksEachOscillatorToItsOwnPatternPosition {
+		var roleOffsets = [0, pi / 2, pi, 3 * pi / 2];
+		var osc = CoupledOscillators.new(naturalFreqs: [1.3, 1.4, 1.6, 1.7], coupling: 0,
+			initialPhases: [0, 0, 0, 0],
+			conductorFreq: 1.5, conductorCoupling: 4.0,
+			roleOffsets: roleOffsets, roleMultipliers: [1, 1, 1, 1]);
+
+		500.do { osc.tick(0.01) }; // 5s Einschwingzeit
+
+		osc.phases.do { |p, i|
+			var roleAngle = (osc.conductorPhase + roleOffsets[i]) % 2pi;
+			var diff = ((p - roleAngle + pi) % 2pi) - pi;
+
+			this.assert(diff.abs < 0.5,
+				"Oszillator % stabilisiert sich nahe seiner eigenen Rollen-Zielphase (Abweichung %), nicht bei einer gemeinsamen Unisono-Phase".format(i, diff));
+		};
+	}
 }
