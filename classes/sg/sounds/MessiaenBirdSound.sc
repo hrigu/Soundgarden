@@ -12,18 +12,27 @@ MessiaenBirdSound : Sound {
 	var <>pitchShift; // Halbtöne, mit denen die im Motiv fest hinterlegten Tonhöhen live
 	                  // transponiert werden (Intent 59, Nutzer-Wunsch nach mehr Varianz im GUI
 	                  // -- motif selbst bleibt unverändert, siehe transposedFreq/requiredConstructorArgs)
+	var <>repeatPauseMin; // Sekunden, kürzeste Pause zwischen zwei Motiv-Durchläufen bei
+	                       // loop: true (Intent 59-Folgewunsch: Rufe klangen ohne Pause zu
+	                       // unmittelbar hintereinander wiederholt)
+	var <>repeatPauseMax; // Sekunden, längste Pause -- pro Wiederholung neu zufällig zwischen
+	                       // repeatPauseMin und repeatPauseMax gewählt (siehe play), damit die
+	                       // Rufe nicht metronomisch im immer gleichen Abstand kommen
 	var motifRoutine; // treibt die Noten des Motivs während play(), siehe play/stop
 
-	*new { |motif, amp = 0.35, brightness = 0.5, loop = false, pitchShift = 0|
-		^super.new.init(motif, amp, brightness, loop, pitchShift);
+	*new { |motif, amp = 0.35, brightness = 0.5, loop = false, pitchShift = 0,
+			repeatPauseMin = 0.8, repeatPauseMax = 3.0|
+		^super.new.init(motif, amp, brightness, loop, pitchShift, repeatPauseMin, repeatPauseMax);
 	}
 
-	init { |aMotif, aAmp, aBrightness, aLoop, aPitchShift|
+	init { |aMotif, aAmp, aBrightness, aLoop, aPitchShift, aRepeatPauseMin, aRepeatPauseMax|
 		motif = aMotif;
 		amp = aAmp;
 		brightness = aBrightness;
 		loop = aLoop;
 		pitchShift = aPitchShift;
+		repeatPauseMin = aRepeatPauseMin;
+		repeatPauseMax = aRepeatPauseMax;
 	}
 
 	// reine Tonhöhen-Umrechnung, ohne Server-Bezug -- pitchShift in Halbtönen, wie
@@ -47,6 +56,9 @@ MessiaenBirdSound : Sound {
 						(note[1] * (1 - (note[2] ? 0.8))).wait;
 					};
 					if(loop.not) { break.value(nil) };
+					// zufällige Pause zwischen zwei Ruf-Wiederholungen (Intent 59-Folgewunsch),
+					// live über repeatPauseMin/Max abgefragt statt einmalig beim Start fixiert.
+					rrand(repeatPauseMin, repeatPauseMax).wait;
 				};
 			};
 		}).play;
@@ -86,7 +98,9 @@ MessiaenBirdSound : Sound {
 		^[
 			[\amp, ControlSpec(0, 1, \lin)],
 			[\brightness, ControlSpec(0, 1, \lin)],
-			[\pitchShift, ControlSpec(-24, 24, \lin)]
+			[\pitchShift, ControlSpec(-24, 24, \lin)],
+			[\repeatPauseMin, ControlSpec(0, 10, \lin)],
+			[\repeatPauseMax, ControlSpec(0, 15, \lin)]
 		]
 	}
 
