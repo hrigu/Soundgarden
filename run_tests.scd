@@ -16,6 +16,7 @@ TestRoomSceneLibrary.run;
 TestSoloMuteController.run;
 TestSoundObjectControlsView.run;
 TestSoundObjectBuilder.run;
+TestSoundObject.run;
 TestCallingPattern.run;
 TestRhythmPatternCreator.run;
 TestBirdMotif.run;

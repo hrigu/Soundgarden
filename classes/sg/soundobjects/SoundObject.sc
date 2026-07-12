@@ -8,6 +8,12 @@ SoundObject {
 	var <>movable;
 	var <>sound;
 	var <>binauralizer;
+	var hasStopped; // Guard gegen doppeltes Stoppen (siehe stop) -- Bug-Report zu Intent 59:
+	                // in oeuvre/messiaen_birds/messiaen_birds.scd kann die individuelle
+	                // Lebensdauer-Routine eines Vogels UND der Stück-Ende-Cue beide
+	                // fadeOutAndStop auf demselben SoundObject auslösen (die Lebensdauer-Routine
+	                // läuft unabhängig von der Timeline weiter), was ohne Guard zu einem
+	                // zweiten n_free auf einen bereits freigegebenen Node führte.
 
 	*new { |movable, sound, binauralizer|
 		^super.new.init(movable, sound, binauralizer);
@@ -17,6 +23,7 @@ SoundObject {
 		movable = aMovable;
 		sound = aSound ? InsectSound.new;
 		binauralizer = aBinauralizer ? Binauralizer.new;
+		hasStopped = false;
 	}
 
 	// startet Klang- und Binauralizer-Synth. Das Ticken (Bewegung, Azimuth/Distanz)
@@ -51,7 +58,12 @@ SoundObject {
 		sound.call;
 	}
 
+	// idempotent (siehe hasStopped oben): ein zweiter Aufruf (z.B. weil zwei unabhängige
+	// Routinen beide fadeOutAndStop auf demselben Objekt auslösen) ist ein stiller No-op statt
+	// binauralizer/sound ein zweites Mal auf einen bereits freigegebenen Synth freizugeben.
 	stop {
+		if(hasStopped) { ^this };
+		hasStopped = true;
 		binauralizer.stop;
 		sound.stop;
 	}
