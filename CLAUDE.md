@@ -91,7 +91,22 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
     (Duck-Typing) das Interface `play`/`set`/`stop`, kanonisch dokumentiert in
     `Binauralizer.sc`; `RoomRecorder` (Start/Stop-Aufnahme + Dateiname-/Zeitstempel-Erzeugung,
     idempotent wie `SoundObject>>stop` — Name bewusst nicht `Recorder`, das kollidiert mit einer
-    gleichnamigen SuperCollider-Kernklasse, Intent 60)
+    gleichnamigen SuperCollider-Kernklasse, Intent 60), `CoupledOscillators` (reine, server-freie
+    `tick(dt)`-Logik wie `Timeline`/`Orchestra`: gekoppelte Phasenoszillatoren nach dem
+    Kuramoto-Modell, für emergente statt geskriptete Synchronisation, z.B.
+    `oeuvre/cricket_chorus/cricket_chorus.scd`, Intent 61. Jeder Oszillator hat eine eigene
+    `naturalFreq`; `coupling` ist die Mutual-Kopplungsstärke untereinander, `conductorCoupling`
+    zusätzlich eine asymmetrische Kopplung an einen unbeeinflussten "Dirigenten" fester
+    `conductorFreq` — damit ist der End-Groove explizit wählbar statt nur passiv der Mittelwert
+    aller Einzelfrequenzen. `roleOffsets`/`roleMultipliers` (Default 0/1 = reines Unisono) geben
+    jedem Oszillator eine feste rhythmische Rolle relativ zum Dirigenten (`roleAngle =
+    roleMultiplier * conductorPhase + roleOffset`), sodass sich der Chor auf ein gemeinsames
+    Pattern statt bloß Unisono einigt — Kopplung wirkt auf `deviation = phase - roleAngle`.
+    `conductorPhase` bewusst NICHT mod 2π gewrapped (siehe Kommentar in der Klasse) — bei
+    gebrochenen `roleMultiplier`-Werten (z.B. 0.5) würde ein gewrapptes `conductorPhase` sonst
+    einen echten Phasensprung in `roleAngle` erzeugen und die Kopplung destabilisieren. `tick`
+    liefert die Indizes aller in diesem Tick über 2π gelaufenen Oszillatoren zurück
+    (Feuerungs-Event), `orderParameter` misst den Grad der Synchronisation (0=chaotisch, 1=synchron).
   - `classes/sg/gui/` — `SpatialControlPanel` (ein Fenster: editierbare Raum-Draufsicht +
     Regler für Room-/Hall-/Soundobjekt-Parameter, Tastatursteuerung des Listeners W/S/A/D/Q/E,
     Solo/Mute, Preset-Load/Save, optionaler Start/Stop-Recording-Bereich über `recordingsDir`,
@@ -116,6 +131,15 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
   mit `Latch` + `round`
   nachgebaut.
 - Kein MIDI-Controller vorgesehen — Steuerung ist bewusst reine Tastatur (`Cmd+Enter` je Block).
+- `CricketSound.new(pattern: nil)` schaltet entgegen der Erwartung **nicht** das eingebaute
+  `CallingPattern` ab: `*new` generiert per `pattern ?? { CricketSound.makePattern }` bei `nil`
+  immer automatisch ein eigenes (so gewollt, siehe `TestCricketSound.sc` — `??` unterscheidet
+  nicht zwischen "Argument nicht übergeben" und "explizit nil übergeben"). Wer eine `CricketSound`-
+  Instanz rein extern (z.B. per eigener Tick-Routine) steuern will, muss `pattern` nach der
+  Konstruktion explizit auf der Sound-Instanz zurücksetzen (`so.sound.pattern = nil`), und zwar
+  bevor `Sound>>play` (bzw. `Room>>play`) aufgerufen wird — sonst startet die interne
+  Pattern-Routine trotzdem und überschreibt/interferiert mit dem externen Gate (führte in Intent
+  61/`cricket_chorus.scd` zu durchgehendem statt rhythmisch pausiertem Zirpen).
 - `rrand(*someArray)` funktioniert **nicht** wie ein normaler Funktionsaufruf mit Array-Splatting:
   `rrand(lo, hi)` wird vom Compiler wie ein Binäroperator (`lo.rrand(hi)`) übersetzt, nicht wie
   eine generische Methode — das Splatting landet dann als einzelnes Args-Array beim (fehlenden)
