@@ -118,8 +118,12 @@ callBirdTimes.do { |t|
 (
 ~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "presets"
 	+/+ "messiaen_birds").fullPath;
+// recordingsDir (Intent 60): schaltet den Start/Stop-Recording-Bereich im Kontrollpanel frei,
+// statt manuell s.record/duration abzuschätzen -- Aufnahme läuft, bis der Nutzer selbst stoppt.
+~recordingsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname
+	+/+ "recordings").fullPath;
 ~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true,
-	presetsDir: ~presetsDir);
+	presetsDir: ~presetsDir, recordingsDir: ~recordingsDir);
 ~controlPanel.show;
 )
 

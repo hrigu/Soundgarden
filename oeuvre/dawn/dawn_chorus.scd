@@ -197,17 +197,6 @@ cricketTimes.do { |t, i|
 )
 
 
-// Aufnahme des kompletten Stücks (Server-Output, also inkl. binauraler Verarbeitung) von
-// Anfang bis Ende -- duration stoppt sie automatisch nach der Stückdauer + Sicherheitsmarge
-// (Vögel/Grillen klingen nach dem Stück-Ende-Cue noch bis zu ~0.8s aus, siehe fadeOutAndStop).
-~recordingsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "recordings")
-	.fullPath;
-if(File.exists(~recordingsDir).not) { File.mkdir(~recordingsDir) };
-~recordingPath = ~recordingsDir +/+ "dawn_chorus_"
-	++ Date.getDate.format("%Y-%m-%d_%H-%M-%S") ++ ".wav";
-s.record(path: ~recordingPath, duration: ~totalDur + 2);
-"Aufnahme gestartet: %".format(~recordingPath).postln;
-
 "Beginn der Dämmerung.".postln;
 ~room.play;
 ~timeline.play;
@@ -215,18 +204,18 @@ s.record(path: ~recordingPath, duration: ~totalDur + 2);
 (
 ~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "presets"
 	+/+ "dawn_chorus").fullPath;
+// recordingsDir (Intent 60): schaltet den Start/Stop-Recording-Bereich im Kontrollpanel frei --
+// ersetzt den früheren manuellen s.record(duration:)-Aufruf mit vorab geschätzter Stückdauer.
+~recordingsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname
+	+/+ "recordings").fullPath;
 ~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true,
-	presetsDir: ~presetsDir);
+	presetsDir: ~presetsDir, recordingsDir: ~recordingsDir);
 ~controlPanel.show;
 )
 
 
 // --- 4) Stoppen ---
 ~timeline.stop;
-
-// Fallback, falls das Stück vorzeitig abgebrochen wird -- normalerweise stoppt s.record schon
-// selbst über die oben gesetzte duration. Kein Fehler, falls längst nicht mehr aufgenommen wird.
-s.stopRecording;
 
 // room.teardown stoppt, gibt den Reverb-Bus frei UND delegiert an listener.teardown, das bei
 // AtkBinauralizer den HRTF-Kernel freigibt (siehe Room>>teardown/Listener>>teardown, Intent
