@@ -14,10 +14,10 @@
 //   - Doppelzeit (roleMultiplier 2): 3 schnelle, helle Grillen im doppelten Tempo
 //   - Halbzeit (roleMultiplier 0.5): 3 tiefe, seltene Grillen im halben Tempo
 //
-// Task 2.1 (dieser Block): die 12 Stimmen + ihre Rollen definieren und stationär im Raum
-// registrieren (pattern: nil -- kein internes CallingPattern, gate wird extern per
-// CoupledOscillators-Feuerungs-Event getriggert). Tick-Routine/Timeline/Kontrollpanel folgen in
-// Task 2.2.
+// Erster Block: die 12 Stimmen + ihre Rollen definieren und stationär im Raum registrieren
+// (pattern: nil -- kein internes CallingPattern, gate wird extern per CoupledOscillators-
+// Feuerungs-Event getriggert). Zweiter Block: Dirigent (CoupledOscillators), Tick-Routine,
+// Timeline (rampt conductorCoupling hoch, beendet das Stück).
 //
 // Kopfhörer benutzen — binaurale Effekte (ITD/Panning/HRTF) funktionieren nicht über
 // Lautsprecher richtig.
@@ -96,9 +96,95 @@ CricketSound.addSynthDef;
 	~room.registerFromBuilder(voice[\soundParams], movableParams, soundClass: CricketSound)
 };
 
-// für Task 2.2 (CoupledOscillators-Tick-Routine) parallel zu ~soundObjects extrahiert.
+// parallel zu ~soundObjects extrahiert, für den Dirigenten unten.
 ~roleOffsets = ~voices.collect { |v| v[\roleOffset] };
 ~roleMultipliers = ~voices.collect { |v| v[\roleMultiplier] };
 ~naturalFreqs = ~voices.collect { |v| v[\naturalFreq] };
 ~chirpDurs = ~voices.collect { |v| v[\chirpDur] };
 )
+
+// --- 2) Dirigent, Tick-Routine, Timeline ------------------------------------------------
+(
+~totalDur = 100;       // Gesamtdauer des Stücks in Sekunden
+~chaosDur = 8;         // reine Chaos-Phase am Anfang, bevor die Kopplung zu wirken beginnt
+~coupleRampDur = 40;   // Dauer, über die conductorCoupling von 0 auf ihren Zielwert steigt
+// ~targetCoupling: die am weitesten von ihrer Rollen-Zielfrequenz gestreute Stimme (Doppelzeit-
+// Schicht, naturalFreq bis zu 1.04Hz über ihrer Zielfrequenz 2*conductorFreq) braucht
+// conductorCoupling > ca. 6.5, um überhaupt einzurasten (Schwelle ~ |naturalFreq - Zielfreq| *
+// 2pi, siehe CoupledOscillators-Tests). 12 gibt genug Sicherheitsmarge für zuverlässiges,
+// nicht bloss knapp-kritisches (und damit sehr langsames) Einrasten. Feintuning per Hörtest
+// (Task 2.3).
+~targetCoupling = 12;
+
+~oscillators = CoupledOscillators.new(
+	naturalFreqs: ~naturalFreqs,
+	coupling: 0,                   // keine Mutual-Kopplung -- nur der Dirigent zieht die Rollen
+	initialPhases: ~numVoices.collect { 2pi.rand },
+	conductorFreq: ~conductorFreq,
+	conductorCoupling: 0,          // startet bei 0, Timeline rampt es hoch (siehe unten)
+	roleOffsets: ~roleOffsets,
+	roleMultipliers: ~roleMultipliers
+);
+
+~timeline = Timeline.new(~totalDur);
+~timeline.ramp(~chaosDur, ~chaosDur + ~coupleRampDur, 0, ~targetCoupling,
+	{ |v| ~oscillators.conductorCoupling = v });
+
+// zentrale Tick-Routine (Muster wie Timeline>>play/Orchestra: eine Routine statt viele pro
+// Stimme) -- treibt CoupledOscillators in Echtzeit und löst bei jedem Feuerungs-Event einen
+// kurzen Gate-An/Aus-Impuls (Ruflänge = die kuratierte chirpDur dieser Stimme) auf dem
+// jeweiligen laufenden Synth aus.
+~oscDt = 0.02;
+~oscRoutine = Routine({
+	loop {
+		var fired = ~oscillators.tick(~oscDt);
+		fired.do { |i|
+			Routine({
+				var synth = ~soundObjects[i].sound.synth;
+				synth.set(\gate, 1);
+				~chirpDurs[i].wait;
+				synth.set(\gate, 0);
+			}).play;
+		};
+		~oscDt.wait;
+	}
+});
+
+// Stück-Ende: Tick-Routine stoppen, alle Grillen klickfrei verstummen (fadeOutAndStop, gleiches
+// Muster wie messiaen_birds.scd/dawn_chorus.scd).
+~timeline.at(~totalDur, {
+	"Grillenchor ist fertig.".postln;
+	~oscRoutine.stop;
+	~soundObjects.do { |so|
+		so.fadeOutAndStop(0.5, { |stopped| ~room.orchestra.unregister(stopped) })
+	};
+});
+)
+
+// --- 3) Abspielen ---
+
+(
+"Beginn des Grillenchors -- unkoordiniert.".postln;
+~room.play;
+// Start: keine Grille dauerzirpt (SynthDef-Default gate=1) -- nur die vom Dirigenten
+// getriggerten Kurz-Rufe sollen hörbar sein.
+~soundObjects.do { |so| so.sound.synth.set(\gate, 0) };
+~oscRoutine.play;
+~timeline.play;
+)
+
+(
+~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "presets"
+	+/+ "cricket_chorus").fullPath;
+~recordingsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname
+	+/+ "recordings").fullPath;
+~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true,
+	presetsDir: ~presetsDir, recordingsDir: ~recordingsDir);
+~controlPanel.show;
+)
+
+// --- 4) Stoppen ---
+~timeline.stop;
+~oscRoutine.stop;
+~room.teardown;
+~controlPanel.free;
