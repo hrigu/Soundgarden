@@ -103,11 +103,29 @@ ausführen. In diesem Repo auf macOS funktioniert zuverlässig:
 Voraussetzungen/Details:
 - `boot/load_classes.scd` muss mindestens einmal gelaufen sein, damit `classes/` und `tests/`
   persistent in `sclang_conf.yaml` stehen.
-- Der Agent-Shell-`PATH` muss `sclang` enthalten; auf dieser Maschine liegt es unter
+- `sclang` liegt auf dieser Maschine **nicht** auf dem `PATH` — `which sclang` schlägt fehl,
+  das ist aber kein Hinweis auf fehlenden Zugriff. Voller Pfad:
   `/Applications/SuperCollider.app/Contents/MacOS/sclang`.
 - `QT_QPA_PLATFORM=offscreen` ist **hier nicht** verwendbar: das installierte macOS-Build
   bringt nur das Qt-Platform-Plugin `cocoa` mit, nicht `offscreen`.
 - `QTWEBENGINE_DISABLE_SANDBOX=1` ist für diesen lokalen Lauf nicht nötig.
+
+**Gotcha — hängender sclang-Prozess ohne jede Ausgabe:** `run_tests.scd` ruft am Ende kein
+`0.exit` auf. Läuft dabei mittendrin ein **unbehandelter Laufzeitfehler** (z.B. Assertion mit
+Typfehler, `nil doesNotUnderstand`), bricht das restliche Skript ab, und der sclang-Prozess
+bleibt danach lebendig auf der interaktiven Konsole stehen — für immer, ohne Prompt (kein
+Terminal an stdin), bei ~0% CPU. Wird die Ausgabe dabei durch `| tail` oder `| head` gepiped,
+erscheint **gar keine** Ausgabe, bis der Prozess endet — ein Hänger sieht dadurch identisch
+aus wie "läuft noch normal", man merkt es nicht rechtzeitig. `timeout`/`gtimeout` sind auf
+diesem macOS **nicht** installiert (kein coreutils), ein simples `timeout 60 sclang ...` schlägt
+mit `command not found` fehl. Deshalb beim Testlauf immer:
+1. Direkt in eine Datei umleiten (`> out.txt 2>&1`), niemals durch `tail`/`head` pipen — sonst
+   ist ein Hänger von einem normalen, noch laufenden Testlauf nicht unterscheidbar.
+2. An eine Kopie von `run_tests.scd` ein explizites `0.exit;` anhängen, statt das Original zu
+   verändern.
+3. Im Hintergrund starten und selbst mit einer kurzen Zähl-Schleife (`kill -0 $PID`, z.B. 30×
+   1s) überwachen; läuft der Prozess danach noch, davon ausgehen, dass er hängt, und ihn killen
+   statt weiter zu warten (siehe `[[sclang-headless-test-run]]`-Memory für das genaue Rezept).
 
 In anderen Umgebungen kann weiterhin ein explizites `sclang -l <conf.yaml> <script.scd>`
 sinnvoll sein, wenn der Klassenpfad nicht schon persistent konfiguriert ist. Ein
