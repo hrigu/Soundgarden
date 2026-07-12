@@ -50,4 +50,23 @@ TestCoupledOscillators : UnitTest {
 
 		this.assertEquals(fired, [1]);
 	}
+
+	// Mutual-Kopplung (Intent 61, Kuramoto-Modell): vier eng beieinanderliegende natürliche
+	// Frequenzen, weit gestreute Startphasen (Ordnungsparameter exakt 0 -- Phasen gleichmässig
+	// über den Kreis verteilt), ausreichend starke coupling. Über eine simulierte Dauer von 5s
+	// (500 Ticks à 10ms) richten sich die Phasen von selbst aneinander aus -- orderParameter
+	// nähert sich 1 an. Werte per Python-Referenzsimulation der geplanten tick-Formel
+	// vorab geprüft (siehe Intent-Planung), nicht willkürlich geraten.
+	test_tickWithMutualCouplingConvergesOrderParameterTowardOne {
+		var osc = CoupledOscillators.new(naturalFreqs: [1.0, 1.05, 0.95, 1.02], coupling: 4.0,
+			initialPhases: [0, pi / 2, pi, 3 * pi / 2]);
+
+		this.assertFloatEquals(osc.orderParameter, 0.0,
+			"Startphasen gleichmässig über den Kreis verteilt -- komplett unkoordiniert");
+
+		500.do { osc.tick(0.01) };
+
+		this.assert(osc.orderParameter > 0.95,
+			"nach 5s simulierter Zeit mit ausreichender Kopplung sind die Phasen synchronisiert (orderParameter %)".format(osc.orderParameter));
+	}
 }
