@@ -69,4 +69,38 @@ TestCoupledOscillators : UnitTest {
 		this.assert(osc.orderParameter > 0.95,
 			"nach 5s simulierter Zeit mit ausreichender Kopplung sind die Phasen synchronisiert (orderParameter %)".format(osc.orderParameter));
 	}
+
+	// Dirigent (Intent 61): vier natürliche Frequenzen deutlich unter der vorgegebenen
+	// conductorFreq (Mittelwert 1.275, conductorFreq 1.6) -- ohne Dirigent würde ein reines
+	// Mutual-Modell zum Mittelwert konvergieren. Mit ausreichend starker conductorCoupling und
+	// coupling: 0 (keine Mutual-Kopplung, damit nur der Dirigenten-Effekt gemessen wird) lockt
+	// jeder Oszillator stattdessen auf conductorFreq: der Phasenversatz zum Dirigenten wird nach
+	// dem Einschwingen (5s) über eine weitere simulierte Sekunde hinweg praktisch konstant --
+	// beweist Frequenzgleichheit mit dem Dirigenten, nicht mit dem Mittelwert der 12 (hier: 4)
+	// Einzelfrequenzen. Zahlen per Python-Referenzsimulation der geplanten tick-Formel
+	// vorab geprüft (siehe Intent-Planung).
+	test_tickWithConductorLocksPhasesToConductorFreqNotToMeanNaturalFreq {
+		var osc = CoupledOscillators.new(naturalFreqs: [1.2, 1.25, 1.3, 1.35], coupling: 0,
+			initialPhases: [0, pi / 2, pi, 3 * pi / 2],
+			conductorFreq: 1.6, conductorCoupling: 4.0);
+		var diffsBefore, diffsAfter;
+
+		500.do { osc.tick(0.01) }; // 5s Einschwingzeit
+
+		diffsBefore = osc.phases.collect { |p|
+			((p - osc.conductorPhase + pi) % 2pi) - pi
+		};
+
+		100.do { osc.tick(0.01) }; // weitere simulierte Sekunde
+
+		diffsAfter = osc.phases.collect { |p|
+			((p - osc.conductorPhase + pi) % 2pi) - pi
+		};
+
+		diffsBefore.do { |d, i|
+			this.assertFloatEquals(diffsAfter[i], d,
+				"Phasenversatz zum Dirigenten bleibt über Zeit konstant -- Frequenz ist auf conductorFreq gelockt, nicht auf den Mittelwert der Einzelfrequenzen",
+				0.01);
+		};
+	}
 }
