@@ -121,9 +121,17 @@ SpaceCanvas {
 	}
 
 	// von der Panel-Routine pro Tick aufgerufen: Listener-Bewegung per gehaltener Taste,
-	// danach Neuzeichnen.
+	// danach Neuzeichnen. Prüft dabei auch, ob das ausgewählte Soundobjekt in der Zwischenzeit
+	// entfernt wurde (z.B. Orchestra>>unregister nach SoundObject>>fadeOutAndStop, weil seine
+	// Lebensdauer abgelaufen ist, siehe oeuvre/messiaen_birds/messiaen_birds.scd) -- ohne diesen
+	// Check bliebe es beliebig lange als selectedSoundObject bestehen und der GUI-Regler-Bereich
+	// würde weiter auf dessen (jetzt toten) Sound zugreifen (Bug-Report zu Intent 59).
 	tick { |dt|
 		this.applyHeldKeys(dt);
+		if(selectedSoundObject.notNil
+				and: { room.orchestra.soundObjects.includes(selectedSoundObject).not }) {
+			this.select(nil);
+		};
 		view.refresh;
 		^this
 	}

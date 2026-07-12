@@ -1,5 +1,6 @@
 // Test-Double für Sound>>setParam: zeichnet nur gesetzte Controls auf, ohne echten
-// Server/Synth zu brauchen — analog FakeReverbForRoomTest (TestRoom.sc).
+// Server/Synth zu brauchen — analog FakeReverbForRoomTest (TestRoom.sc). free ist ein
+// No-op wie beim echten Synth (Sound>>stop ruft es bedingungslos auf).
 FakeSynthForSoundTest {
 	var <log;
 
@@ -8,6 +9,13 @@ FakeSynthForSoundTest {
 	init { |aLog| log = aLog }
 
 	set { |key, value| log.add([key, value]) }
+
+	free { }
+}
+
+// Test-Double für Sound>>stop: nur free() als No-op, kein echter Server-Bus nötig.
+FakeBusForSoundTest {
+	free { }
 }
 
 // Minimale Sound-Subklasse mit einem einzigen <>-Parameter, um setParam isoliert von
@@ -19,9 +27,10 @@ FakeSoundForSoundTest : Sound {
 
 	init { |aFreq| freq = aFreq }
 
-	// synth hat in Sound nur einen Getter (<synth) -- innerhalb der Subklasse ist die
-	// Instanzvariable aber direkt zuweisbar, kein echter Server/Synth für den Test nötig.
+	// synth/bus haben in Sound nur Getter (<synth/<bus) -- innerhalb der Subklasse sind die
+	// Instanzvariablen aber direkt zuweisbar, kein echter Server/Synth/Bus für den Test nötig.
 	setSynth { |aSynth| synth = aSynth }
+	setBus { |aBus| bus = aBus }
 }
 
 // Minimale Sound-Subklasse mit einem Pflicht-Konstruktorargument (id) und einem editierbaren
@@ -77,6 +86,37 @@ TestSound : UnitTest {
 
 		this.assertEquals(sound.freq, 880,
 			"die Instanzvariable wird auch ohne laufenden Synth aktualisiert");
+	}
+
+	// Bug-Report (Intent 59-Folgearbeit): GUI-Regler eines längst gestoppten SoundObject
+	// schickten wiederholt "/n_set Node ... not found", weil stop() synth/bus zwar freigab,
+	// die Instanzvariablen selbst aber nicht auf nil zurücksetzte -- setParam prüft nur
+	// "synth !? {...}" und feuerte deshalb weiter auf den toten Synth.
+	test_stopClearsSynthAndBusReferences {
+		var sound = FakeSoundForSoundTest.new;
+		sound.setSynth(FakeSynthForSoundTest.new(List.new));
+		sound.setBus(FakeBusForSoundTest.new);
+
+		sound.stop;
+
+		this.assert(sound.synth.isNil,
+			"stop setzt synth auf nil, damit setParam danach keinen toten Node anspricht");
+		this.assert(sound.bus.isNil, "stop setzt bus ebenfalls auf nil");
+	}
+
+	test_setParamAfterStopDoesNotTouchDeadSynth {
+		var sound = FakeSoundForSoundTest.new;
+		var log = List.new;
+		sound.setSynth(FakeSynthForSoundTest.new(log));
+		sound.setBus(FakeBusForSoundTest.new);
+		sound.stop;
+
+		sound.setParam(\freq, 880);
+
+		this.assertEquals(log.asArray, [],
+			"nach stop darf setParam keinen .set mehr auf den (jetzt toten) Synth schicken");
+		this.assertEquals(sound.freq, 880,
+			"die Instanzvariable selbst wird trotzdem weiter aktualisiert");
 	}
 
 	test_defaultEditableParamsIsEmpty {

@@ -24,10 +24,16 @@ Sound {
 	}
 
 	// gibt Synth und Bus wieder frei — Sound besitzt den Bus, ist also auch fürs
-	// Aufräumen zuständig
+	// Aufräumen zuständig. Setzt synth/bus danach auf nil: eine freigegebene Synth-Instanz
+	// bleibt sonst als totes Objekt mit toter nodeID bestehen, und setParam (siehe dort) würde
+	// bei einem späteren GUI-Regler-Zugriff weiter .set auf den längst freigegebenen Node
+	// schicken -- serverseitig harmlos, aber "/n_set Node ... not found" im Log (Bug-Report zu
+	// Intent 59: GUI-Regler eines Vogels, dessen Lebensdauer schon abgelaufen war).
 	stop {
 		synth.free;
 		bus.free;
+		synth = nil;
+		bus = nil;
 	}
 
 	// call — löst einen kurzen, hörbaren Akzent auf dem laufenden Klang aus (z.B. für
