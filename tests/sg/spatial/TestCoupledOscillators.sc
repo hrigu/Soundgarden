@@ -163,4 +163,37 @@ TestCoupledOscillators : UnitTest {
 		this.assert((plainDiffAfter - plainDiffBefore).abs > 1.0,
 			"Abweichung zur reinen conductorPhase driftet deutlich -- Oszillator ist NICHT im 1:1-Unisono zum Dirigenten");
 	}
+
+	// Regressionstest (Intent 61, Bug-Report nach Hörtest Task 2.3): der vorherige Test
+	// (1.5, roleMultiplier: 2) deckt nur GANZZAHLIGE Vervielfacher ab. Mit einem gebrochenen
+	// roleMultiplier (0.5, "Halbzeit"-Rolle) lockte die ursprüngliche Implementierung
+	// fälschlich auf 1x statt 0.5x conductorFreq -- Ursache: conductorPhase wurde intern per
+	// mod 2pi zurückgewickelt, was bei roleMultiplier * 2pi nur für ganze Zahlen wieder ein
+	// Vielfaches von 2pi ergibt (also unsichtbar bleibt), bei einem Bruch wie 0.5 aber einen
+	// echten Sprung in roleAngle erzeugt und die Kopplung destabilisiert. Zahlen per
+	// Python-Referenzsimulation der KORRIGIERTEN Formel (conductorPhase unwrapped) vorab
+	// geprüft.
+	test_tickWithFractionalRoleMultiplierLocksToRationalMultipleOfConductorFreq {
+		var osc = CoupledOscillators.new(naturalFreqs: [1.0], coupling: 0,
+			initialPhases: [0],
+			conductorFreq: 1.5, conductorCoupling: 4.0,
+			roleOffsets: [0], roleMultipliers: [0.5]);
+		var roleDiffBefore, plainDiffBefore, roleDiffAfter, plainDiffAfter;
+
+		500.do { osc.tick(0.01) }; // 5s Einschwingzeit
+
+		roleDiffBefore = ((osc.phases[0] - (0.5 * osc.conductorPhase) + pi) % 2pi) - pi;
+		plainDiffBefore = ((osc.phases[0] - osc.conductorPhase + pi) % 2pi) - pi;
+
+		100.do { osc.tick(0.01) }; // weitere simulierte Sekunde
+
+		roleDiffAfter = ((osc.phases[0] - (0.5 * osc.conductorPhase) + pi) % 2pi) - pi;
+		plainDiffAfter = ((osc.phases[0] - osc.conductorPhase + pi) % 2pi) - pi;
+
+		this.assertFloatEquals(roleDiffAfter, roleDiffBefore,
+			"Abweichung zur Rollen-Zielphase (0.5x conductorPhase) bleibt konstant -- Oszillator ist auf 0.5x conductorFreq gelockt",
+			0.01);
+		this.assert((plainDiffAfter - plainDiffBefore).abs > 1.0,
+			"Abweichung zur reinen (1x) conductorPhase driftet deutlich -- Oszillator ist NICHT fälschlich im 1:1-Unisono gelockt");
+	}
 }
