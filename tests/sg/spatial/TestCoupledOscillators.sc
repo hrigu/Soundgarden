@@ -164,6 +164,31 @@ TestCoupledOscillators : UnitTest {
 			"Abweichung zur reinen conductorPhase driftet deutlich -- Oszillator ist NICHT im 1:1-Unisono zum Dirigenten");
 	}
 
+	// phaseNoise (Intent 62 Task 5, Hörtest-Feedback zu cricket_groove.scd): ohne Kopplung ist
+	// jeder Oszillator sonst ein exakt periodischer Takt, auch wenn coupling/conductorCoupling
+	// beide 0 sind -- das klang bei den fünf Grillen-Stimmen schon vor jeder Synchronisation
+	// mechanisch statt stochastisch. 6 Oszillatoren starten hier absichtlich perfekt synchron
+	// (identische naturalFreq, identische initialPhases -- orderParameter exakt 1) und OHNE jede
+	// Kopplung (coupling: 0, conductorCoupling: 0); ohne phaseNoise blieben sie für immer perfekt
+	// synchron. Mit ausreichend starkem phaseNoise über simulierte 20s (2000 Ticks à 10ms)
+	// driften die 6 Phasen rein durch die zufällige Störung auseinander -- orderParameter fällt
+	// deutlich ab. randSeed fixiert für einen reproduzierbaren Testlauf.
+	test_tickWithPhaseNoiseDecorrelatesInitiallyIdenticalOscillators {
+		var osc;
+
+		thisThread.randSeed = 12345;
+		osc = CoupledOscillators.new(naturalFreqs: Array.fill(6, { 1.0 }), coupling: 0,
+			initialPhases: Array.fill(6, { 0 }), phaseNoise: 2.0);
+
+		this.assertFloatEquals(osc.orderParameter, 1.0,
+			"Startphasen identisch -- perfekt synchron");
+
+		2000.do { osc.tick(0.01) };
+
+		this.assert(osc.orderParameter < 0.5,
+			"phaseNoise treibt anfangs identische, ungekoppelte Oszillatoren auseinander (orderParameter %)".format(osc.orderParameter));
+	}
+
 	// Regressionstest (Intent 61, Bug-Report nach Hörtest Task 2.3): der vorherige Test
 	// (1.5, roleMultiplier: 2) deckt nur GANZZAHLIGE Vervielfacher ab. Mit einem gebrochenen
 	// roleMultiplier (0.5, "Halbzeit"-Rolle) lockte die ursprüngliche Implementierung

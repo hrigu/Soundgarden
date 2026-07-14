@@ -42,6 +42,7 @@ CricketSound.addSynthDef;
 	"...x.x.x.....x.x",  // Floor-Tom: synkopierte Fill-Akzente
 	"...........xx...",  // Mid-Tom: Fill-Doppelschlag gg. Taktende
 ];
+
 ~roles = GrooveNotation.deriveRoles(~groove);
 
 // naturalFreq-Streufaktoren: bewusst weit von der jeweiligen Rollen-Zielfrequenz
@@ -124,6 +125,16 @@ CricketSound.addSynthDef;
 // finale Justierung folgt per Hörtest (Task 5).
 ~targetCoupling = 60;
 
+// ~phaseNoise (Intent 62 Task 5, Hörtest-Feedback): ohne Rauschen ist jede Stimme vor dem
+// Einrasten ein exakt periodischer Takt -- unkoordiniert zueinander, aber pro Stimme klingt das
+// schon mechanisch statt stochastisch. phaseNoise bleibt über das ganze Stück konstant (kein
+// eigenes Ramp nötig): bei kleiner conductorCoupling (Chaos-Phase) dominiert das Rauschen relativ
+// stark, sobald conductorCoupling gegen ~targetCoupling rampt, wird die Rückstellkraft zur
+// Rollen-Zielphase viel stärker als das konstante Rauschen -- der Groove rastet trotzdem hörbar
+// ein, bleibt aber mit einem leichten organischen Wobble statt komplett mechanisch. Startwert für
+// den Hörtest, siehe CoupledOscillators-Klassenkommentar zur Skalierung.
+~phaseNoise = 0.6;
+
 ~oscillators = CoupledOscillators.new(
 	naturalFreqs: ~naturalFreqs,
 	coupling: 0,                   // keine Mutual-Kopplung -- nur der Dirigent zieht die Rollen
@@ -131,7 +142,8 @@ CricketSound.addSynthDef;
 	conductorFreq: ~conductorFreq,
 	conductorCoupling: 0,          // startet bei 0, Timeline rampt es hoch (siehe unten)
 	roleOffsets: ~roleOffsets,
-	roleMultipliers: ~roleMultipliers
+	roleMultipliers: ~roleMultipliers,
+	phaseNoise: ~phaseNoise
 );
 
 ~timeline = Timeline.new(~totalDur);

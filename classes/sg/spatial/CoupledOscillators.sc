@@ -15,6 +15,14 @@
 // zugewiesenen Tempo-Verhältnis im Pattern (z.B. Grundschlag/Doppelzeit/Off-Beat), statt ins
 // Unisono gezogen zu werden. Bei roleOffset=0/roleMultiplier=1 für alle reduziert sich das exakt
 // auf das einfache Kuramoto-Modell.
+//
+// phaseNoise (Default 0, Intent 62 Task 5): Stärke einer zufälligen Phasenstörung pro Tick
+// ("verrauschtes" Kuramoto-Modell). Ohne Kopplung ist jeder Oszillator sonst ein exakt
+// periodischer Metronom-Takt -- unkoordiniert zueinander, aber pro Stimme klingt das schon vor
+// jeder Synchronisation wie ein mechanischer Puls, nicht stochastisch (Hörtest-Feedback zu
+// cricket_groove.scd). phaseNoise > 0 addiert pro Tick `phaseNoise * sqrt(dt) * U(-1,1)` zur
+// Phase (Standard-Skalierung für einen Diffusionsterm, Euler-Maruyama) -- macht den Zeitpunkt
+// jedes Feuerungs-Events unregelmässig, unabhängig von coupling/conductorCoupling.
 CoupledOscillators {
 	var <phases;         // aktuelle Phasen, 0..2pi, ein Wert pro Oszillator
 	var <>coupling;       // K, Stärke der Mutual-Kopplung untereinander (live veränderbar)
@@ -25,15 +33,16 @@ CoupledOscillators {
 	                          // bewusst UNwrapped (kein mod 2pi), siehe tick-Kommentar unten
 	var roleOffsets;      // fester Phasenversatz pro Oszillator (Position im Pattern)
 	var roleMultipliers;  // rationales Tempo-Verhältnis pro Oszillator zur conductorFreq
+	var <>phaseNoise;     // Stärke der zufälligen Phasenstörung pro Tick (live veränderbar)
 
 	*new { |naturalFreqs, coupling = 0, initialPhases, conductorFreq = 0, conductorCoupling = 0,
-			roleOffsets, roleMultipliers|
+			roleOffsets, roleMultipliers, phaseNoise = 0|
 		^super.new.init(naturalFreqs, coupling, initialPhases, conductorFreq, conductorCoupling,
-			roleOffsets, roleMultipliers);
+			roleOffsets, roleMultipliers, phaseNoise);
 	}
 
 	init { |aNaturalFreqs, aCoupling, aInitialPhases, aConductorFreq, aConductorCoupling,
-			aRoleOffsets, aRoleMultipliers|
+			aRoleOffsets, aRoleMultipliers, aPhaseNoise|
 		naturalFreqs = aNaturalFreqs;
 		coupling = aCoupling;
 		phases = aInitialPhases.copy;
@@ -42,6 +51,7 @@ CoupledOscillators {
 		conductorPhase = 0;
 		roleOffsets = aRoleOffsets ?? { naturalFreqs.collect { 0 } };
 		roleMultipliers = aRoleMultipliers ?? { naturalFreqs.collect { 1 } };
+		phaseNoise = aPhaseNoise;
 	}
 
 	// reine Logik, ohne Server-Bezug -- testbar wie Timeline>>tick/Orchestra>>tick. Liefert die
@@ -60,7 +70,8 @@ CoupledOscillators {
 			var couplingSum = n.collect { |j| sin(deviations[j] - deviations[i]) }.sum;
 			var conductorTerm = conductorCoupling * sin(deviations[i].neg);
 			var dtheta = (naturalFreqs[i] * 2pi + (coupling * couplingSum / n) + conductorTerm) * dt;
-			var newPhase = oldPhases[i] + dtheta;
+			var noiseTerm = phaseNoise * dt.sqrt * 1.0.rand2;
+			var newPhase = oldPhases[i] + dtheta + noiseTerm;
 
 			if(newPhase >= 2pi) { fired = fired.add(i) };
 			phases[i] = newPhase % 2pi;
