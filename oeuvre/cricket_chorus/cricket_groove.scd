@@ -131,9 +131,23 @@ CricketSound.addSynthDef;
 // eigenes Ramp nötig): bei kleiner conductorCoupling (Chaos-Phase) dominiert das Rauschen relativ
 // stark, sobald conductorCoupling gegen ~targetCoupling rampt, wird die Rückstellkraft zur
 // Rollen-Zielphase viel stärker als das konstante Rauschen -- der Groove rastet trotzdem hörbar
-// ein, bleibt aber mit einem leichten organischen Wobble statt komplett mechanisch. Startwert für
-// den Hörtest, siehe CoupledOscillators-Klassenkommentar zur Skalierung.
-~phaseNoise = 0.6;
+// ein, bleibt aber mit einem leichten organischen Wobble statt komplett mechanisch.
+//
+// Wertebereich: sinnvoll nur >= 0 (0 = kein Rauschen, exakt das alte deterministische Verhalten).
+// Grössenordnung ist ein Diffusionskoeffizient (rad/sqrt(s)), keine Frequenz/kein Prozentwert.
+// Die verbleibende Phasenstreuung im EINGERASTETEN Zustand (nachdem conductorCoupling bis
+// ~targetCoupling hochgerampt ist) skaliert grob wie phaseNoise / sqrt(2 * conductorCoupling) --
+// zur Einordnung bei ~targetCoupling: 60 (aktueller Wert oben):
+//   phaseNoise   Streuung im Lock (rad)   Charakter
+//   0.6          ~0.055                   sehr eng, kaum hörbarer Wobble im fertigen Groove
+//   2-3          ~0.2-0.27                hörbar organischer, "lebendiger" Lock
+//   ~5           ~0.46                    deutlich lockerer, Groove "schwimmt" spürbar
+//   >= ~11 (= sqrt(2*60))                 Lock destabilisiert sich, Rauschen überwiegt die
+//                                         Rückstellkraft -- rastet praktisch nie sauber ein
+// Während der Chaos-Phase (conductorCoupling = 0) wirkt phaseNoise dagegen ungebremst -- je
+// höher, desto stochastischer jede einzelne Stimme dort. Live veränderbar (<>-Attribut), z.B.
+// ~oscillators.phaseNoise = 2.0 während des Abspielens zum direkten Vergleich.
+~phaseNoise = 3;
 
 ~oscillators = CoupledOscillators.new(
 	naturalFreqs: ~naturalFreqs,
