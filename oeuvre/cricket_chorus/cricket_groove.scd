@@ -96,3 +96,61 @@ CricketSound.addSynthDef;
 ~naturalFreqs = ~voices.collect { |v| v[\naturalFreq] };
 ~chirpDurs = ~voices.collect { |v| v[\chirpDur] };
 )
+
+// --- 2) Dirigent, Tick-Routine, Timeline ------------------------------------------------
+(
+~totalDur = 100;       // Gesamtdauer des Stücks in Sekunden
+~chaosDur = 8;         // reine Chaos-Phase am Anfang, bevor die Kopplung zu wirken beginnt
+~coupleRampDur = 40;   // Dauer, über die conductorCoupling von 0 auf ihren Zielwert steigt
+// ~targetCoupling: wie in cricket_chorus.scd (Intent 61, Task 2.3) muss conductorCoupling weit
+// über der reinen Frequenz-Einrast-Schwelle liegen, um auch PHASEN-seitig hörbar synchron zu
+// werden (sin(dev) = Frequenzabstand*2pi / conductorCoupling) statt nur mit gleicher Periode,
+// aber hörbar versetzt zu feuern. Hihat hat hier mit roleMultiplier 12 den bei weitem grössten
+// Frequenzabstand zur naturalFreq aller 5 Stimmen -- Startwert daher deutlich höher als der in
+// cricket_chorus.scd für die dortige max. roleMultiplier 2 (Doppelzeit) verifizierte Wert;
+// finale Justierung folgt per Hörtest (Task 4).
+~targetCoupling = 60;
+
+~oscillators = CoupledOscillators.new(
+	naturalFreqs: ~naturalFreqs,
+	coupling: 0,                   // keine Mutual-Kopplung -- nur der Dirigent zieht die Rollen
+	initialPhases: ~numVoices.collect { 2pi.rand },
+	conductorFreq: ~conductorFreq,
+	conductorCoupling: 0,          // startet bei 0, Timeline rampt es hoch (siehe unten)
+	roleOffsets: ~roleOffsets,
+	roleMultipliers: ~roleMultipliers
+);
+
+~timeline = Timeline.new(~totalDur);
+~timeline.ramp(~chaosDur, ~chaosDur + ~coupleRampDur, 0, ~targetCoupling,
+	{ |v| ~oscillators.conductorCoupling = v });
+
+// zentrale Tick-Routine (identisches Muster wie cricket_chorus.scd) -- treibt CoupledOscillators
+// in Echtzeit und löst bei jedem Feuerungs-Event einen kurzen Gate-An/Aus-Impuls (Ruflänge = die
+// kuratierte chirpDur dieser Stimme) auf dem jeweiligen laufenden Synth aus.
+~oscDt = 0.02;
+~oscRoutine = Routine({
+	loop {
+		var fired = ~oscillators.tick(~oscDt);
+		fired.do { |i|
+			Routine({
+				var synth = ~soundObjects[i].sound.synth;
+				synth.set(\gate, 1);
+				~chirpDurs[i].wait;
+				synth.set(\gate, 0);
+			}).play;
+		};
+		~oscDt.wait;
+	}
+});
+
+// Stück-Ende: Tick-Routine stoppen, alle Grillen klickfrei verstummen (fadeOutAndStop, gleiches
+// Muster wie cricket_chorus.scd/messiaen_birds.scd/dawn_chorus.scd).
+~timeline.at(~totalDur, {
+	"Grillen-Groove ist fertig.".postln;
+	~oscRoutine.stop;
+	~soundObjects.do { |so|
+		so.fadeOutAndStop(0.5, { |stopped| ~room.orchestra.unregister(stopped) })
+	};
+});
+)
