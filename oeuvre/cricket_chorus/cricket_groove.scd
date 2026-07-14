@@ -154,3 +154,33 @@ CricketSound.addSynthDef;
 	};
 });
 )
+
+// --- 3) Abspielen ---
+
+(
+"Beginn des Grillen-Grooves -- unkoordiniert.".postln;
+~room.play;
+// Start: keine Grille dauerzirpt (SynthDef-Default gate=1) -- nur die vom Dirigenten
+// getriggerten Kurz-Rufe sollen hörbar sein.
+~soundObjects.do { |so| so.sound.synth.set(\gate, 0) };
+~oscRoutine.play;
+~timeline.play;
+)
+
+(
+// eigenes presets-/recordings-Verzeichnis (nicht dasselbe wie cricket_chorus), damit sich die
+// Presets der beiden Stücke nicht überschreiben.
+~presetsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname +/+ "presets"
+	+/+ "cricket_groove").fullPath;
+~recordingsDir = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname
+	+/+ "recordings").fullPath;
+~controlPanel = RoomControlPanel.new(~room, viewRadius: 6, editable: true,
+	presetsDir: ~presetsDir, recordingsDir: ~recordingsDir);
+~controlPanel.show;
+)
+
+// --- 4) Stoppen ---
+~timeline.stop;
+~oscRoutine.stop;
+~room.teardown;
+~controlPanel.free;
