@@ -13,6 +13,7 @@ TestListener.run;
 TestRoom.run;
 TestTimeline.run;
 TestCoupledOscillators.run;
+TestGrooveNotation.run;
 TestRoomRecorder.run;
 TestRoomSceneLibrary.run;
 TestSoloMuteController.run;

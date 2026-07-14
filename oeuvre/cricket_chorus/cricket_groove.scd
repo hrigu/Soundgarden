@@ -7,20 +7,15 @@
 // jeweiligen Rollen-Position — echte Selbstorganisation (Kuramoto-Modell), kein geskripteter
 // Step-Sequencer.
 //
-// Rollen-Ableitung aus dem MIDI-Groove (Zyklus = 1 Takt = 16 Schritte, Winkel = Schritt * pi/8,
-// roleAngle = roleMultiplier * conductorPhase + roleOffset):
-//   - Kick   (MIDI-Note 35, Schritte 0+8/Takt):  roleMultiplier 2, roleOffset 0
-//   - Snare  (MIDI-Note 38, Schritt 4/Takt, Backbeat): roleMultiplier 1, roleOffset pi/2
-//   - Hihat  (MIDI-Note 42, 12 von 16 Schritten/Takt): roleMultiplier 12, roleOffset 0 —
-//     bewusste Näherung als gleichmässiger dichter Puls statt Step-für-Step-Nachbau der exakten
-//     (ungleichmässigen) 16tel-Lücken; kein Sequencer, siehe Intent-62-Entscheid.
-//   - Floor-Tom (MIDI-Note 43, 5 synkopierte Akzente/Takt an Schritt 3/5/7/13/15): roleMultiplier
-//     5, roleOffset 3*pi/8 (zirkulärer Mittelwert der 5 Schritt-Winkel).
-//   - Mid-Tom (MIDI-Note 48, 2 eng benachbarte Fill-Schläge an Schritt 11/12): roleMultiplier 2,
-//     roleOffset 11.5*pi/8 (Mittelwert der beiden Schritt-Winkel).
+// ~groove: der Referenz-Drumgroove als editierbare, sichtbare Notation (Drum-Tab-Stil, ein
+// "x"/"."-String pro Stimme, Länge = Schritte pro Takt) statt einer Handrechnung von
+// roleOffset/roleMultiplier im Code. GrooveNotation.deriveRoles (classes/sg/spatial/
+// GrooveNotation.sc, Intent 62 Task 4) leitet daraus automatisch roleMultiplier (Anzahl Schläge)
+// und roleOffset (zirkulärer Mittelwert der Schlag-Winkel, siehe Klassenkommentar) ab. Wer den
+// Groove ändern will, editiert nur die Strings unten — keine Winkel-Handrechnung mehr nötig.
 // Die im MIDI zusätzlich vorhandene Verdichtung im zweiten Takt (mehr Snare-/Tom-Schläge gegen
-// Taktende) wird NICHT 1:1 nachgebaut, sondern bewusst als Näherung über die genannten
-// Rollen-Positionen abgebildet.
+// Taktende) wird NICHT 1:1 nachgebaut, sondern bewusst als Näherung über die abgeleiteten
+// Rollen-Positionen abgebildet (kein Step-Sequencer, siehe Intent-62-Entscheid).
 //
 // Wie cricket_chorus.scd: erster Block registriert die Stimmen stationär im Raum und setzt
 // pattern = nil PRO SOUND-INSTANZ (nicht nur im soundParams-Event) — siehe CLAUDE.md-Gotcha zu
@@ -35,40 +30,58 @@ CricketSound.addSynthDef;
 ~room = Room.new(s, listener: ~listener, size: 8, height: 3, surface: 0.5);
 
 // ~conductorFreq: gemeinsamer Grundpuls in Hz (wie in cricket_chorus.scd, Intent 61) — Startwert
-// übernommen, Feintuning für die 5-stimmige Besetzung folgt per Hörtest (Task 4).
+// übernommen, Feintuning für die 5-stimmige Besetzung folgt per Hörtest (Task 5).
 ~conductorFreq = 0.35;
 
-// 5 Stimmen, je einer MIDI-Rolle zugeordnet. naturalFreq ist die eigene, unbeeinflusste
-// Ausgangsfrequenz vor dem Einrasten — bewusst weit von der jeweiligen Rollen-Zielfrequenz
-// (roleMultiplier * conductorFreq) entfernt, damit das Stück hörbar unkoordiniert beginnt
-// (gleiches Muster wie cricket_chorus.scd).
+// Reihenfolge: Kick, Snare, Hihat, Floor-Tom, Mid-Tom (aus Download.midi transkribiert, ein
+// Zeichen pro 16tel-Schritt eines Takts) — hier editieren, um den Groove zu verändern.
+~groove = [
+	"x.......x.......",  // Kick: Schritt 0+8 (Grundschlag)
+	"....x...........",  // Snare: Schritt 4 (Backbeat)
+	".xxx.xxx.xxx.xxx",  // Hihat: 12 von 16 Schritten (treibender Puls)
+	"...x.x.x.....x.x",  // Floor-Tom: synkopierte Fill-Akzente
+	"...........xx...",  // Mid-Tom: Fill-Doppelschlag gg. Taktende
+];
+~roles = GrooveNotation.deriveRoles(~groove);
+
+// naturalFreq-Streufaktoren: bewusst weit von der jeweiligen Rollen-Zielfrequenz
+// (roleMultiplier * conductorFreq) entfernt gewählt, damit das Stück hörbar unkoordiniert
+// beginnt (gleiches Muster wie cricket_chorus.scd) — ein Faktor pro Stimme, gleiche Reihenfolge
+// wie ~groove.
+~naturalFreqScatter = [0.6, 1.7, 0.7, 1.3, 1.6];
+
+// 5 Stimmen, je einer MIDI-Rolle zugeordnet; roleOffset/roleMultiplier kommen aus ~roles (oben),
+// nicht mehr aus Handrechnung.
 ~voices = [
 	// --- Kick: tief, tonal, trägt den Grundschlag (Taktanfang + Taktmitte) ---
 	(soundParams: (ringFreq1: 900, wingRate: 14, wingDuty: 0.6, ringDecay1: 0.05,
 		ringDecay2: 0.04, amp: 0.5, pattern: nil),
-		chirpDur: 0.18, naturalFreq: ~conductorFreq * 2 * 0.6, roleOffset: 0, roleMultiplier: 2),
+		chirpDur: 0.18, naturalFreq: ~conductorFreq * ~roles[0].roleMultiplier * ~naturalFreqScatter[0],
+		roleOffset: ~roles[0].roleOffset, roleMultiplier: ~roles[0].roleMultiplier),
 
 	// --- Snare: hell, scharfer Einsatz, Backbeat auf Zählzeit 2 ---
 	(soundParams: (ringFreq1: 3800, wingRate: 34, wingDuty: 0.3, ringDecay1: 0.015,
 		ringDecay2: 0.01, amp: 0.42, pattern: nil),
-		chirpDur: 0.09, naturalFreq: ~conductorFreq * 1 * 1.7, roleOffset: pi / 2, roleMultiplier: 1),
+		chirpDur: 0.09, naturalFreq: ~conductorFreq * ~roles[1].roleMultiplier * ~naturalFreqScatter[1],
+		roleOffset: ~roles[1].roleOffset, roleMultiplier: ~roles[1].roleMultiplier),
 
 	// --- Hihat: sehr hell, kurz, dicht — treibender 16tel-artiger Puls ---
 	(soundParams: (ringFreq1: 6000, wingRate: 48, wingDuty: 0.25, ringDecay1: 0.006,
 		ringDecay2: 0.005, amp: 0.2, pattern: nil),
-		chirpDur: 0.04, naturalFreq: ~conductorFreq * 12 * 0.7, roleOffset: 0, roleMultiplier: 12),
+		chirpDur: 0.04, naturalFreq: ~conductorFreq * ~roles[2].roleMultiplier * ~naturalFreqScatter[2],
+		roleOffset: ~roles[2].roleOffset, roleMultiplier: ~roles[2].roleMultiplier),
 
 	// --- Floor-Tom: dunkler, synkopierte Fill-Akzente ---
 	(soundParams: (ringFreq1: 1400, wingRate: 20, wingDuty: 0.5, ringDecay1: 0.035,
 		ringDecay2: 0.025, amp: 0.35, pattern: nil),
-		chirpDur: 0.14, naturalFreq: ~conductorFreq * 5 * 1.3, roleOffset: 3 * pi / 8,
-		roleMultiplier: 5),
+		chirpDur: 0.14, naturalFreq: ~conductorFreq * ~roles[3].roleMultiplier * ~naturalFreqScatter[3],
+		roleOffset: ~roles[3].roleOffset, roleMultiplier: ~roles[3].roleMultiplier),
 
 	// --- Mid-Tom: etwas heller als Floor-Tom, Fill-Doppelschlag gg. Taktende ---
 	(soundParams: (ringFreq1: 2000, wingRate: 22, wingDuty: 0.45, ringDecay1: 0.03,
 		ringDecay2: 0.02, amp: 0.32, pattern: nil),
-		chirpDur: 0.12, naturalFreq: ~conductorFreq * 2 * 1.6, roleOffset: 11.5 * pi / 8,
-		roleMultiplier: 2),
+		chirpDur: 0.12, naturalFreq: ~conductorFreq * ~roles[4].roleMultiplier * ~naturalFreqScatter[4],
+		roleOffset: ~roles[4].roleOffset, roleMultiplier: ~roles[4].roleMultiplier),
 ];
 ~numVoices = ~voices.size;
 
@@ -108,7 +121,7 @@ CricketSound.addSynthDef;
 // aber hörbar versetzt zu feuern. Hihat hat hier mit roleMultiplier 12 den bei weitem grössten
 // Frequenzabstand zur naturalFreq aller 5 Stimmen -- Startwert daher deutlich höher als der in
 // cricket_chorus.scd für die dortige max. roleMultiplier 2 (Doppelzeit) verifizierte Wert;
-// finale Justierung folgt per Hörtest (Task 4).
+// finale Justierung folgt per Hörtest (Task 5).
 ~targetCoupling = 60;
 
 ~oscillators = CoupledOscillators.new(
