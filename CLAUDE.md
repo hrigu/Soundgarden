@@ -121,40 +121,66 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
 
 ## Gotchas
 
-- `PathName>>extension` kann ein **Symbol** statt einen String liefern. `Array:-includes`/
-  `-indexOf` vergleichen intern per Identität — zwei inhaltsgleiche, aber unterschiedliche
-  String-Objekte matchen NICHT, auch wenn ein direkter `==`-Vergleich `true` ergibt. Extensions
-  deshalb immer als Symbol vergleichen (siehe `classes/BootTrackDetection.sc`, getestet in
-  `tests/TestBootTrackDetection.sc`).
-- `Decimator` (Bitcrush-UGen) gehört zu `sc3-plugins`, nicht zum Core — auf einer frischen
-  Installation `ERROR: Class not defined`. In `experiments/live_coding_rig/fx.scd` stattdessen
-  mit `Latch` + `round`
-  nachgebaut.
-- Kein MIDI-Controller vorgesehen — Steuerung ist bewusst reine Tastatur (`Cmd+Enter` je Block).
-- `CricketSound.new(pattern: nil)` schaltet entgegen der Erwartung **nicht** das eingebaute
-  `CallingPattern` ab: `*new` generiert per `pattern ?? { CricketSound.makePattern }` bei `nil`
-  immer automatisch ein eigenes (so gewollt, siehe `TestCricketSound.sc` — `??` unterscheidet
-  nicht zwischen "Argument nicht übergeben" und "explizit nil übergeben"). Wer eine `CricketSound`-
-  Instanz rein extern (z.B. per eigener Tick-Routine) steuern will, muss `pattern` nach der
-  Konstruktion explizit auf der Sound-Instanz zurücksetzen (`so.sound.pattern = nil`), und zwar
-  bevor `Sound>>play` (bzw. `Room>>play`) aufgerufen wird — sonst startet die interne
-  Pattern-Routine trotzdem und überschreibt/interferiert mit dem externen Gate (führte in Intent
-  61/`cricket_chorus.scd` zu durchgehendem statt rhythmisch pausiertem Zirpen).
-- `rrand(*someArray)` funktioniert **nicht** wie ein normaler Funktionsaufruf mit Array-Splatting:
-  `rrand(lo, hi)` wird vom Compiler wie ein Binäroperator (`lo.rrand(hi)`) übersetzt, nicht wie
-  eine generische Methode — das Splatting landet dann als einzelnes Args-Array beim (fehlenden)
-  Empfänger `nil` statt auf zwei echte Argumente verteilt zu werden. Fehlerbild: `ERROR: binary
-  operator 'rrand' failed. RECEIVER: nil` erst zur Laufzeit, kein Compile-Fehler. Immer explizit
-  `rrand(range[0], range[1])` schreiben, nie `rrand(*range)` (zweimal in Intent 59 aufgetreten,
-  siehe `oeuvre/messiaen_birds/messiaen_birds.scd`).
-- Bluetooth-Headsets (z.B. AirPods, Bose) liefern für ihr Mikrofon oft nur 16kHz, während der
-  Output mit 44100Hz läuft — das lässt den Server-Boot mit einem Samplerate-Konflikt scheitern,
-  UND hält macOS die Verbindung systemweit im HFP-Modus (mono, verrauscht, kein Stereo-Panning
-  hörbar), solange das Headset in den **macOS-Systemeinstellungen** (Ton → Eingabe) noch als
-  Standard-Mikrofon eingestellt ist. Der eigentliche Fix ist dort: Eingabegerät auf ein
-  Nicht-Bluetooth-Gerät umstellen, dann handelt macOS A2DP (sauberes Stereo) neu aus.
-  `s.options.numInputBusChannels = 0` in `boot/boot.scd` ist zusätzlich vorbereitet (aktuell
-  auskommentiert), falls der Server trotzdem mit aktivem Bluetooth-Mikrofon gebootet wird.
+| Fallstrick | betrifft | Details |
+|---|---|---|
+| Extension-Vergleiche als Symbole | `BootTrackDetection`, Datei-Scanning | [Extension-Vergleiche](#extension-vergleiche-als-symbole) |
+| `Decimator` nicht im Core | Live-Coding-FX | [sc3-plugins-Abhängigkeit](#decimator-gehört-zu-sc3-plugins) |
+| Kein MIDI-Controller | Live-Set-Workflow | [Reine Tastatursteuerung](#kein-midi-controller) |
+| `CricketSound(pattern: nil)` | `CricketSound`, externe Tick-Routinen | [Pattern-Verhalten](#cricketsoundnewpattern-nil-schaltet-pattern-nicht-ab) |
+| `rrand(*array)` funktioniert nicht | Zufallsbereiche | [Array-Splatting bei Binäroperatoren](#rrandarray-funktioniert-nicht) |
+| Bluetooth-Headset Samplerate-Konflikt | Server-Boot, Audio-Ausgabe | [Bluetooth-Headsets](#bluetooth-headset-samplerate-konflikt) |
+
+### Extension-Vergleiche als Symbole
+
+`PathName>>extension` kann ein **Symbol** statt einen String liefern. `Array:-includes`/
+`-indexOf` vergleichen intern per Identität — zwei inhaltsgleiche, aber unterschiedliche
+String-Objekte matchen NICHT, auch wenn ein direkter `==`-Vergleich `true` ergibt. Extensions
+deshalb immer als Symbol vergleichen (siehe `classes/BootTrackDetection.sc`, getestet in
+`tests/TestBootTrackDetection.sc`).
+
+### Decimator gehört zu sc3-plugins
+
+`Decimator` (Bitcrush-UGen) gehört zu `sc3-plugins`, nicht zum Core — auf einer frischen
+Installation `ERROR: Class not defined`. In `experiments/live_coding_rig/fx.scd` stattdessen
+mit `Latch` + `round`
+nachgebaut.
+
+### Kein MIDI-Controller
+
+Kein MIDI-Controller vorgesehen — Steuerung ist bewusst reine Tastatur (`Cmd+Enter` je Block).
+
+### CricketSound.new(pattern: nil) schaltet Pattern nicht ab
+
+`CricketSound.new(pattern: nil)` schaltet entgegen der Erwartung **nicht** das eingebaute
+`CallingPattern` ab: `*new` generiert per `pattern ?? { CricketSound.makePattern }` bei `nil`
+immer automatisch ein eigenes (so gewollt, siehe `TestCricketSound.sc` — `??` unterscheidet
+nicht zwischen "Argument nicht übergeben" und "explizit nil übergeben"). Wer eine `CricketSound`-
+Instanz rein extern (z.B. per eigener Tick-Routine) steuern will, muss `pattern` nach der
+Konstruktion explizit auf der Sound-Instanz zurücksetzen (`so.sound.pattern = nil`), und zwar
+bevor `Sound>>play` (bzw. `Room>>play`) aufgerufen wird — sonst startet die interne
+Pattern-Routine trotzdem und überschreibt/interferiert mit dem externen Gate (führte in Intent
+61/`cricket_chorus.scd` zu durchgehendem statt rhythmisch pausiertem Zirpen).
+
+### rrand(*array) funktioniert nicht
+
+`rrand(*someArray)` funktioniert **nicht** wie ein normaler Funktionsaufruf mit Array-Splatting:
+`rrand(lo, hi)` wird vom Compiler wie ein Binäroperator (`lo.rrand(hi)`) übersetzt, nicht wie
+eine generische Methode — das Splatting landet dann als einzelnes Args-Array beim (fehlenden)
+Empfänger `nil` statt auf zwei echte Argumente verteilt zu werden. Fehlerbild: `ERROR: binary
+operator 'rrand' failed. RECEIVER: nil` erst zur Laufzeit, kein Compile-Fehler. Immer explizit
+`rrand(range[0], range[1])` schreiben, nie `rrand(*range)` (zweimal in Intent 59 aufgetreten,
+siehe `oeuvre/messiaen_birds/messiaen_birds.scd`).
+
+### Bluetooth-Headset Samplerate-Konflikt
+
+Bluetooth-Headsets (z.B. AirPods, Bose) liefern für ihr Mikrofon oft nur 16kHz, während der
+Output mit 44100Hz läuft — das lässt den Server-Boot mit einem Samplerate-Konflikt scheitern,
+UND hält macOS die Verbindung systemweit im HFP-Modus (mono, verrauscht, kein Stereo-Panning
+hörbar), solange das Headset in den **macOS-Systemeinstellungen** (Ton → Eingabe) noch als
+Standard-Mikrofon eingestellt ist. Der eigentliche Fix ist dort: Eingabegerät auf ein
+Nicht-Bluetooth-Gerät umstellen, dann handelt macOS A2DP (sauberes Stereo) neu aus.
+`s.options.numInputBusChannels = 0` in `boot/boot.scd` ist zusätzlich vorbereitet (aktuell
+auskommentiert), falls der Server trotzdem mit aktivem Bluetooth-Mikrofon gebootet wird.
 
 Für das vollständige IDD-Protokoll (Intent-Format, Ordner-Workflow, Task-Bestätigungen,
 Commit-Konventionen) siehe `AGENTS.md`.
