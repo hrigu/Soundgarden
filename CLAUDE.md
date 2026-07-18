@@ -37,6 +37,10 @@ Kommentare und Commit-Messages in diesem Repo sind auf Deutsch.
   von `boot/boot.scd`** erfolgt sein — `boot/boot.scd` ruft `BootTrackDetection` auf, das erst
   nach diesem Schritt existiert.
 - `run_tests.scd` — automatisierte Tests (`UnitTest`) für die reine sclang-Logik.
+  Für headless Ausführung siehe `scripts/run_tests.sh`.
+- `.claude/settings.local.json` — projektspezifische Agent-Berechtigungen (z.B. Lesen von
+  `~/Library/Application Support/SuperCollider/**`, `git mv`/`git add`). Wird von Claude Code
+  beim Öffnen des Repos automatisch berücksichtigt.
 - Live-Set-Workflow: `boot/boot.scd` → `experiments/live_coding_rig/fx.scd` →
   `experiments/live_coding_rig/set_template.scd` (Block für Block, `Cmd+Enter`).
 - Spatial-Audio-Prototyp: `boot/boot.scd` → eine der Varianten in `demos/grill/` (bzw.
