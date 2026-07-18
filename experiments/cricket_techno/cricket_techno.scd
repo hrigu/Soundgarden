@@ -9,7 +9,7 @@
 // --- 1) Setup: 36 CricketSounds im Raum ---------------------------------------------
 (
 CricketSound.addSynthDef;
-~listener = Listener.new(binauralizerClass: AtkBinauralizer);
+~listener = Listener.new(binauralizerClass: Binauralizer);
 ~room = Room.new(s, listener: ~listener, size: 10, height: 3, surface: 0.5);
 
 // Tempo und Raster
