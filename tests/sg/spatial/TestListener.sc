@@ -48,9 +48,20 @@ FakeAtkBinauralizerForListenerTest {
 }
 
 // Test-Double für directOutBinauralizerClass (Fallback bei binauralizerClass = nil) — hat
-// bewusst nur *addSynthDef, kein *setup, analog zum echten DirectOutBinauralizer.
+// bewusst nur *addSynthDef, kein *setup, analog zum echten DirectOutBinauralizer. *new muss
+// reverbMix als Parameter akzeptieren, damit Listener>>makeBinauralizer(reverbMix: ...) keine
+// Warnung "keyword arg 'reverbMix' not found" erzeugt.
 FakeDirectOutBinauralizerForListenerTest {
 	classvar <lastAddSynthDefBus;
+	var <reverbMix;
+
+	*new { |reverbMix = 0.2|
+		^super.new.init(reverbMix);
+	}
+
+	init { |aReverbMix|
+		reverbMix = aReverbMix;
+	}
 
 	*addSynthDef { |reverbBus|
 		lastAddSynthDefBus = reverbBus;
