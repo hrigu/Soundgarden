@@ -105,9 +105,6 @@ CricketSound.addSynthDef;
 // Gotcha: CricketSound.new(pattern: nil) schaltet das eingebaute CallingPattern NICHT ab
 // (siehe CLAUDE.md). Muss pro Sound-Instanz explizit auf nil setzen, BEVOR ~room.play läuft.
 ~soundObjects.do { |so| so.sound.pattern = nil };
-
-// Synths initial stumm setzen, damit nichts dauerzirpt, bevor die Patterns starten.
-~soundObjects.do { |so| so.sound.synth.set(\gate, 0) };
 )
 
 // --- 2) Groove-Patterns -------------------------------------------------------------
@@ -198,6 +195,16 @@ CricketSound.addSynthDef;
 
 // --- 3) Trigger-Routinen und Abspielen ---------------------------------------------
 (
+"Beginn des Cricket-Techno-Experiments.".postln;
+
+// Zuerst Room starten — erst dadurch existieren die Synths auf den Sound-Instanzen.
+~room.play;
+
+// Alle Grillen-Synths initial stumm setzen, damit nichts dauerzirpt, bevor die Patterns
+// treffen. Muss NACH ~room.play passieren.
+~soundObjects.do { |so| so.sound.synth.set(\gate, 0) };
+
+// Jetzt, wo die Synths existieren, die Trigger-Routinen bauen.
 ~routines = ~voicePatterns.collect { |pat, i|
 	var synth = ~soundObjects[i].sound.synth;
 	var stream = pat[\stream].asStream;
@@ -217,8 +224,6 @@ CricketSound.addSynthDef;
 	});
 };
 
-"Beginn des Cricket-Techno-Experiments.".postln;
-~room.play;
 ~routines.do(_.play);
 )
 
