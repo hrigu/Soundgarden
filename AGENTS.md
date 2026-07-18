@@ -46,8 +46,10 @@ offensichtliche Korrekturen).
 
 ### Ablage & Tracking
 
-- `.intents/{todo,work-in-progress,completed}/` — ein Intent wandert `todo` →
-  `work-in-progress` (sobald Arbeit beginnt) → `completed` (sobald alle Tasks `[x]` sind).
+- `.intents/{todo,work-in-progress,parkiert,completed}/` — ein Intent wandert normalerweise
+  `todo` → `work-in-progress` (sobald Arbeit beginnt) → `completed` (sobald alle Tasks `[x]`
+  sind). `parkiert/` ist ein optionaler Zustand für wartende Intents (siehe Abschnitt
+  „Parken von Intents“).
 - Dateiname: `<Nummer>.<typ>_<domain>_<slug>.md` (Typ/Domain/Slug klein geschrieben,
   Bindestrich-getrennt).
 - `<n>.last_intent_created` — leere Marker-Datei, trackt die zuletzt vergebene Nummer nur über
@@ -70,6 +72,25 @@ offensichtliche Korrekturen).
 6. Alle Tasks eines Intents fertig → Intent nach `completed/` verschieben, committen.
 7. Nutzer-Kommandos: "weiter"/"ja"/"ok" → fortfahren; "skip X" → Task/Intent überspringen;
    "ändern/anpassen X" → gemeinsam überarbeiten statt einfach weiterzumachen.
+
+### Parken von Intents
+
+Manche Intents sind weder aktiv blockiert noch sofort abgeschlossen, sondern warten auf eine
+externe Bedingung (Hörtest, Materialbeschaffung, Nutzer-Entscheidung). Um zu verhindern, dass
+sie `todo/` oder `work-in-progress/` verstopfen, während spätere Intents bereits abgeschlossen
+werden, können sie in `.intents/parkiert/` abgelegt werden.
+
+- Voraussetzung: der Intent hat einen **klaren Park-Grund** und eine **Wiederaufnahme-Bedingung**.
+  Beides wird als kurzer Kommentar am Anfang der Intent-Datei festgehalten.
+- Übergänge:
+  - `todo/` oder `work-in-progress/` → `parkiert/`: jederzeit, wenn eine Wartebedingung eintritt.
+  - `parkiert/` → `todo/` oder `work-in-progress/`: sobald die Wartebedingung erfüllt ist.
+  - `parkiert/` → `completed/`: nur, wenn alle Tasks tatsächlich erledigt sind (z.B. nach einem
+    verspäteten Hörtest).
+- `parkiert/` ist **kein Grab**: Intents dort werden bei der Suche nach verwandten Themen
+  (Protokoll-Schritt 1) genauso berücksichtigt wie `todo/` und `work-in-progress/`.
+- Die Intent-Nummer bleibt beim Parken unverändert; `last_intent_created` wird nicht
+  zurückgesetzt.
 
 ### TDD — wo sinnvoll, nicht dogmatisch
 
