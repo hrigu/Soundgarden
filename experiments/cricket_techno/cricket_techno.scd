@@ -41,22 +41,22 @@ CricketSound.addSynthDef;
 // Ausgangspunkt — Feintuning passiert nach dem Hörtest.
 ~voiceSpecs = [];
 ~layers.do { |layer|
-	layer.count.do { |i|
-		var spec = switch(layer.name,
+	layer[\count].do { |i|
+		var spec = switch(layer[\name],
 			\kick,    [ (wingRate: 16, wingDuty: 0.60, ringFreq1: 900,  ringFreq2: 950,
-						ringDecay1: 0.08, ringDecay2: 0.06, amp: layer.baseAmp) ],
+						ringDecay1: 0.08, ringDecay2: 0.06, amp: layer[\baseAmp]) ],
 			\snare,   [ (wingRate: 32, wingDuty: 0.35, ringFreq1: 2500, ringFreq2: 2600,
-						ringDecay1: 0.03, ringDecay2: 0.02, amp: layer.baseAmp) ],
+						ringDecay1: 0.03, ringDecay2: 0.02, amp: layer[\baseAmp]) ],
 			\hihat,   [ (wingRate: 55, wingDuty: 0.25, ringFreq1: 7000, ringFreq2: 7200,
-						ringDecay1: 0.008, ringDecay2: 0.006, amp: layer.baseAmp) ],
+						ringDecay1: 0.008, ringDecay2: 0.006, amp: layer[\baseAmp]) ],
 			\texture, [ (wingRate: 38, wingDuty: 0.40, ringFreq1: 3500, ringFreq2: 3600,
-						ringDecay1: 0.02, ringDecay2: 0.015, amp: layer.baseAmp) ]
+						ringDecay1: 0.02, ringDecay2: 0.015, amp: layer[\baseAmp]) ]
 		).first;
 		~voiceSpecs = ~voiceSpecs.add((
-			layer: layer.name,
+			layer: layer[\name],
 			layerIndex: i,
 			soundParams: spec ++ (pattern: nil),
-			chirpDur: layer.chirpDur,
+			chirpDur: layer[\chirpDur],
 			ampScale: 1.0
 		));
 	};
@@ -66,7 +66,7 @@ CricketSound.addSynthDef;
 // Textur weit gestreut. Jede Stimme bekommt leichte Zufallsstreuung, damit sich 36 Stimmen
 // nicht auf einen Punkt zusammenziehen.
 ~soundObjects = ~voiceSpecs.collect { |spec, i|
-	var layer = spec.layer;
+	var layer = spec[\layer];
 	var angle, radius, z;
 	var movableParams;
 
@@ -99,7 +99,7 @@ CricketSound.addSynthDef;
 		roomRadius: radius + 2
 	);
 
-	~room.registerFromBuilder(spec.soundParams, movableParams, soundClass: CricketSound)
+	~room.registerFromBuilder(spec[\soundParams], movableParams, soundClass: CricketSound)
 };
 
 // Gotcha: CricketSound.new(pattern: nil) schaltet das eingebaute CallingPattern NICHT ab
@@ -156,7 +156,7 @@ CricketSound.addSynthDef;
 // - Amplituden-Skaling pro Stimme
 // - Texture-Stream pro Stimme neu zufällig
 ~voicePatterns = ~voiceSpecs.collect { |spec, i|
-	var layer = spec.layer;
+	var layer = spec[\layer];
 	var baseStream;
 	var jitter;
 	var probability;
@@ -190,8 +190,8 @@ CricketSound.addSynthDef;
 			Pwhite(probability * 0.9, probability, inf) * baseStream
 		),
 		stepDur: ~stepDur * Pwhite(1 - jitter, 1 + jitter, inf),
-		chirpDur: spec.chirpDur,
-		ampScale: spec.ampScale
+		chirpDur: spec[\chirpDur],
+		ampScale: spec[\ampScale]
 	)
 };
 )
@@ -200,15 +200,15 @@ CricketSound.addSynthDef;
 (
 ~routines = ~voicePatterns.collect { |pat, i|
 	var synth = ~soundObjects[i].sound.synth;
-	var stream = pat.stream.asStream;
-	var durStream = pat.stepDur.asStream;
+	var stream = pat[\stream].asStream;
+	var durStream = pat[\stepDur].asStream;
 	Routine({
 		~totalSteps.do {
 			var gate = stream.next;
 			var dur = durStream.next;
 			if(gate.notNil and: { gate > 0 }) {
-				var chirpDur = min(pat.chirpDur, dur * 0.9);
-				synth.set(\amp, ~voiceSpecs[i].soundParams.amp * pat.ampScale);
+				var chirpDur = min(pat[\chirpDur], dur * 0.9);
+				synth.set(\amp, ~voiceSpecs[i][\soundParams][\amp] * pat[\ampScale]);
 				synth.set(\gate, 1);
 				SystemClock.sched(chirpDur, { synth.set(\gate, 0) });
 			};
