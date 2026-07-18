@@ -35,7 +35,17 @@ offensichtliche Korrekturen).
   - `Live-Set` — `boot/boot.scd`/`experiments/live_coding_rig/fx.scd`/
     `experiments/live_coding_rig/set_template.scd`, der DJ-Live-Coding-Workflow.
   - `Boot-Tracks` — Track-Erkennung/-Loading-Logik.
-  - `Spatial-Audio` — `Movable`/`Listener`/`SoundObject`, binaurale Klangobjekte.
+  - `Spatial-Audio` — `Movable`/`Listener`/`SoundObject`, binaurale Klangobjekte. Wird bei
+    Bedarf durch Unter-Domains präzisiert (siehe unten).
+  - `infra` — Repo-Struktur, Build-/Test-Hilfsmittel, Agent-Dokumentation.
+  - `sounds` — Klanggenerierende Klassen unter `classes/sg/sounds/`.
+  - `soundobjects` — Bewegung + Klangobjekt-Logik unter `classes/sg/soundobjects/`.
+  - `spatial` — Raum, Hall, Binauralizer, Timeline, Orchester unter `classes/sg/spatial/`.
+  - `gui` — Steuerungs- und Anzeige-Klassen unter `classes/sg/gui/`.
+
+  Die Domain in Intent-Titeln und Commit-Messages sollte die passende Granularkeit wählen:
+  bei übergreifenden Änderungen `Spatial-Audio`, bei fokussierten Änderungen die jeweilige
+  Unter-Domain (z.B. `enhancement (spatial): ...` oder `enhancement (gui): ...`).
 - Pflicht-Abschnitte:
   - **1. Why** — Objective, Context, optional Depends On/Related To Intents.
   - **2.0 What** — Gherkin-Szenarien (bei Feature/Enhancement/Bug/Test) oder eine kurze
