@@ -132,7 +132,7 @@ CricketSound.addSynthDef;
 
 // Wandelt einen String wie "x...x..." in einen Array von Gates (1/0) um.
 ~stringToGates = { |str|
-	str.asArray.collect { |ch| if(ch == $x) { 1 } { 0 } }
+	Array.fill(str.size, { |i| if(str[i] == $x) { 1 } { 0 } })
 };
 
 // Wandelt ein Array von 16 Takt-Strings in einen langen Gate-Stream für die gesamte Länge.
