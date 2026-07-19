@@ -20,7 +20,7 @@ RhythmPlaygroundPatternPresetLibrary {
 	*listNames { |dir|
 		^if(File.exists(dir)) {
 			PathName(dir).files.select { |pn| pn.extension.asSymbol == \scd }
-				.collect { |pn| pn.fileNameWithoutExtension }
+				.collect { |pn| pn.fileNameWithoutExtension.asString }
 		} { [] };
 	}
 }
