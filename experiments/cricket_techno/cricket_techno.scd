@@ -37,14 +37,14 @@ CricketSound.addSynthDef;
 // texture:  4 Stimmen, weit gestreut — atmosphärische Füllung
 
 ~layers = [
-	(name: \kick,    count: 4, baseAmp: 0.55, chirpDur: 0.18),
-	(name: \sub,     count: 2, baseAmp: 0.45, chirpDur: 0.30),
-	(name: \snare,   count: 5, baseAmp: 0.40, chirpDur: 0.09),
-	(name: \clap,    count: 4, baseAmp: 0.32, chirpDur: 0.05),
+	(name: \kick,    count: 1, baseAmp: 0.25, chirpDur: 0.18),
+	(name: \sub,     count: 1, baseAmp: 0.25, chirpDur: 0.30),
+	(name: \snare,   count: 5, baseAmp: 0.20, chirpDur: 0.09),
+	(name: \clap,    count: 6, baseAmp: 0.32, chirpDur: 0.05),
 	(name: \chihat,  count: 8, baseAmp: 0.18, chirpDur: 0.03),
-	(name: \ohihat,  count: 4, baseAmp: 0.14, chirpDur: 0.08),
+	(name: \ohihat,  count: 6, baseAmp: 0.34, chirpDur: 0.08),
 	(name: \perc,    count: 5, baseAmp: 0.22, chirpDur: 0.12),
-	(name: \texture, count: 4, baseAmp: 0.10, chirpDur: 0.06)
+	(name: \texture, count: 4, baseAmp: 0.30, chirpDur: 0.06)
 ];
 
 // Pro Stimme: Klangparameter abhängig von der Schicht.
@@ -79,60 +79,85 @@ CricketSound.addSynthDef;
 	};
 };
 
-// Räumliche Verteilung: tiefe Schichten nah und zentriert, helle/perkussive weiter und
-// gestreut. Jede Stimme bekommt leichte Zufallsstreuung.
+// Räumliche Verteilung: alle Stimmen bewegen sich langsam auf Kreisbahnen um den Hörer.
+// Tiefe Schichten drehen sich nah und langsam, helle/perkussive weiter und teils schneller.
+// Jede Stimme startet an einem anderen Winkel, damit sich die Kreisbahnen nicht decken.
 ~soundObjects = ~voiceSpecs.collect { |spec, i|
 	var layer = spec[\layer];
-	var angle, radius, z;
+	var baseRadius, angularSpeed, breathAmount, breathRate, startAngle, z;
 	var movableParams;
 
 	switch(layer,
 		\kick, {
-			angle = rrand(-0.3, 0.3);
-			radius = rrand(2.0, 3.0);
+			baseRadius = rrand(2.0, 3.0);
+			angularSpeed = rrand(0.03, 0.06);
+			breathAmount = rrand(0.2, 0.5);
+			breathRate = rrand(0.05, 0.12);
 			z = rrand(-0.2, 0.2);
 		},
 		\sub, {
-			angle = rrand(-0.2, 0.2);
-			radius = rrand(2.5, 3.5);
+			baseRadius = rrand(2.5, 3.5);
+			angularSpeed = rrand(0.02, 0.04);
+			breathAmount = rrand(0.3, 0.6);
+			breathRate = rrand(0.04, 0.10);
 			z = rrand(-0.3, 0.0);
 		},
 		\snare, {
-			angle = (pi * 0.5) + rrand(-0.4, 0.4);
-			radius = rrand(3.0, 4.5);
+			baseRadius = rrand(3.0, 4.5);
+			angularSpeed = rrand(0.05, 0.10);
+			breathAmount = rrand(0.3, 0.7);
+			breathRate = rrand(0.06, 0.14);
 			z = rrand(-0.3, 0.3);
 		},
 		\clap, {
-			angle = (pi * 1.5) + rrand(-0.5, 0.5);
-			radius = rrand(3.5, 5.0);
+			baseRadius = rrand(3.5, 5.0);
+			angularSpeed = rrand(-0.08, -0.04);
+			breathAmount = rrand(0.3, 0.6);
+			breathRate = rrand(0.07, 0.15);
 			z = rrand(0.0, 0.4);
 		},
 		\chihat, {
-			angle = 2pi.rand;
-			radius = rrand(3.5, 5.5);
+			baseRadius = rrand(3.5, 5.5);
+			angularSpeed = rrand(0.08, 0.15);
+			breathAmount = rrand(0.4, 0.8);
+			breathRate = rrand(0.08, 0.18);
 			z = rrand(-0.2, 0.5);
 		},
 		\ohihat, {
-			angle = 2pi.rand;
-			radius = rrand(4.0, 6.0);
+			baseRadius = rrand(4.0, 6.0);
+			angularSpeed = rrand(-0.10, -0.05);
+			breathAmount = rrand(0.4, 0.9);
+			breathRate = rrand(0.06, 0.14);
 			z = rrand(0.1, 0.6);
 		},
 		\perc, {
-			angle = 2pi.rand;
-			radius = rrand(4.5, 6.5);
+			baseRadius = rrand(4.5, 6.5);
+			angularSpeed = rrand(0.06, 0.12);
+			breathAmount = rrand(0.5, 1.0);
+			breathRate = rrand(0.05, 0.12);
 			z = rrand(-0.4, 0.4);
 		},
 		\texture, {
-			angle = 2pi.rand;
-			radius = rrand(6.0, 9.0);
+			baseRadius = rrand(6.0, 9.0);
+			angularSpeed = rrand(0.02, 0.05);
+			breathAmount = rrand(0.8, 1.5);
+			breathRate = rrand(0.03, 0.08);
 			z = rrand(-0.5, 0.5);
 		}
 	);
 
+	startAngle = 2pi.rand;
+
 	movableParams = (
-		pos: [radius * cos(angle), radius * sin(angle), z],
-		moveRule: SteadyMoveRule.new,
-		roomRadius: radius + 2
+		pos: [baseRadius * sin(startAngle), baseRadius * cos(startAngle), z],
+		moveRule: CircularMoveRule.new(
+			baseRadius: baseRadius,
+			breathAmount: breathAmount,
+			breathRate: breathRate,
+			angularSpeed: angularSpeed,
+			startAngle: startAngle
+		),
+		roomRadius: baseRadius + breathAmount + 2
 	);
 
 	~room.registerFromBuilder(spec[\soundParams], movableParams, soundClass: CricketSound)
