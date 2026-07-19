@@ -64,8 +64,8 @@ TestRhythmPatternNotation : UnitTest {
 
 	test_eventsIgnoresTrailingSegmentSeparator {
 		this.assertEquals(
-			RhythmPatternNotation.events("|xxxx|x.x.x.", barDur: 4),
-			RhythmPatternNotation.events("|xxxx|x.x.x.|", barDur: 4),
+			RhythmPatternNotation.events("xxxx|x.x.x.", barDur: 4),
+			RhythmPatternNotation.events("xxxx|x.x.x.|", barDur: 4),
 			"ein abschließendes | erzeugt kein zusätzliches leeres Segment"
 		);
 	}
@@ -80,6 +80,27 @@ TestRhythmPatternNotation : UnitTest {
 			RhythmPatternNotation.events("xxxx", barDur: 4),
 			RhythmPatternNotation.events("xxxx||", barDur: 4),
 			"ein einzelner Takt mit abschließendem || bleibt derselbe Takt"
+		);
+	}
+
+	test_eventsIgnoresLeadingSegmentSeparator {
+		this.assertEquals(
+			RhythmPatternNotation.events("xxxx|x.x.x.", barDur: 4),
+			RhythmPatternNotation.events("|xxxx|x.x.x.", barDur: 4),
+			"ein führendes | erzeugt kein leeres Anfangssegment"
+		);
+	}
+
+	test_eventsIgnoresLeadingBarSeparator {
+		this.assertEquals(
+			RhythmPatternNotation.events("xxxx||x.x.", barDur: 4),
+			RhythmPatternNotation.events("||xxxx||x.x.", barDur: 4),
+			"ein führendes || erzeugt keinen leeren Anfangstakt"
+		);
+		this.assertEquals(
+			RhythmPatternNotation.events("xxxx", barDur: 4),
+			RhythmPatternNotation.events("||xxxx", barDur: 4),
+			"ein einzelner Takt mit führendem || bleibt derselbe Takt"
 		);
 	}
 }

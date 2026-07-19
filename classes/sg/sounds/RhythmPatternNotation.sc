@@ -19,7 +19,9 @@ RhythmPatternNotation {
 		str.do { |c|
 			if(c == $|) {
 				if(prevWasBar) {
-					bars.add(current.asArray);
+					if(current.notEmpty or: { bars.notEmpty }) {
+						bars.add(current.asArray);
+					};
 					current = List.new;
 					prevWasBar = false;
 				} {
@@ -45,7 +47,9 @@ RhythmPatternNotation {
 
 		bar.do { |c|
 			if(c == $|) {
-				segments.add(current.asArray);
+				if(current.notEmpty or: { segments.notEmpty }) {
+					segments.add(current.asArray);
+				};
 				current = List.new;
 			} {
 				current.add(c);
