@@ -137,6 +137,8 @@ CricketSound.addSynthDef;
 ~playgroundRoutines = nil;
 ~playgroundSoundObjects = nil;
 ~playgroundIsRunning = false;
+~playgroundRoomIsPlaying = false;
+~playgroundStopToken = 0;
 
 // --- GUI ------------------------------------------------------------------------------
 
@@ -213,6 +215,7 @@ CricketSound.addSynthDef;
 		^nil;
 	};
 
+	~playgroundStopToken = ~playgroundStopToken + 1;
 	~bpm = ~playgroundBPMBox.value;
 	~stepDur = 60 / ~bpm / ~stepsPerBeat;
 
@@ -231,7 +234,12 @@ CricketSound.addSynthDef;
 	};
 
 	~playgroundSoundObjects.do { |so| so.sound.pattern = nil };
-	~room.play;
+	if(~playgroundRoomIsPlaying) {
+		~playgroundSoundObjects.do { |so| so.play(s) };
+	} {
+		~room.play;
+		~playgroundRoomIsPlaying = true;
+	};
 	~playgroundSoundObjects.do { |so| so.sound.synth.set(\gate, 0) };
 
 	~playgroundRoutines = activeLayers.collect { |layerName, i|
@@ -267,15 +275,37 @@ CricketSound.addSynthDef;
 };
 
 ~stopPlayground = {
+	var soundObjects, remaining, stopToken;
+
+	~playgroundStopToken = ~playgroundStopToken + 1;
+	stopToken = ~playgroundStopToken;
+
 	~playgroundRoutines !? { |routines|
 		routines.do(_.stop);
 		~playgroundRoutines = nil;
 	};
-	~playgroundSoundObjects !? { |soundObjects|
+
+	soundObjects = ~playgroundSoundObjects;
+	if(soundObjects.notNil) {
+		remaining = soundObjects.size;
 		soundObjects.do { |so|
-			so.fadeOutAndStop(0.5, { |stopped| ~room.orchestra.unregister(stopped) })
+			~room.orchestra.unregister(so);
+			so.fadeOutAndStop(0.5, {
+				remaining = remaining - 1;
+				if(remaining <= 0
+					and: { ~playgroundStopToken == stopToken }
+					and: { ~playgroundIsRunning.not }) {
+					~room.stop;
+					~playgroundRoomIsPlaying = false;
+				};
+			})
 		};
 		~playgroundSoundObjects = nil;
+	} {
+		if(~playgroundRoomIsPlaying and: { ~playgroundIsRunning.not }) {
+			~room.stop;
+			~playgroundRoomIsPlaying = false;
+		};
 	};
 	~playgroundIsRunning = false;
 	"Playground gestoppt.".postln;
