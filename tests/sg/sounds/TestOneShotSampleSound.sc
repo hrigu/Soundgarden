@@ -20,4 +20,21 @@ TestOneShotSampleSound : UnitTest {
 			"OneShotSampleSound erbt die Sample-Parameter; rate/phase werden nur nicht im " ++
 			"eigenen Synth benutzt");
 	}
+
+	test_activeVoiceCountIsZeroBeforePlay {
+		var sound = OneShotSampleSound.new("irrelevant/path.wav");
+
+		this.assertEquals(sound.activeVoiceCount, 0,
+			"vor dem ersten trigger gibt es keine aktiven One-Shot-Voices");
+	}
+
+	test_voiceCleanupDelayCoversAtLeastShortTail {
+		var shortSound = OneShotSampleSound.new("irrelevant/path.wav", duration: 0.03);
+		var longerSound = OneShotSampleSound.new("irrelevant/path.wav", duration: 0.4);
+
+		this.assertFloatEquals(shortSound.voiceCleanupDelay, 0.2,
+			"sehr kurze Samples bekommen genug Zeit fuer einen kleinen Ausklang");
+		this.assertFloatEquals(longerSound.voiceCleanupDelay, 0.5,
+			"laengere Samples bleiben bis nach ihrer Duration in der Active-Liste");
+	}
 }
