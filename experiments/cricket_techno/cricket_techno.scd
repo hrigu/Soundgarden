@@ -179,75 +179,75 @@ CricketSound.addSynthDef;
 (
 // ---- KICK: abwechslungsreicher, nicht nur bum-bum-buuuum ----
 ~kickBars = [
-	"x...x...x.......",   // 0: Kick auf 1 und 3 (half-time-feel)
-	"x...x...x...x...",   // 1: vier auf dem Floor
-	"x...x.x.x...x...",   // 2: Kick auf 1, 16tel-Flur, 3
-	"x...x...x...x.x.",   // 3: vier auf dem Floor + Vorgriff
-	"x...x...x.x.x...",   // 4: Kick auf 1, 3 und Nachschlag
-	"x.x.x...x......."    // 5: synkopiert
+	"....|x...|x...|....",   // 0: Kick auf 1 und 3 (half-time-feel)
+	"x...|x...|x...|x...",   // 1: vier auf dem Floor
+	"x...|..x.|....|x...",   // 2: Kick auf 1, 16tel-Flur, 3
+	"x...|x...|x.....|x.",   // 3: vier auf dem Floor + Vorgriff
+	"x...|x...|x.x.|x...",   // 4: Kick auf 1, 3 und Nachschlag
+	"..x.|x...|x...|...."    // 5: synkopiert
 ];
 ~kickSeq = [0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4];
 ~kickPattern = ~kickSeq.collect { |i| ~kickBars[i] };
 
 // ---- SUB: sehr spärliche, tiefe Akzente ----
 ~subBars = [
-	"x........................",   // 0: ein Sub-Schlag pro Takt (24tel)
-	"........................",   // 1: Pause
-	"x.......x................"    // 2: zwei Sub-Schläge
+	"x.....|......|......|......",   // 0: ein Sub-Schlag pro Takt (24tel)
+	"......|......|......|......",   // 1: Pause
+	"x.....|..x...|......|......"    // 2: zwei Sub-Schläge
 ];
 // Sub-Schicht arbeitet mit 8tel-Auflösung, damit die langen Töne nicht zu dicht werden.
 ~subSeq = [0, 1, 0, 1, 2, 1, 0, 1, 0, 1, 0, 1, 2, 1, 0, 1];
 
 // ---- SNARE: Backbeat + Ghost Notes ----
 ~snareBars = [
-	"....x.......x...",   // 0: klassischer Backbeat
-	"....x...x...x...",   // 1: Backbeat + Offbeat
-	"....x.......x.x.",   // 2: Backbeat + Vorgriff
-	"x...x...x...x...",   // 3: Roll
-	"................"    // 4: Pause
+	"....|x...|....|x...",   // 0: klassischer Backbeat
+	"....|x...|x...|x...",   // 1: Backbeat + Offbeat
+	"....|x...|....|x.x.",   // 2: Backbeat + Vorgriff
+	"x...|x...|x...|x...",   // 3: Roll
+	"....|....|....|...."    // 4: Pause
 ];
 ~snareSeq = [0, 0, 1, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2, 3, 4];
 ~snarePattern = ~snareSeq.collect { |i| ~snareBars[i] };
 
 // ---- CLAP: scharfe, spärliche Akzente ----
 ~clapBars = [
-	"....x.......x...",   // 0: Backbeat-Clap
-	"x.......x.......",   // 1: halbzeit-Clap
-	"....x...x....x..",   // 2: synkopiert
-	"................"    // 3: Pause
+	"....|x...|....|x...",   // 0: Backbeat-Clap
+	"x...|....|x...|....",   // 1: halbzeit-Clap
+	"....|x...|x...|.x..",   // 2: synkopiert
+	"....|....|....|...."    // 3: Pause
 ];
 ~clapSeq = [0, 3, 0, 2, 0, 3, 1, 0, 0, 3, 0, 2, 0, 3, 0, 0];
 ~clapPattern = ~clapSeq.collect { |i| ~clapBars[i] };
 
 // ---- CHIHAT: treibende 16tel mit Dichte-Variation ----
 ~chihatBars = [
-	"x.x.x.x.x.x.x.x.",   // 0: geschlossene 16tel
-	".x.x.x.x.x.x.x.x",   // 1: versetzt
-	"x...x...x...x...",   // 2: Achtel
-	"x.x.x.x...x.x.x.",   // 3: mit Lücken
-	"................"    // 4: Pause
+	"x.x.|x.x.|x.x.|x.x.",   // 0: geschlossene 16tel
+	".x.x|.x.x|.x.x|.x.x",   // 1: versetzt
+	"x...|x...|x...|x...",   // 2: Achtel
+	"x.x.|x.x.|...x|.x.x.",   // 3: mit Lücken
+	"....|....|....|...."    // 4: Pause
 ];
 ~chihatSeq = [0, 0, 1, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 2, 0, 4];
 ~chihatPattern = ~chihatSeq.collect { |i| ~chihatBars[i] };
 
 // ---- OHIHAT: offene Akzente ----
 ~ohihatBars = [
-	"..x...x...x...x.",   // 0: offene Hihat auf den Offbeats
-	"x...x...x...x...",   // 1: jeder Beat
-	"....x.......x...",   // 2: Backbeat
-	"................"    // 3: Pause
+	"..x.|...x|...x|...x",   // 0: offene Hihat auf den Offbeats
+	"x...|x...|x...|x...",   // 1: jeder Beat
+	"....|x...|....|x...",   // 2: Backbeat
+	"....|....|....|...."    // 3: Pause
 ];
 ~ohihatSeq = [0, 3, 0, 0, 1, 3, 0, 0, 0, 3, 0, 1, 0, 3, 2, 0];
 ~ohihatPattern = ~ohihatSeq.collect { |i| ~ohihatBars[i] };
 
 // ---- PERC: Fills und Polyrhythmen ----
 ~percBars = [
-	"x...x...x...x...",   // 0: gleichmässig
-	"x.x.x.x.x.x.x.x.",   // 1: 16tel
-	"............x...",   // 2: Taktende-Akzent
-	"........x.x.x...",   // 3: Triolen-Fill
-	"................",   // 4: Pause
-	"x...x...x...x.x."    // 5: Vorgriff
+	"x...|x...|x...|x...",   // 0: gleichmässig
+	"x.x.|x.x.|x.x.|x.x.",   // 1: 16tel
+	"....|....|....|x...",   // 2: Taktende-Akzent
+	"....|....|x.x.|x...",   // 3: Triolen-Fill
+	"....|....|....|....",   // 4: Pause
+	"x...|x...|x...|x.x."    // 5: Vorgriff
 ];
 ~percSeq = [4, 4, 0, 4, 4, 2, 4, 4, 4, 0, 4, 3, 4, 4, 1, 5];
 ~percPattern = ~percSeq.collect { |i| ~percBars[i] };
@@ -257,9 +257,14 @@ CricketSound.addSynthDef;
 
 // --- Pattern-Hilfsfunktionen ---------------------------------------------------------
 
+// Entfernt grafische Taktstriche ('|') aus einem Pattern-String.
+~cleanPattern = { |str| str.select { |c| c != $| } };
+
 // Wandelt einen String wie "x...x..." in einen Array von Gates (1/0) um.
+// '|' wird ignoriert (rein grafische Gliederung).
 ~stringToGates = { |str|
-	Array.fill(str.size, { |i| if(str[i] == $x) { 1 } { 0 } })
+	var cleaned = ~cleanPattern.value(str);
+	Array.fill(cleaned.size, { |i| if(cleaned[i] == $x) { 1 } { 0 } })
 };
 
 // Wandelt ein Array von Takt-Strings in einen endlosen Gate-Stream um.
@@ -270,11 +275,13 @@ CricketSound.addSynthDef;
 
 // Spezialfall Sub: 24tel-Auflösung (längere Strings) auf 16tel herunterrechnen.
 // Jeder 24tel-Schritt wird auf den nächsten 16tel-Schritt gemappt.
+// '|' wird vor dem Rechnen entfernt (rein grafische Gliederung).
 ~subBarsToGateStream = { |barStrings|
 	var gates = barStrings.collect { |str|
+		var cleaned = ~cleanPattern.value(str);
 		~stepsPerBar.collect { |step|
-			var idx = (step * str.size / ~stepsPerBar).floor.asInteger;
-			if(str[idx] == $x) { 1 } { 0 }
+			var idx = (step * cleaned.size / ~stepsPerBar).floor.asInteger;
+			if(cleaned[idx] == $x) { 1 } { 0 }
 		}
 	}.flat;
 	Pseq(gates, inf);
