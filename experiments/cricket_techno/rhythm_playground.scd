@@ -114,6 +114,7 @@ OneShotSampleSound.addSynthDef;
 
 ~playgroundRoutines = nil;
 ~playgroundSoundObjects = nil;
+~playgroundSoundObjectsByLayer = nil;
 ~playgroundIsRunning = false;
 ~playgroundRoomIsPlaying = false;
 ~playgroundStopToken = 0;
@@ -132,6 +133,18 @@ OneShotSampleSound.addSynthDef;
 		startFrac: sampleControls[\startFrac].value.clip(0, 1),
 		duration: sampleControls[\duration].value.max(0.01)
 	)
+};
+
+~applyPlaygroundSampleParamsToRunningSound = { |layerName, controls|
+	var soundObject = ~playgroundSoundObjectsByLayer !? { ~playgroundSoundObjectsByLayer[layerName] };
+	var params;
+
+	if(soundObject.notNil and: { soundObject.sound.isKindOf(OneShotSampleSound) }) {
+		params = ~playgroundSampleParamsFromControls.value(layerName, controls);
+		soundObject.sound.amp = params[\amp];
+		soundObject.sound.startFrac = params[\startFrac];
+		soundObject.sound.duration = params[\duration];
+	};
 };
 
 ~playgroundPresetEvent = { |controls|
@@ -181,6 +194,7 @@ OneShotSampleSound.addSynthDef;
 					if(layerPreset[\sample][\duration].notNil) {
 						controls[layerName][\sample][\duration].value = layerPreset[\sample][\duration];
 					};
+					~applyPlaygroundSampleParamsToRunningSound.value(layerName, controls);
 				};
 			};
 		};
@@ -268,6 +282,7 @@ OneShotSampleSound.addSynthDef;
 		var row = CompositeView(win.view, 728@28);
 		var sampleRow = CompositeView(win.view, 728@30);
 		var checkbox, textField, sampleParams, ampSlider, startSlider, durationSlider;
+		var updateRunningSample;
 
 		row.decorator = FlowLayout(row.bounds, Point(0, 2), Point(8, 0));
 		sampleRow.decorator = FlowLayout(sampleRow.bounds, Point(0, 2), Point(8, 0));
@@ -277,13 +292,14 @@ OneShotSampleSound.addSynthDef;
 		textField = TextField(row, 600@24).string_(def[\pattern]);
 
 		sampleParams = ~playgroundDefaultSampleParams.value(layerName);
+		updateRunningSample = { ~applyPlaygroundSampleParamsToRunningSound.value(layerName, controls) };
 		StaticText(sampleRow, 98@24).string_("Sample").align_(\right);
 		ampSlider = EZSlider(sampleRow, 200@24, "Amp", ControlSpec(0, 1, \lin, 0.01),
-			nil, sampleParams[\amp], false, 54, 46);
+			updateRunningSample, sampleParams[\amp], false, 54, 46);
 		startSlider = EZSlider(sampleRow, 200@24, "Start", ControlSpec(0, 1, \lin, 0.001),
-			nil, sampleParams[\startFrac], false, 54, 46);
+			updateRunningSample, sampleParams[\startFrac], false, 54, 46);
 		durationSlider = EZSlider(sampleRow, 200@24, "Dauer", ControlSpec(0.01, 2, \lin, 0.01),
-			nil, sampleParams[\duration], false, 54, 46);
+			updateRunningSample, sampleParams[\duration], false, 54, 46);
 
 		controls[layerName] = (
 			active: checkbox,
@@ -319,6 +335,7 @@ OneShotSampleSound.addSynthDef;
 
 	~playgroundStopToken = ~playgroundStopToken + 1;
 	startToken = ~playgroundStopToken;
+	~playgroundSoundObjectsByLayer = ();
 	~bpm = ~playgroundBPMBox.value;
 	~barDur = 60 / ~bpm * ~beatsPerBar;
 	soundMode = ~soundMode;
@@ -326,6 +343,7 @@ OneShotSampleSound.addSynthDef;
 	~playgroundSoundObjects = activeLayers.collect { |layerName, i|
 		var def = ~layerDefs[layerName];
 		var patternString = controls[layerName][\pattern].value;
+		var soundObject;
 		var soundParams;
 		var angle = (i / activeLayers.size) * 2pi;
 		var radius = 3.0;
@@ -337,7 +355,7 @@ OneShotSampleSound.addSynthDef;
 
 		if(soundMode == \percussion) {
 			soundParams = ~playgroundSampleParamsFromControls.value(layerName, controls);
-			~room.register(
+			soundObject = ~room.register(
 				Movable.new(
 					pos: movableParams[\pos],
 					moveRule: movableParams[\moveRule],
@@ -353,9 +371,11 @@ OneShotSampleSound.addSynthDef;
 		} {
 			soundParams = def[\soundParams].copy;
 			// Pattern speichern wir temporär im Sound-Event mit, falls nützlich.
-			~room.registerFromBuilder(soundParams ++ (pattern: nil), movableParams,
+			soundObject = ~room.registerFromBuilder(soundParams ++ (pattern: nil), movableParams,
 				soundClass: CricketSound)
 		};
+		~playgroundSoundObjectsByLayer[layerName] = soundObject;
+		soundObject;
 	};
 
 	if(soundMode == \cricket) {
@@ -426,6 +446,7 @@ OneShotSampleSound.addSynthDef;
 		routines.do(_.stop);
 		~playgroundRoutines = nil;
 	};
+	~playgroundSoundObjectsByLayer = nil;
 
 	soundObjects = ~playgroundSoundObjects;
 	if(soundObjects.notNil) {
