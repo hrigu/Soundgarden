@@ -26,9 +26,10 @@ RhythmPlaygroundPercussionSamples {
 		^repoRoot +/+ relativePath
 	}
 
-	*soundParamsFor { |layerName, repoRoot, amp = 0.5, duration = 0.35|
+	*soundParamsFor { |layerName, repoRoot, amp = 0.5, duration = 0.35, startFrac = 0|
 		var path = this.pathFor(layerName, repoRoot);
 		if(path.isNil) { ^nil };
-		^(path: path, amp: (amp * this.ampScale).clip(0, 1), duration: duration, startFrac: 0)
+		^(path: path, amp: (amp * this.ampScale).clip(0, 1), duration: duration,
+			startFrac: startFrac.clip(0, 1))
 	}
 }

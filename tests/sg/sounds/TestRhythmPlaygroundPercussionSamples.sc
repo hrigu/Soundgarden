@@ -29,6 +29,13 @@ TestRhythmPlaygroundPercussionSamples : UnitTest {
 		this.assertEquals(params[\startFrac], 0);
 	}
 
+	test_soundParamsForAcceptsStartFrac {
+		var params = RhythmPlaygroundPercussionSamples.soundParamsFor(\kick, "/repo/root",
+			startFrac: 0.35);
+
+		this.assertEquals(params[\startFrac], 0.35);
+	}
+
 	test_unknownLayerReturnsNil {
 		this.assertEquals(RhythmPlaygroundPercussionSamples.pathFor(\missing, "/repo/root"), nil);
 		this.assertEquals(RhythmPlaygroundPercussionSamples.soundParamsFor(\missing, "/repo/root"), nil);

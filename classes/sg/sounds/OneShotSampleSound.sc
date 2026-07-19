@@ -7,6 +7,14 @@
 OneShotSampleSound : SampleSound {
 	var activeSynths;
 
+	*editableParams {
+		^[
+			[\amp, ControlSpec(0, 1, \lin)],
+			[\startFrac, ControlSpec(0, 1, \lin)],
+			[\duration, ControlSpec(0.01, 2, \lin)]
+		]
+	}
+
 	*addSynthDef {
 		SynthDef(\oneShotSampleOwner, { |out = 0|
 			Out.ar(out, Silent.ar(1));

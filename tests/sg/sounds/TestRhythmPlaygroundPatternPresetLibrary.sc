@@ -10,7 +10,8 @@ TestRhythmPlaygroundPatternPresetLibrary : UnitTest {
 			123,
 			\percussion,
 			(
-				kick: (active: true, pattern: "x...|...."),
+				kick: (active: true, pattern: "x...|....",
+					sample: (amp: 0.7, startFrac: 0.1, duration: 0.25)),
 				snare: (active: false, pattern: "....|x...")
 			)
 		)
@@ -23,6 +24,9 @@ TestRhythmPlaygroundPatternPresetLibrary : UnitTest {
 		this.assertEquals(preset[\soundMode], \percussion);
 		this.assertEquals(preset[\layers][\kick][\active], true);
 		this.assertEquals(preset[\layers][\kick][\pattern], "x...|....");
+		this.assertEquals(preset[\layers][\kick][\sample][\amp], 0.7);
+		this.assertEquals(preset[\layers][\kick][\sample][\startFrac], 0.1);
+		this.assertEquals(preset[\layers][\kick][\sample][\duration], 0.25);
 	}
 
 	test_saveThenLoadRoundTripsPresetEvent {

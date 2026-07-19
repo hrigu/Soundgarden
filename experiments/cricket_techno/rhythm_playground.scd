@@ -118,12 +118,33 @@ OneShotSampleSound.addSynthDef;
 ~playgroundRoomIsPlaying = false;
 ~playgroundStopToken = 0;
 
+~playgroundDefaultSampleParams = { |layerName|
+	var def = ~layerDefs[layerName];
+	RhythmPlaygroundPercussionSamples.soundParamsFor(layerName, ~repoRoot,
+		amp: def[\soundParams][\amp], duration: def[\chirpDur].max(0.12));
+};
+
+~playgroundSampleParamsFromControls = { |layerName, controls|
+	var sampleControls = controls[layerName][\sample];
+	(
+		path: RhythmPlaygroundPercussionSamples.pathFor(layerName, ~repoRoot),
+		amp: sampleControls[\amp].value.clip(0, 1),
+		startFrac: sampleControls[\startFrac].value.clip(0, 1),
+		duration: sampleControls[\duration].value.max(0.01)
+	)
+};
+
 ~playgroundPresetEvent = { |controls|
 	var layerStates = ();
 	~layerNames.do { |layerName|
 		layerStates[layerName] = (
 			active: controls[layerName][\active].value,
-			pattern: controls[layerName][\pattern].value
+			pattern: controls[layerName][\pattern].value,
+			sample: (
+				amp: controls[layerName][\sample][\amp].value,
+				startFrac: controls[layerName][\sample][\startFrac].value,
+				duration: controls[layerName][\sample][\duration].value
+			)
 		);
 	};
 	RhythmPlaygroundPatternPresetLibrary.eventFor(~playgroundBPMBox.value, ~soundMode, layerStates);
@@ -150,6 +171,17 @@ OneShotSampleSound.addSynthDef;
 				if(layerPreset[\pattern].notNil) {
 					controls[layerName][\pattern].value = layerPreset[\pattern];
 				};
+				if(layerPreset[\sample].notNil) {
+					if(layerPreset[\sample][\amp].notNil) {
+						controls[layerName][\sample][\amp].value = layerPreset[\sample][\amp];
+					};
+					if(layerPreset[\sample][\startFrac].notNil) {
+						controls[layerName][\sample][\startFrac].value = layerPreset[\sample][\startFrac];
+					};
+					if(layerPreset[\sample][\duration].notNil) {
+						controls[layerName][\sample][\duration].value = layerPreset[\sample][\duration];
+					};
+				};
 			};
 		};
 	};
@@ -161,18 +193,18 @@ OneShotSampleSound.addSynthDef;
 	var win, controls, startButton, stopButton, restartButton, bpmNumberBox, soundModeMenu;
 	var header, presetRow, label, presetNameField, presetMenu, refreshPresetMenu;
 
-	win = Window("Rhythm Pattern Playground", Rect(100, 100, 720, 420));
+	win = Window("Rhythm Pattern Playground", Rect(100, 100, 760, 700));
 	win.view.decorator = FlowLayout(win.view.bounds.insetBy(16, 16), Point(0, 4), Point(8, 8));
 	controls = ();
 
-	StaticText(win.view, 688@24)
+	StaticText(win.view, 728@24)
 		.string_("Rhythm Pattern Playground")
 		.font_(Font.default.copy.size_(16).boldVariant)
 		.align_(\left);
 	win.view.decorator.nextLine;
 
 	// Header: Start / Stop / Restart / BPM
-	header = CompositeView(win.view, 688@36);
+	header = CompositeView(win.view, 728@36);
 	header.decorator = FlowLayout(header.bounds, Point(0, 4), Point(8, 0));
 
 	startButton = Button(header, 100@28).states_([["Start"]]).action_({ ~startPlayground.value(controls) });
@@ -193,7 +225,7 @@ OneShotSampleSound.addSynthDef;
 		.action_({ |nb| ~bpm = nb.value; });
 	win.view.decorator.nextLine;
 
-	presetRow = CompositeView(win.view, 688@36);
+	presetRow = CompositeView(win.view, 728@36);
 	presetRow.decorator = FlowLayout(presetRow.bounds, Point(0, 4), Point(8, 0));
 	StaticText(presetRow, 60@28).string_("Preset:").align_(\right);
 	presetNameField = TextField(presetRow, 150@24).string_("pattern");
@@ -224,7 +256,7 @@ OneShotSampleSound.addSynthDef;
 	});
 	win.view.decorator.nextLine;
 
-	label = StaticText(win.view, 688@20)
+	label = StaticText(win.view, 728@20)
 		.string_("Aktiv  Layer                Pattern (x = Schlag, . = Pause, | = Segment, || = Takt)")
 		.font_(Font.default.copy.size_(11))
 		.align_(\left);
@@ -233,16 +265,31 @@ OneShotSampleSound.addSynthDef;
 	// Pro Layer eine Zeile
 	~layerNames.do { |layerName|
 		var def = ~layerDefs[layerName];
-		var row = CompositeView(win.view, 688@28);
-		var checkbox, textField;
+		var row = CompositeView(win.view, 728@28);
+		var sampleRow = CompositeView(win.view, 728@30);
+		var checkbox, textField, sampleParams, ampSlider, startSlider, durationSlider;
 
 		row.decorator = FlowLayout(row.bounds, Point(0, 2), Point(8, 0));
+		sampleRow.decorator = FlowLayout(sampleRow.bounds, Point(0, 2), Point(8, 0));
 
 		checkbox = CheckBox(row, 20@24).value_(true);
 		StaticText(row, 70@24).string_(layerName.asString).align_(\left);
-		textField = TextField(row, 560@24).string_(def[\pattern]);
+		textField = TextField(row, 600@24).string_(def[\pattern]);
 
-		controls[layerName] = (active: checkbox, pattern: textField);
+		sampleParams = ~playgroundDefaultSampleParams.value(layerName);
+		StaticText(sampleRow, 98@24).string_("Sample").align_(\right);
+		ampSlider = EZSlider(sampleRow, 200@24, "Amp", ControlSpec(0, 1, \lin, 0.01),
+			nil, sampleParams[\amp], false, 54, 46);
+		startSlider = EZSlider(sampleRow, 200@24, "Start", ControlSpec(0, 1, \lin, 0.001),
+			nil, sampleParams[\startFrac], false, 54, 46);
+		durationSlider = EZSlider(sampleRow, 200@24, "Dauer", ControlSpec(0.01, 2, \lin, 0.01),
+			nil, sampleParams[\duration], false, 54, 46);
+
+		controls[layerName] = (
+			active: checkbox,
+			pattern: textField,
+			sample: (amp: ampSlider, startFrac: startSlider, duration: durationSlider)
+		);
 		win.view.decorator.nextLine;
 	};
 
@@ -289,8 +336,7 @@ OneShotSampleSound.addSynthDef;
 		);
 
 		if(soundMode == \percussion) {
-			soundParams = RhythmPlaygroundPercussionSamples.soundParamsFor(layerName, ~repoRoot,
-				amp: def[\soundParams][\amp], duration: def[\chirpDur].max(0.12));
+			soundParams = ~playgroundSampleParamsFromControls.value(layerName, controls);
 			~room.register(
 				Movable.new(
 					pos: movableParams[\pos],

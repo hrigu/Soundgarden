@@ -13,12 +13,21 @@ TestOneShotSampleSound : UnitTest {
 			"OneShotSampleSound bleibt preset-/builder-kompatibel mit SampleSound");
 	}
 
-	test_editableParamsRemainSampleParams {
+	test_editableParamsOnlyExposeAudibleOneShotParams {
 		var keys = OneShotSampleSound.editableParams.collect { |pair| pair[0] };
 
-		this.assertEquals(keys, [\rate, \phase, \amp, \startFrac, \duration],
-			"OneShotSampleSound erbt die Sample-Parameter; rate/phase werden nur nicht im " ++
-			"eigenen Synth benutzt");
+		this.assertEquals(keys, [\amp, \startFrac, \duration],
+			"OneShotSampleSound zeigt nur Parameter, die der One-Shot-Synth wirklich nutzt");
+	}
+
+	test_buildFromSavedParamsUsesAudibleOneShotParams {
+		var sound = OneShotSampleSound.buildFromSavedParams((path: "irrelevant/path.wav",
+			amp: 0.6, startFrac: 0.2, duration: 0.5, rate: 7, phase: 0.4));
+
+		this.assertEquals(sound.path, "irrelevant/path.wav");
+		this.assertEquals(sound.amp, 0.6);
+		this.assertEquals(sound.startFrac, 0.2);
+		this.assertEquals(sound.duration, 0.5);
 	}
 
 	test_activeVoiceCountIsZeroBeforePlay {
