@@ -52,8 +52,9 @@ TestRhythmPlaygroundPatternPresetLibrary : UnitTest {
 		RhythmPlaygroundPatternPresetLibrary.save(dir, "presetB", preset);
 		names = RhythmPlaygroundPatternPresetLibrary.listNames(dir);
 
-		this.assert(names.includes("presetA"));
-		this.assert(names.includes("presetB"));
+		// Array>>includes vergleicht Strings per Identität, nicht zuverlässig per Inhalt.
+		this.assert(names.any { |n| n == "presetA" });
+		this.assert(names.any { |n| n == "presetB" });
 	}
 
 	test_listNamesOnMissingDirReturnsEmptyArray {
