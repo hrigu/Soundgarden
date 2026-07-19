@@ -262,10 +262,10 @@ CricketSound.addSynthDef;
 	Array.fill(str.size, { |i| if(str[i] == $x) { 1 } { 0 } })
 };
 
-// Wandelt ein Array von Takt-Strings in einen langen Gate-Stream um.
+// Wandelt ein Array von Takt-Strings in einen endlosen Gate-Stream um.
 ~barsToGateStream = { |barStrings|
 	var gates = barStrings.collect(~stringToGates).flat;
-	Pseq(gates, 1);
+	Pseq(gates, inf);
 };
 
 // Spezialfall Sub: 24tel-Auflösung (längere Strings) auf 16tel herunterrechnen.
@@ -277,7 +277,7 @@ CricketSound.addSynthDef;
 			if(str[idx] == $x) { 1 } { 0 }
 		}
 	}.flat;
-	Pseq(gates, 1);
+	Pseq(gates, inf);
 };
 
 // Baut den Texture-Pattern-Stream aus 16 zufällig gefüllten Takten.
@@ -359,7 +359,7 @@ CricketSound.addSynthDef;
 	var stream = pat[\stream].asStream;
 	var durStream = pat[\stepDur].asStream;
 	Routine({
-		~totalSteps.do {
+		loop {
 			var gate = stream.next;
 			var dur = durStream.next;
 			if(gate.notNil and: { gate > 0 }) {
