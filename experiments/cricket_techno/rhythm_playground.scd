@@ -216,8 +216,6 @@ CricketSound.addSynthDef;
 	~bpm = ~playgroundBPMBox.value;
 	~stepDur = 60 / ~bpm / ~stepsPerBeat;
 
-	~room.play;
-
 	~playgroundSoundObjects = activeLayers.collect { |layerName, i|
 		var def = ~layerDefs[layerName];
 		var patternString = controls[layerName][\pattern].value;
@@ -233,6 +231,7 @@ CricketSound.addSynthDef;
 	};
 
 	~playgroundSoundObjects.do { |so| so.sound.pattern = nil };
+	~room.play;
 	~playgroundSoundObjects.do { |so| so.sound.synth.set(\gate, 0) };
 
 	~playgroundRoutines = activeLayers.collect { |layerName, i|
