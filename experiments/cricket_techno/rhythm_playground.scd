@@ -253,10 +253,12 @@ CricketSound.addSynthDef;
 		var def = ~layerDefs[layerName];
 		var patternString = controls[layerName][\pattern].value;
 		var soundParams = def[\soundParams].copy;
+		var angle = (i / activeLayers.size) * 2pi;
+		var radius = 3.0;
 		var movableParams = (
-			pos: [0, 0, 0],
+			pos: [radius * sin(angle), radius * cos(angle), 0],
 			moveRule: SteadyMoveRule.new,
-			roomRadius: 5
+			roomRadius: radius + 2
 		);
 		// Pattern speichern wir temporär im Sound-Event mit, falls nützlich.
 		~room.registerFromBuilder(soundParams ++ (pattern: nil), movableParams,
