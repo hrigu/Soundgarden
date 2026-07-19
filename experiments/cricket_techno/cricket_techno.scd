@@ -344,8 +344,7 @@ CricketSound.addSynthDef;
 			Pwhite(probability * 0.9, probability, inf) * baseStream
 		),
 		stepDur: ~stepDur * Pwhite(1 - jitter, 1 + jitter, inf),
-		chirpDur: spec[\chirpDur],
-		ampScale: spec[\ampScale]
+		chirpDur: spec[\chirpDur]
 	)
 };
 )
@@ -371,7 +370,6 @@ CricketSound.addSynthDef;
 			var dur = durStream.next;
 			if(gate.notNil and: { gate > 0 }) {
 				var chirpDur = min(pat[\chirpDur], dur * 0.9);
-				synth.set(\amp, ~voiceSpecs[i][\soundParams][\amp] * pat[\ampScale]);
 				synth.set(\gate, 1);
 				SystemClock.sched(chirpDur, { synth.set(\gate, 0) });
 			};
