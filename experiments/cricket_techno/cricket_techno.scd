@@ -37,8 +37,8 @@ CricketSound.addSynthDef;
 // texture:  4 Stimmen, weit gestreut — atmosphärische Füllung
 
 ~layers = [
-	(name: \kick,    count: 1, baseAmp: 0.25, chirpDur: 0.18),
-	(name: \sub,     count: 1, baseAmp: 0.25, chirpDur: 0.30),
+	(name: \kick,    count: 1, baseAmp: 0.08, chirpDur: 0.18),
+	(name: \sub,     count: 1, baseAmp: 0.08, chirpDur: 0.30),
 	(name: \snare,   count: 5, baseAmp: 0.20, chirpDur: 0.09),
 	(name: \clap,    count: 6, baseAmp: 0.32, chirpDur: 0.05),
 	(name: \chihat,  count: 8, baseAmp: 0.18, chirpDur: 0.03),
