@@ -61,4 +61,25 @@ TestRhythmPatternNotation : UnitTest {
 		this.assertEvent(stream.next, 1, 1,
 			"der Stream wiederholt das Pattern endlos");
 	}
+
+	test_eventsIgnoresTrailingSegmentSeparator {
+		this.assertEquals(
+			RhythmPatternNotation.events("|xxxx|x.x.x.", barDur: 4),
+			RhythmPatternNotation.events("|xxxx|x.x.x.|", barDur: 4),
+			"ein abschließendes | erzeugt kein zusätzliches leeres Segment"
+		);
+	}
+
+	test_eventsIgnoresTrailingBarSeparator {
+		this.assertEquals(
+			RhythmPatternNotation.events("xxxx||x.x.", barDur: 4),
+			RhythmPatternNotation.events("xxxx||x.x.||", barDur: 4),
+			"ein abschließendes || erzeugt keinen zusätzlichen leeren Takt"
+		);
+		this.assertEquals(
+			RhythmPatternNotation.events("xxxx", barDur: 4),
+			RhythmPatternNotation.events("xxxx||", barDur: 4),
+			"ein einzelner Takt mit abschließendem || bleibt derselbe Takt"
+		);
+	}
 }

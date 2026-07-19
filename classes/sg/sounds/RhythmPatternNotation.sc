@@ -33,7 +33,6 @@ RhythmPatternNotation {
 				current.add(c);
 			};
 		};
-		if(prevWasBar) { current.add($|) };
 		bars.add(current.asArray);
 		^bars.asArray
 	}
@@ -50,7 +49,9 @@ RhythmPatternNotation {
 				current.add(c);
 			};
 		};
-		segments.add(current.asArray);
+		if(current.notEmpty or: { segments.isEmpty }) {
+			segments.add(current.asArray);
+		};
 		^segments.asArray
 	}
 
