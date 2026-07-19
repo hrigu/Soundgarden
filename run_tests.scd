@@ -25,6 +25,7 @@ TestRhythmPatternCreator.run;
 TestRhythmPatternNotation.run;
 TestOneShotSampleSound.run;
 TestRhythmPlaygroundPercussionSamples.run;
+TestRhythmPlaygroundPatternPresetLibrary.run;
 TestBirdMotif.run;
 TestBirdMotifExamples.run;
 TestCricketSound.run;

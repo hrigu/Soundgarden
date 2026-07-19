@@ -17,6 +17,7 @@ OneShotSampleSound.addSynthDef;
 ~listener = Listener.new(binauralizerClass: Binauralizer);
 ~room = Room.new(s, listener: ~listener, size: 10, height: 3, surface: 0.5);
 ~repoRoot = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname).fullPath;
+~patternPresetsDir = ~repoRoot +/+ "presets" +/+ "rhythm_playground";
 
 ~bpm = 110;
 ~beatsPerBar = 4;
@@ -117,11 +118,48 @@ OneShotSampleSound.addSynthDef;
 ~playgroundRoomIsPlaying = false;
 ~playgroundStopToken = 0;
 
+~playgroundPresetEvent = { |controls|
+	var layerStates = ();
+	~layerNames.do { |layerName|
+		layerStates[layerName] = (
+			active: controls[layerName][\active].value,
+			pattern: controls[layerName][\pattern].value
+		);
+	};
+	RhythmPlaygroundPatternPresetLibrary.eventFor(~playgroundBPMBox.value, ~soundMode, layerStates);
+};
+
+~applyPlaygroundPreset = { |controls, preset|
+	var layers = preset[\layers];
+
+	if(preset[\bpm].notNil) {
+		~bpm = preset[\bpm];
+		~playgroundBPMBox.value = ~bpm;
+	};
+	if(preset[\soundMode].notNil) {
+		~soundMode = preset[\soundMode];
+		~playgroundSoundModeMenu.value = if(~soundMode == \percussion) { 1 } { 0 };
+	};
+	if(layers.notNil) {
+		~layerNames.do { |layerName|
+			var layerPreset = layers[layerName];
+			if(layerPreset.notNil) {
+				if(layerPreset[\active].notNil) {
+					controls[layerName][\active].value = layerPreset[\active];
+				};
+				if(layerPreset[\pattern].notNil) {
+					controls[layerName][\pattern].value = layerPreset[\pattern];
+				};
+			};
+		};
+	};
+};
+
 // --- GUI ------------------------------------------------------------------------------
 
 ~buildPlaygroundGUI = {
 	var win, controls, startButton, stopButton, restartButton, bpmNumberBox, soundModeMenu;
-	var header, label;
+	var header, presetRow, label, presetNameField, presetMenu, refreshPresetMenu;
 
 	win = Window("Rhythm Pattern Playground", Rect(100, 100, 720, 420));
 	win.view.decorator = FlowLayout(win.view.bounds.insetBy(16, 16), Point(0, 4), Point(8, 8));
@@ -155,6 +193,37 @@ OneShotSampleSound.addSynthDef;
 		.action_({ |nb| ~bpm = nb.value; });
 	win.view.decorator.nextLine;
 
+	presetRow = CompositeView(win.view, 688@36);
+	presetRow.decorator = FlowLayout(presetRow.bounds, Point(0, 4), Point(8, 0));
+	StaticText(presetRow, 60@28).string_("Preset:").align_(\right);
+	presetNameField = TextField(presetRow, 150@24).string_("pattern");
+	presetMenu = PopUpMenu(presetRow, 190@24);
+	refreshPresetMenu = {
+		var names = RhythmPlaygroundPatternPresetLibrary.listNames(~patternPresetsDir);
+		presetMenu.items = names;
+		if(names.notEmpty) { presetMenu.value = 0 };
+	};
+	refreshPresetMenu.value;
+	Button(presetRow, 100@24).states_([["Speichern"]]).action_({
+		var name = presetNameField.string;
+		if(name.notEmpty) {
+			RhythmPlaygroundPatternPresetLibrary.save(~patternPresetsDir, name,
+				~playgroundPresetEvent.value(controls));
+			refreshPresetMenu.value;
+		};
+	});
+	Button(presetRow, 80@24).states_([["Laden"]]).action_({
+		var name = presetMenu.item;
+		var preset = if(name.notNil) {
+			RhythmPlaygroundPatternPresetLibrary.load(~patternPresetsDir, name)
+		} { nil };
+		if(preset.notNil) {
+			~applyPlaygroundPreset.value(controls, preset);
+			presetNameField.string = name;
+		};
+	});
+	win.view.decorator.nextLine;
+
 	label = StaticText(win.view, 688@20)
 		.string_("Aktiv  Layer                Pattern (x = Schlag, . = Pause, | = Segment, || = Takt)")
 		.font_(Font.default.copy.size_(11))
@@ -180,6 +249,7 @@ OneShotSampleSound.addSynthDef;
 	win.front;
 	~playgroundControls = controls;
 	~playgroundBPMBox = bpmNumberBox;
+	~playgroundSoundModeMenu = soundModeMenu;
 };
 
 // --- Start / Stop ----------------------------------------------------------------------
