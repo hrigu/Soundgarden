@@ -33,7 +33,9 @@ RhythmPatternNotation {
 				current.add(c);
 			};
 		};
-		bars.add(current.asArray);
+		if(current.notEmpty or: { bars.isEmpty }) {
+			bars.add(current.asArray);
+		};
 		^bars.asArray
 	}
 
