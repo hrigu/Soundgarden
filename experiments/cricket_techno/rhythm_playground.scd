@@ -1,39 +1,31 @@
-// rhythm_playground.scd — isolierter Testraum für die Cricket-Techno-Rhythm-Patterns.
-// Ziel: einzelne Layer oder Layer-Kombinationen schnell hören, ohne den vollen 36-Stimmen-Raum.
-// Kein GUI: Layer werden über ~activeLayers im Code ausgewählt.
+// rhythm_playground.scd — isolierter Testraum für Cricket-Techno-Rhythm-Patterns mit GUI.
+// Ziel: einzelne Layer oder Kombinationen schnell an- und abschalten, Pattern-Strings direkt
+// editieren und sofort neu starten, ohne durch den Code zu scrollen.
+//
+// Benutzung:
+//   1. Block 1 (Setup + GUI) ausführen.
+//   2. Im Fenster Layer an-/ausschalten, Pattern-Strings editieren, BPM wählen.
+//   3. "Start" drücken.
+//   4. "Stop" beendet alles; "Restart" übernimmt aktuelle Einstellungen neu.
 //
 // Kopfhörer benutzen — binaurale Effekte funktionieren nicht über Lautsprecher.
 
-// --- 1) Setup -------------------------------------------------------------------------
 (
+// --- Setup ----------------------------------------------------------------------------
 CricketSound.addSynthDef;
 ~listener = Listener.new(binauralizerClass: Binauralizer);
 ~room = Room.new(s, listener: ~listener, size: 10, height: 3, surface: 0.5);
 
-// Tempo und Raster
 ~bpm = 110;
 ~beatsPerBar = 4;
-~numBars = 16;
-~stepsPerBeat = 4;              // 16tel-Noten
-~stepDur = 60 / ~bpm / ~stepsPerBeat;
+~stepsPerBeat = 4;              // 16tel
 ~stepsPerBar = ~beatsPerBar * ~stepsPerBeat;
 
-// Layer-Auswahl: Namen einfach in das Array schreiben, die man hören will.
-// Verfügbare Layer: \kick, \sub, \snare, \clap, \chihat, \ohihat, \perc, \texture
-~activeLayers = [\kick, \snare];
-
-// Pro Layer: Pattern-Bausteine, Sequenz, Klangparameter und Chirp-Dauer.
+// Layer-Definitionen: Name, Standard-Pattern, Klangparameter, Chirp-Dauer.
+// Das Standard-Pattern ist ein einzelner Takt, der endlos loopt.
 ~layerDefs = (
 	kick: (
-		bars: [
-			"....|x...|x...|....",   // 0: Kick auf 1 und 3 (half-time-feel)
-			"x...|x...|x...|x...",   // 1: vier auf dem Floor
-			"x...|..x.|....|x...",   // 2: Kick auf 1, 16tel-Flur, 3
-			"x...|x...|x.....|x.",   // 3: vier auf dem Floor + Vorgriff
-			"x...|x...|x.x.|x...",   // 4: Kick auf 1, 3 und Nachschlag
-			"..x.|x...|x...|...."    // 5: synkopiert
-		],
-		seq: [0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4],
+		pattern: "....|x...|x...|....",
 		soundParams: (
 			wingRate: 16, wingDuty: 0.60,
 			ringFreq1: 900, ringFreq2: 950,
@@ -43,12 +35,7 @@ CricketSound.addSynthDef;
 		chirpDur: 0.18
 	),
 	sub: (
-		bars: [
-			"x.....|......|......|......",   // 0: ein Sub-Schlag pro Takt (24tel)
-			"......|......|......|......",   // 1: Pause
-			"x.....|..x...|......|......"    // 2: zwei Sub-Schläge
-		],
-		seq: [0, 1, 0, 1, 2, 1, 0, 1, 0, 1, 0, 1, 2, 1, 0, 1],
+		pattern: "x.....|......|......|......",
 		soundParams: (
 			wingRate: 10, wingDuty: 0.70,
 			ringFreq1: 500, ringFreq2: 520,
@@ -59,14 +46,7 @@ CricketSound.addSynthDef;
 		subdivision: 24
 	),
 	snare: (
-		bars: [
-			"....|x...|....|x...",   // 0: klassischer Backbeat
-			"....|x...|x...|x...",   // 1: Backbeat + Offbeat
-			"....|x...|....|x.x.",   // 2: Backbeat + Vorgriff
-			"x...|x...|x...|x...",   // 3: Roll
-			"....|....|....|...."    // 4: Pause
-		],
-		seq: [0, 0, 1, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2, 3, 4],
+		pattern: "....|x...|....|x...",
 		soundParams: (
 			wingRate: 34, wingDuty: 0.32,
 			ringFreq1: 2400, ringFreq2: 2500,
@@ -76,13 +56,7 @@ CricketSound.addSynthDef;
 		chirpDur: 0.09
 	),
 	clap: (
-		bars: [
-			"....|x...|....|x...",   // 0: Backbeat-Clap
-			"x...|....|x...|....",   // 1: halbzeit-Clap
-			"....|x...|x...|.x..",   // 2: synkopiert
-			"....|....|....|...."    // 3: Pause
-		],
-		seq: [0, 3, 0, 2, 0, 3, 1, 0, 0, 3, 0, 2, 0, 3, 0, 0],
+		pattern: "....|x...|....|x...",
 		soundParams: (
 			wingRate: 45, wingDuty: 0.28,
 			ringFreq1: 4500, ringFreq2: 4600,
@@ -92,14 +66,7 @@ CricketSound.addSynthDef;
 		chirpDur: 0.05
 	),
 	chihat: (
-		bars: [
-			"x.x.|x.x.|x.x.|x.x.",   // 0: geschlossene 16tel
-			".x.x|.x.x|.x.x|.x.x",   // 1: versetzt
-			"x...|x...|x...|x...",   // 2: Achtel
-			"x.x.|x.x.|...x|.x.x.",   // 3: mit Lücken
-			"....|....|....|...."    // 4: Pause
-		],
-		seq: [0, 0, 1, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 2, 0, 4],
+		pattern: "x.x.|x.x.|x.x.|x.x.",
 		soundParams: (
 			wingRate: 60, wingDuty: 0.22,
 			ringFreq1: 7500, ringFreq2: 7700,
@@ -109,13 +76,7 @@ CricketSound.addSynthDef;
 		chirpDur: 0.03
 	),
 	ohihat: (
-		bars: [
-			"..x.|...x|...x|...x",   // 0: offene Hihat auf den Offbeats
-			"x...|x...|x...|x...",   // 1: jeder Beat
-			"....|x...|....|x...",   // 2: Backbeat
-			"....|....|....|...."    // 3: Pause
-		],
-		seq: [0, 3, 0, 0, 1, 3, 0, 0, 0, 3, 0, 1, 0, 3, 2, 0],
+		pattern: "..x.|...x|...x|...x",
 		soundParams: (
 			wingRate: 48, wingDuty: 0.30,
 			ringFreq1: 6000, ringFreq2: 6100,
@@ -125,15 +86,7 @@ CricketSound.addSynthDef;
 		chirpDur: 0.08
 	),
 	perc: (
-		bars: [
-			"x...|x...|x...|x...",   // 0: gleichmässig
-			"x.x.|x.x.|x.x.|x.x.",   // 1: 16tel
-			"....|....|....|x...",   // 2: Taktende-Akzent
-			"....|....|x.x.|x...",   // 3: Triolen-Fill
-			"....|....|....|....",   // 4: Pause
-			"x...|x...|x...|x.x."    // 5: Vorgriff
-		],
-		seq: [4, 4, 0, 4, 4, 2, 4, 4, 4, 0, 4, 3, 4, 4, 1, 5],
+		pattern: "x...|x...|x...|x...",
 		soundParams: (
 			wingRate: 28, wingDuty: 0.45,
 			ringFreq1: 1600, ringFreq2: 1700,
@@ -143,119 +96,196 @@ CricketSound.addSynthDef;
 		chirpDur: 0.12
 	),
 	texture: (
-		bars: nil,   // wird zufällig generiert
-		seq: nil,
+		pattern: "..x.|x...|....|x.x.",
 		soundParams: (
 			wingRate: 36, wingDuty: 0.42,
 			ringFreq1: 3200, ringFreq2: 3300,
 			ringDecay1: 0.025, ringDecay2: 0.020,
 			amp: 0.30
 		),
-		chirpDur: 0.06,
-		textureDensity: 0.20
+		chirpDur: 0.06
 	)
 );
 
+~layerNames = [\kick, \sub, \snare, \clap, \chihat, \ohihat, \perc, \texture];
+
 // --- Pattern-Hilfsfunktionen ----------------------------------------------------------
 
-// Entfernt grafische Taktstriche ('|') aus einem Pattern-String.
 ~cleanPattern = { |str| str.select { |c| c != $| } };
 
-// Wandelt einen String wie "x...x..." in einen Array von Gates (1/0) um.
 ~stringToGates = { |str|
 	var cleaned = ~cleanPattern.value(str);
 	Array.fill(cleaned.size, { |i| if(cleaned[i] == $x) { 1 } { 0 } })
 };
 
-// Wandelt ein Array von Takt-Strings in einen endlosen Gate-Stream um.
-~barsToGateStream = { |barStrings|
-	var gates = barStrings.collect(~stringToGates).flat;
+~barsToGateStream = { |barString|
+	var gates = ~stringToGates.value(barString);
 	Pseq(gates, inf);
 };
 
-// Spezialfall Sub: 24tel-Auflösung (längere Strings) auf 16tel herunterrechnen.
-~subBarsToGateStream = { |barStrings|
-	var gates = barStrings.collect { |str|
-		var cleaned = ~cleanPattern.value(str);
-		~stepsPerBar.collect { |step|
-			var idx = (step * cleaned.size / ~stepsPerBar).floor.asInteger;
-			if(cleaned[idx] == $x) { 1 } { 0 }
-		}
-	}.flat;
-	Pseq(gates, inf);
-};
-
-// Baut einen zufälligen Texture-Stream aus 16 Takten.
-~buildTextureStream = { |density|
-	var bars = ~numBars.collect {
-		String.fill(~stepsPerBar, {
-			if(density.coin) { $x } { $. }
-		})
+~subBarsToGateStream = { |barString|
+	var cleaned = ~cleanPattern.value(barString);
+	var gates = ~stepsPerBar.collect { |step|
+		var idx = (step * cleaned.size / ~stepsPerBar).floor.asInteger;
+		if(cleaned[idx] == $x) { 1 } { 0 }
 	};
-	~barsToGateStream.value(bars);
+	Pseq(gates, inf);
 };
 
-// Pro aktivem Layer ein CricketSound im Raum registrieren.
-// Alle stehen an derselben Position, damit der Fokus auf dem Rhythmus liegt.
-~soundObjects = ~activeLayers.collect { |layerName, i|
-	var def = ~layerDefs[layerName];
-	var movableParams = (
-		pos: [0, 0, 0],
-		moveRule: SteadyMoveRule.new,
-		roomRadius: 5
-	);
-	~room.registerFromBuilder(def[\soundParams] ++ (pattern: nil), movableParams,
-		soundClass: CricketSound)
+// --- Laufzeit-Variablen ---------------------------------------------------------------
+
+~playgroundRoutines = nil;
+~playgroundSoundObjects = nil;
+~playgroundIsRunning = false;
+
+// --- GUI ------------------------------------------------------------------------------
+
+~buildPlaygroundGUI = {
+	var win, controls, startButton, stopButton, restartButton, bpmNumberBox;
+	var header, label;
+
+	win = Window("Rhythm Pattern Playground", Rect(100, 100, 720, 420));
+	win.view.decorator = FlowLayout(win.view.bounds.insetBy(16, 16), Point(0, 4), Point(8, 8));
+	controls = ();
+
+	StaticText(win.view, 688@24)
+		.string_("Rhythm Pattern Playground")
+		.font_(Font.default.copy.size_(16).boldVariant)
+		.align_(\left);
+	win.view.decorator.nextLine;
+
+	// Header: Start / Stop / Restart / BPM
+	header = CompositeView(win.view, 688@36);
+	header.decorator = FlowLayout(header.bounds, Point(0, 4), Point(8, 0));
+
+	startButton = Button(header, 100@28).states_([["Start"]]).action_({ ~startPlayground.value(controls) });
+	stopButton = Button(header, 100@28).states_([["Stop"]]).action_({ ~stopPlayground.value });
+	restartButton = Button(header, 100@28).states_([["Restart"]]).action_({ ~stopPlayground.value; ~startPlayground.value(controls) });
+
+	StaticText(header, 60@28).string_("BPM:").align_(\right);
+	bpmNumberBox = NumberBox(header, 60@28)
+		.value_(~bpm)
+		.clipLo_(30)
+		.clipHi_(240)
+		.action_({ |nb| ~bpm = nb.value; });
+	win.view.decorator.nextLine;
+
+	label = StaticText(win.view, 688@20)
+		.string_("Aktiv  Layer                Pattern (x = Schlag, . = Pause, | = Taktstrich)")
+		.font_(Font.default.copy.size_(11))
+		.align_(\left);
+	win.view.decorator.nextLine;
+
+	// Pro Layer eine Zeile
+	~layerNames.do { |layerName|
+		var def = ~layerDefs[layerName];
+		var row = CompositeView(win.view, 688@28);
+		var checkbox, textField;
+
+		row.decorator = FlowLayout(row.bounds, Point(0, 2), Point(8, 0));
+
+		checkbox = CheckBox(row, 20@24).value_(true);
+		StaticText(row, 70@24).string_(layerName.asString).align_(\left);
+		textField = TextField(row, 560@24).string_(def[\pattern]);
+
+		controls[layerName] = (active: checkbox, pattern: textField);
+		win.view.decorator.nextLine;
+	};
+
+	win.front;
+	~playgroundControls = controls;
+	~playgroundBPMBox = bpmNumberBox;
 };
 
-// Gotcha: eingebautes CallingPattern ausschalten.
-~soundObjects.do { |so| so.sound.pattern = nil };
-)
+// --- Start / Stop ----------------------------------------------------------------------
 
-// --- 2) Start -------------------------------------------------------------------------
-(
-"Rhythm-Pattern-Playground startet: ".post;
-~activeLayers.do { |n| (n.asString ++ " ").post };
-"".postln;
+~startPlayground = { |controls|
+	var activeLayers;
 
-~room.play;
-~soundObjects.do { |so| so.sound.synth.set(\gate, 0) };
+	if(~playgroundIsRunning) { ~stopPlayground.value };
 
-~routines = ~activeLayers.collect { |layerName, i|
-	var def = ~layerDefs[layerName];
-	var stream;
-	var synth = ~soundObjects[i].sound.synth;
-	var durStream = (~stepDur * Pwhite(0.95, 1.05, inf)).asStream;
+	activeLayers = ~layerNames.select { |layerName|
+		controls[layerName][\active].value
+	};
 
-	if(layerName == \texture) {
-		stream = ~buildTextureStream.value(def[\textureDensity]).asStream;
-	} {
+	if(activeLayers.isEmpty) {
+		"Kein Layer aktiv — Start abgebrochen.".postln;
+		^nil;
+	};
+
+	~bpm = ~playgroundBPMBox.value;
+	~stepDur = 60 / ~bpm / ~stepsPerBeat;
+
+	~room.play;
+
+	~playgroundSoundObjects = activeLayers.collect { |layerName, i|
+		var def = ~layerDefs[layerName];
+		var patternString = controls[layerName][\pattern].value;
+		var soundParams = def[\soundParams].copy;
+		var movableParams = (
+			pos: [0, 0, 0],
+			moveRule: SteadyMoveRule.new,
+			roomRadius: 5
+		);
+		// Pattern speichern wir temporär im Sound-Event mit, falls nützlich.
+		~room.registerFromBuilder(soundParams ++ (pattern: nil), movableParams,
+			soundClass: CricketSound)
+	};
+
+	~playgroundSoundObjects.do { |so| so.sound.pattern = nil };
+	~playgroundSoundObjects.do { |so| so.sound.synth.set(\gate, 0) };
+
+	~playgroundRoutines = activeLayers.collect { |layerName, i|
+		var def = ~layerDefs[layerName];
+		var patternString = controls[layerName][\pattern].value;
+		var stream;
+		var synth = ~playgroundSoundObjects[i].sound.synth;
+		var durStream = (~stepDur * Pwhite(0.95, 1.05, inf)).asStream;
+
 		if(def[\subdivision] == 24) {
-			stream = ~subBarsToGateStream.value(def[\seq].collect { |idx| def[\bars][idx] }).asStream;
+			stream = ~subBarsToGateStream.value(patternString).asStream;
 		} {
-			stream = ~barsToGateStream.value(def[\seq].collect { |idx| def[\bars][idx] }).asStream;
+			stream = ~barsToGateStream.value(patternString).asStream;
 		};
+
+		Routine({
+			loop {
+				var gate = stream.next;
+				var dur = durStream.next;
+				if(gate.notNil and: { gate > 0 }) {
+					var chirpDur = min(def[\chirpDur], dur * 0.9);
+					synth.set(\gate, 1);
+					SystemClock.sched(chirpDur, { synth.set(\gate, 0) });
+				};
+				dur.wait;
+			}
+		});
 	};
 
-	Routine({
-		loop {
-			var gate = stream.next;
-			var dur = durStream.next;
-			if(gate.notNil and: { gate > 0 }) {
-				var chirpDur = min(def[\chirpDur], dur * 0.9);
-				synth.set(\gate, 1);
-				SystemClock.sched(chirpDur, { synth.set(\gate, 0) });
-			};
-			dur.wait;
-		}
-	});
+	~playgroundRoutines.do(_.play);
+	~playgroundIsRunning = true;
+	("Playground gestartet: " ++ activeLayers.collect(_.asString).join(", ")).postln;
 };
 
-~routines.do(_.play);
+~stopPlayground = {
+	~playgroundRoutines !? { |routines|
+		routines.do(_.stop);
+		~playgroundRoutines = nil;
+	};
+	~playgroundSoundObjects !? { |soundObjects|
+		soundObjects.do { |so|
+			so.fadeOutAndStop(0.5, { |stopped| ~room.orchestra.unregister(stopped) })
+		};
+		~playgroundSoundObjects = nil;
+	};
+	~playgroundIsRunning = false;
+	"Playground gestoppt.".postln;
+};
+
+~buildPlaygroundGUI.value;
 )
 
-// --- 3) Stop --------------------------------------------------------------------------
+// --- Hilfsblock: Fenster erneut öffnen (falls geschlossen) -----------------------------
 (
-~routines.do(_.stop);
-~soundObjects.do { |so| so.fadeOutAndStop(0.5, { |stopped| ~room.orchestra.unregister(stopped) }) };
+~buildPlaygroundGUI.value;
 )
