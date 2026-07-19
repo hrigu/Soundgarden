@@ -123,12 +123,42 @@ CricketSound.addSynthDef;
 	Pseq(gates, inf);
 };
 
-~subBarsToGateStream = { |barString|
-	var cleaned = ~cleanPattern.value(barString);
-	var gates = ~stepsPerBar.collect { |step|
-		var idx = (step * cleaned.size / ~stepsPerBar).floor.asInteger;
-		if(cleaned[idx] == $x) { 1 } { 0 }
+~splitLogicalBars = { |str|
+	var bars = List.new;
+	var current = List.new;
+	var prevWasBar = false;
+
+	str.do { |c|
+		if(c == $|) {
+			if(prevWasBar) {
+				bars.add(current.asArray);
+				current = List.new;
+				prevWasBar = false;
+			} {
+				current.add(c);
+				prevWasBar = true;
+			};
+		} {
+			current.add(c);
+			prevWasBar = false;
+		};
 	};
+	bars.add(current.asArray);
+	bars.asArray;
+};
+
+~subBarsToGateStream = { |barString|
+	var gates = ~splitLogicalBars.value(barString).collect { |logicalBar|
+		var cleaned = ~cleanPattern.value(logicalBar);
+		if(cleaned.isEmpty) {
+			~stepsPerBar.collect { 0 }
+		} {
+			~stepsPerBar.collect { |step|
+				var idx = (step * cleaned.size / ~stepsPerBar).floor.asInteger;
+				if(cleaned[idx] == $x) { 1 } { 0 }
+			}
+		}
+	}.flat;
 	Pseq(gates, inf);
 };
 
