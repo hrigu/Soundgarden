@@ -3,6 +3,10 @@
 // verwenden koennen.
 RhythmPlaygroundPercussionSamples {
 
+	*ampScale {
+		^4.0
+	}
+
 	*relativePaths {
 		^(
 			kick: "sounds/instruments/Percussion/bass drum/bass-drum__025_forte_bass-drum-mallet.mp3",
@@ -25,6 +29,6 @@ RhythmPlaygroundPercussionSamples {
 	*soundParamsFor { |layerName, repoRoot, amp = 0.5, duration = 0.35|
 		var path = this.pathFor(layerName, repoRoot);
 		if(path.isNil) { ^nil };
-		^(path: path, amp: amp, duration: duration, startFrac: 0)
+		^(path: path, amp: (amp * this.ampScale).clip(0, 1), duration: duration, startFrac: 0)
 	}
 }

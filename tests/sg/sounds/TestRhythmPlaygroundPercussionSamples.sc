@@ -23,7 +23,8 @@ TestRhythmPlaygroundPercussionSamples : UnitTest {
 
 		this.assert(params[\path].beginsWith("/repo/root/sounds/instruments/Percussion/"),
 			"Pfad wird relativ zur Repo-Wurzel aufgebaut");
-		this.assertEquals(params[\amp], 0.25);
+		this.assertEquals(params[\amp], 1.0,
+			"Percussion-Samples werden gegenueber den leisen Cricket-Amps angehoben");
 		this.assertEquals(params[\duration], 0.12);
 		this.assertEquals(params[\startFrac], 0);
 	}
@@ -31,5 +32,16 @@ TestRhythmPlaygroundPercussionSamples : UnitTest {
 	test_unknownLayerReturnsNil {
 		this.assertEquals(RhythmPlaygroundPercussionSamples.pathFor(\missing, "/repo/root"), nil);
 		this.assertEquals(RhythmPlaygroundPercussionSamples.soundParamsFor(\missing, "/repo/root"), nil);
+	}
+
+	test_soundParamsForScalesAmpButClipsAtOne {
+		var quietParams = RhythmPlaygroundPercussionSamples.soundParamsFor(\kick, "/repo/root",
+			amp: 0.1);
+		var loudParams = RhythmPlaygroundPercussionSamples.soundParamsFor(\kick, "/repo/root",
+			amp: 0.5);
+
+		this.assertEquals(quietParams[\amp], 0.4);
+		this.assertEquals(loudParams[\amp], 1.0,
+			"Sample-Amp bleibt im gueltigen Synth-Parameterbereich");
 	}
 }
