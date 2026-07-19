@@ -13,11 +13,14 @@
 (
 // --- Setup ----------------------------------------------------------------------------
 CricketSound.addSynthDef;
+OneShotSampleSound.addSynthDef;
 ~listener = Listener.new(binauralizerClass: Binauralizer);
 ~room = Room.new(s, listener: ~listener, size: 10, height: 3, surface: 0.5);
+~repoRoot = PathName(thisProcess.nowExecutingPath.dirname.dirname.dirname).fullPath;
 
 ~bpm = 110;
 ~beatsPerBar = 4;
+~soundMode = \cricket;
 
 // Layer-Definitionen: Name, Standard-Pattern, Klangparameter, Chirp-Dauer.
 // Das Standard-Pattern ist ein einzelner Takt, der endlos loopt.
@@ -117,7 +120,7 @@ CricketSound.addSynthDef;
 // --- GUI ------------------------------------------------------------------------------
 
 ~buildPlaygroundGUI = {
-	var win, controls, startButton, stopButton, restartButton, bpmNumberBox;
+	var win, controls, startButton, stopButton, restartButton, bpmNumberBox, soundModeMenu;
 	var header, label;
 
 	win = Window("Rhythm Pattern Playground", Rect(100, 100, 720, 420));
@@ -138,7 +141,13 @@ CricketSound.addSynthDef;
 	stopButton = Button(header, 100@28).states_([["Stop"]]).action_({ ~stopPlayground.value });
 	restartButton = Button(header, 100@28).states_([["Restart"]]).action_({ ~stopPlayground.value; ~startPlayground.value(controls) });
 
-	StaticText(header, 60@28).string_("BPM:").align_(\right);
+	StaticText(header, 60@28).string_("Klang:").align_(\right);
+	soundModeMenu = PopUpMenu(header, 120@28)
+		.items_(["Grillen", "Percussion"])
+		.value_(if(~soundMode == \percussion) { 1 } { 0 })
+		.action_({ |menu| ~soundMode = [\cricket, \percussion][menu.value] });
+
+	StaticText(header, 45@28).string_("BPM:").align_(\right);
 	bpmNumberBox = NumberBox(header, 60@28)
 		.value_(~bpm)
 		.clipLo_(30)
@@ -177,6 +186,8 @@ CricketSound.addSynthDef;
 
 ~startPlayground = { |controls|
 	var activeLayers;
+	var soundMode;
+	var startToken;
 
 	if(~playgroundIsRunning) { ~stopPlayground.value };
 
@@ -190,13 +201,15 @@ CricketSound.addSynthDef;
 	};
 
 	~playgroundStopToken = ~playgroundStopToken + 1;
+	startToken = ~playgroundStopToken;
 	~bpm = ~playgroundBPMBox.value;
 	~barDur = 60 / ~bpm * ~beatsPerBar;
+	soundMode = ~soundMode;
 
 	~playgroundSoundObjects = activeLayers.collect { |layerName, i|
 		var def = ~layerDefs[layerName];
 		var patternString = controls[layerName][\pattern].value;
-		var soundParams = def[\soundParams].copy;
+		var soundParams;
 		var angle = (i / activeLayers.size) * 2pi;
 		var radius = 3.0;
 		var movableParams = (
@@ -204,25 +217,52 @@ CricketSound.addSynthDef;
 			moveRule: SteadyMoveRule.new,
 			roomRadius: radius + 2
 		);
-		// Pattern speichern wir temporär im Sound-Event mit, falls nützlich.
-		~room.registerFromBuilder(soundParams ++ (pattern: nil), movableParams,
-			soundClass: CricketSound)
+
+		if(soundMode == \percussion) {
+			soundParams = RhythmPlaygroundPercussionSamples.soundParamsFor(layerName, ~repoRoot,
+				amp: def[\soundParams][\amp], duration: def[\chirpDur].max(0.12));
+			~room.register(
+				Movable.new(
+					pos: movableParams[\pos],
+					moveRule: movableParams[\moveRule],
+					roomRadius: movableParams[\roomRadius]
+				),
+				OneShotSampleSound.new(
+					soundParams[\path],
+					amp: soundParams[\amp],
+					startFrac: soundParams[\startFrac],
+					duration: soundParams[\duration]
+				)
+			)
+		} {
+			soundParams = def[\soundParams].copy;
+			// Pattern speichern wir temporär im Sound-Event mit, falls nützlich.
+			~room.registerFromBuilder(soundParams ++ (pattern: nil), movableParams,
+				soundClass: CricketSound)
+		};
 	};
 
-	~playgroundSoundObjects.do { |so| so.sound.pattern = nil };
+	if(soundMode == \cricket) {
+		~playgroundSoundObjects.do { |so| so.sound.pattern = nil };
+	} {
+		~playgroundSoundObjects.do { |so| so.sound.preload(s) };
+	};
 	if(~playgroundRoomIsPlaying) {
 		~playgroundSoundObjects.do { |so| so.play(s) };
 	} {
 		~room.play;
 		~playgroundRoomIsPlaying = true;
 	};
-	~playgroundSoundObjects.do { |so| so.sound.synth.set(\gate, 0) };
+	if(soundMode == \cricket) {
+		~playgroundSoundObjects.do { |so| so.sound.synth.set(\gate, 0) };
+	};
 
 	~playgroundRoutines = activeLayers.collect { |layerName, i|
 		var def = ~layerDefs[layerName];
 		var patternString = controls[layerName][\pattern].value;
 		var stream;
-		var synth = ~playgroundSoundObjects[i].sound.synth;
+		var sound = ~playgroundSoundObjects[i].sound;
+		var synth = sound.synth;
 		var jitterStream = Pwhite(0.95, 1.05, inf).asStream;
 
 		stream = RhythmPatternNotation.eventStream(patternString, ~barDur).asStream;
@@ -233,17 +273,31 @@ CricketSound.addSynthDef;
 				var dur = event[\dur] * jitterStream.next;
 				if(event[\gate].notNil and: { event[\gate] > 0 }) {
 					var chirpDur = min(def[\chirpDur], dur * 0.9);
-					synth.set(\gate, 1);
-					SystemClock.sched(chirpDur, { synth.set(\gate, 0) });
+					if(soundMode == \percussion) {
+						sound.trigger;
+					} {
+						synth.set(\gate, 1);
+						SystemClock.sched(chirpDur, { synth.set(\gate, 0) });
+					};
 				};
 				dur.wait;
 			}
 		});
 	};
 
-	~playgroundRoutines.do(_.play);
+	if(soundMode == \percussion) {
+		SystemClock.sched(0.2, {
+			if(~playgroundStopToken == startToken and: { ~playgroundIsRunning }) {
+				~playgroundRoutines.do(_.play);
+			};
+			nil
+		});
+	} {
+		~playgroundRoutines.do(_.play);
+	};
 	~playgroundIsRunning = true;
-	("Playground gestartet: " ++ activeLayers.collect(_.asString).join(", ")).postln;
+	("Playground gestartet (" ++ soundMode.asString ++ "): "
+		++ activeLayers.collect(_.asString).join(", ")).postln;
 };
 
 ~stopPlayground = {

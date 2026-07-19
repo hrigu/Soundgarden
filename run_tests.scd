@@ -23,6 +23,8 @@ TestSoundObject.run;
 TestCallingPattern.run;
 TestRhythmPatternCreator.run;
 TestRhythmPatternNotation.run;
+TestOneShotSampleSound.run;
+TestRhythmPlaygroundPercussionSamples.run;
 TestBirdMotif.run;
 TestBirdMotifExamples.run;
 TestCricketSound.run;
