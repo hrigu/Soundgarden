@@ -106,70 +106,6 @@ CricketSound.addSynthDef;
 
 ~layerNames = [\kick, \sub, \snare, \clap, \chihat, \ohihat, \perc, \texture];
 
-// --- Pattern-Hilfsfunktionen ----------------------------------------------------------
-
-~splitLogicalBars = { |str|
-	var bars = List.new;
-	var current = List.new;
-	var prevWasBar = false;
-
-	str.do { |c|
-		if(c == $|) {
-			if(prevWasBar) {
-				bars.add(current.asArray);
-				current = List.new;
-				prevWasBar = false;
-			} {
-				prevWasBar = true;
-			};
-		} {
-			if(prevWasBar) {
-				current.add($|);
-				prevWasBar = false;
-			};
-			current.add(c);
-		};
-	};
-	if(prevWasBar) { current.add($|) };
-	bars.add(current.asArray);
-	bars.asArray;
-};
-
-~splitSegments = { |bar|
-	var segments = List.new;
-	var current = List.new;
-
-	bar.do { |c|
-		if(c == $|) {
-			segments.add(current.asArray);
-			current = List.new;
-		} {
-			current.add(c);
-		};
-	};
-	segments.add(current.asArray);
-	segments.asArray;
-};
-
-~patternToEvents = { |str, barDur|
-	~splitLogicalBars.value(str).collect { |bar|
-		var segments = ~splitSegments.value(bar);
-		var segmentDur = barDur / segments.size.max(1);
-		segments.collect { |segment|
-			if(segment.isEmpty) {
-				[(gate: 0, dur: segmentDur)]
-			} {
-				var stepDur = segmentDur / segment.size;
-				segment.collect { |c| (gate: if(c == $x) { 1 } { 0 }, dur: stepDur) }
-			};
-		}.flat;
-	}.flat;
-};
-
-~patternToEventStream = { |barString, barDur|
-	Pseq(~patternToEvents.value(barString, barDur), inf);
-};
-
 // --- Laufzeit-Variablen ---------------------------------------------------------------
 
 ~playgroundRoutines = nil;
@@ -289,7 +225,7 @@ CricketSound.addSynthDef;
 		var synth = ~playgroundSoundObjects[i].sound.synth;
 		var jitterStream = Pwhite(0.95, 1.05, inf).asStream;
 
-		stream = ~patternToEventStream.value(patternString, ~barDur).asStream;
+		stream = RhythmPatternNotation.eventStream(patternString, ~barDur).asStream;
 
 		Routine({
 			loop {
