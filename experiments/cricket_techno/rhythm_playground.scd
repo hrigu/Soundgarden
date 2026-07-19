@@ -18,8 +18,6 @@ CricketSound.addSynthDef;
 
 ~bpm = 110;
 ~beatsPerBar = 4;
-~stepsPerBeat = 4;              // 16tel
-~stepsPerBar = ~beatsPerBar * ~stepsPerBeat;
 
 // Layer-Definitionen: Name, Standard-Pattern, Klangparameter, Chirp-Dauer.
 // Das Standard-Pattern ist ein einzelner Takt, der endlos loopt.
@@ -42,8 +40,7 @@ CricketSound.addSynthDef;
 			ringDecay1: 0.18, ringDecay2: 0.15,
 			amp: 0.08
 		),
-		chirpDur: 0.30,
-		subdivision: 24
+		chirpDur: 0.30
 	),
 	snare: (
 		pattern: "....|x...|....|x...",
@@ -111,18 +108,6 @@ CricketSound.addSynthDef;
 
 // --- Pattern-Hilfsfunktionen ----------------------------------------------------------
 
-~cleanPattern = { |str| str.select { |c| c != $| } };
-
-~stringToGates = { |str|
-	var cleaned = ~cleanPattern.value(str);
-	Array.fill(cleaned.size, { |i| if(cleaned[i] == $x) { 1 } { 0 } })
-};
-
-~barsToGateStream = { |barString|
-	var gates = ~stringToGates.value(barString);
-	Pseq(gates, inf);
-};
-
 ~splitLogicalBars = { |str|
 	var bars = List.new;
 	var current = List.new;
@@ -135,31 +120,54 @@ CricketSound.addSynthDef;
 				current = List.new;
 				prevWasBar = false;
 			} {
-				current.add(c);
 				prevWasBar = true;
 			};
 		} {
+			if(prevWasBar) {
+				current.add($|);
+				prevWasBar = false;
+			};
 			current.add(c);
-			prevWasBar = false;
 		};
 	};
+	if(prevWasBar) { current.add($|) };
 	bars.add(current.asArray);
 	bars.asArray;
 };
 
-~subBarsToGateStream = { |barString|
-	var gates = ~splitLogicalBars.value(barString).collect { |logicalBar|
-		var cleaned = ~cleanPattern.value(logicalBar);
-		if(cleaned.isEmpty) {
-			~stepsPerBar.collect { 0 }
+~splitSegments = { |bar|
+	var segments = List.new;
+	var current = List.new;
+
+	bar.do { |c|
+		if(c == $|) {
+			segments.add(current.asArray);
+			current = List.new;
 		} {
-			~stepsPerBar.collect { |step|
-				var idx = (step * cleaned.size / ~stepsPerBar).floor.asInteger;
-				if(cleaned[idx] == $x) { 1 } { 0 }
-			}
-		}
+			current.add(c);
+		};
+	};
+	segments.add(current.asArray);
+	segments.asArray;
+};
+
+~patternToEvents = { |str, barDur|
+	~splitLogicalBars.value(str).collect { |bar|
+		var segments = ~splitSegments.value(bar);
+		var segmentDur = barDur / segments.size.max(1);
+		segments.collect { |segment|
+			if(segment.isEmpty) {
+				[(gate: 0, dur: segmentDur)]
+			} {
+				var stepDur = segmentDur / segment.size;
+				segment.collect { |c| (gate: if(c == $x) { 1 } { 0 }, dur: stepDur) }
+			};
+		}.flat;
 	}.flat;
-	Pseq(gates, inf);
+};
+
+~patternToEventStream = { |barString, barDur|
+	Pseq(~patternToEvents.value(barString, barDur), inf);
 };
 
 // --- Laufzeit-Variablen ---------------------------------------------------------------
@@ -203,7 +211,7 @@ CricketSound.addSynthDef;
 	win.view.decorator.nextLine;
 
 	label = StaticText(win.view, 688@20)
-		.string_("Aktiv  Layer                Pattern (x = Schlag, . = Pause, | = Taktstrich)")
+		.string_("Aktiv  Layer                Pattern (x = Schlag, . = Pause, | = Segment, || = Takt)")
 		.font_(Font.default.copy.size_(11))
 		.align_(\left);
 	win.view.decorator.nextLine;
@@ -247,7 +255,7 @@ CricketSound.addSynthDef;
 
 	~playgroundStopToken = ~playgroundStopToken + 1;
 	~bpm = ~playgroundBPMBox.value;
-	~stepDur = 60 / ~bpm / ~stepsPerBeat;
+	~barDur = 60 / ~bpm * ~beatsPerBar;
 
 	~playgroundSoundObjects = activeLayers.collect { |layerName, i|
 		var def = ~layerDefs[layerName];
@@ -279,19 +287,15 @@ CricketSound.addSynthDef;
 		var patternString = controls[layerName][\pattern].value;
 		var stream;
 		var synth = ~playgroundSoundObjects[i].sound.synth;
-		var durStream = (~stepDur * Pwhite(0.95, 1.05, inf)).asStream;
+		var jitterStream = Pwhite(0.95, 1.05, inf).asStream;
 
-		if(def[\subdivision] == 24) {
-			stream = ~subBarsToGateStream.value(patternString).asStream;
-		} {
-			stream = ~barsToGateStream.value(patternString).asStream;
-		};
+		stream = ~patternToEventStream.value(patternString, ~barDur).asStream;
 
 		Routine({
 			loop {
-				var gate = stream.next;
-				var dur = durStream.next;
-				if(gate.notNil and: { gate > 0 }) {
+				var event = stream.next;
+				var dur = event[\dur] * jitterStream.next;
+				if(event[\gate].notNil and: { event[\gate] > 0 }) {
 					var chirpDur = min(def[\chirpDur], dur * 0.9);
 					synth.set(\gate, 1);
 					SystemClock.sched(chirpDur, { synth.set(\gate, 0) });
